@@ -44,7 +44,7 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
     if (type === 'chars') {
       const words = children.split(' ');
       return words.map((word, wordIndex) => (
-        <span key={wordIndex} className="inline-block whitespace-nowrap overflow-hidden">
+        <span key={wordIndex} className="inline-block whitespace-nowrap overflow-visible">
           {word.split('').map((char, charIndex) => (
             <span key={charIndex} className="split-char inline-block" style={{ transformStyle: 'preserve-3d' }}>
               {char}
@@ -58,7 +58,7 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
   };
 
   return (
-    <div ref={containerRef} className={`${className} overflow-hidden`} style={{ perspective: '1000px' }}>
+    <div ref={containerRef} className={`overflow-hidden ${className}`} style={{ perspective: '1000px' }}>
       {renderSplitText()}
     </div>
   );

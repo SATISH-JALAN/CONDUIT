@@ -105,7 +105,7 @@ export function Home() {
             <h1 className="text-[clamp(42px,5vw,72px)] font-display font-[700] leading-[0.92] tracking-[-0.04em] animate-weight">
               <SplitText className="block text-[var(--ink-1)]">Your money.</SplitText>
               <SplitText className="block text-[var(--surge)]" delay={0.1}>Streaming.</SplitText>
-              <SplitText className="block text-[40%] font-secondary italic font-light text-[var(--ink-3)] mt-2" delay={0.2}>
+              <SplitText className="block text-[40%] font-secondary italic font-light text-[var(--ink-3)] leading-[1.16] mt-2 pb-[0.16em]" delay={0.2}>
                 every second.
               </SplitText>
             </h1>

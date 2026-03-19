@@ -18,15 +18,38 @@ type SortOption = 'apy-desc' | 'apy-asc' | 'duration-asc' | 'duration-desc' | 'm
 
 export function Bonds() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('apy-desc');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+
+  const sortOptions: { value: SortOption; label: string }[] = [
+    { value: 'apy-desc', label: 'Highest APY' },
+    { value: 'apy-asc', label: 'Lowest APY' },
+    { value: 'duration-asc', label: 'Shortest Duration' },
+    { value: 'duration-desc', label: 'Longest Duration' },
+    { value: 'min-asc', label: 'Lowest Min. Invest' },
+    { value: 'min-desc', label: 'Highest Min. Invest' },
+  ];
+
+  const selectedSortLabel = sortOptions.find((option) => option.value === sortBy)?.label ?? 'Highest APY';
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -76,20 +99,38 @@ export function Bonds() {
                 className="w-full sm:w-[240px] pl-9 pr-4 py-2 rounded-full bg-[var(--paper-2)] border border-[var(--paper-edge)] focus:outline-none focus:border-[var(--surge-pale-2)] focus:ring-1 focus:ring-[var(--surge-pale-2)] transition-all font-secondary text-[13px] text-[var(--ink-1)] placeholder:text-[var(--ink-4)]"
               />
             </div>
-            <div className="relative flex items-center">
-              <select 
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="appearance-none pl-4 pr-10 py-2 rounded-full bg-[var(--paper-2)] border border-[var(--paper-edge)] focus:outline-none focus:border-[var(--surge-pale-2)] focus:ring-1 focus:ring-[var(--surge-pale-2)] transition-all font-secondary text-[13px] text-[var(--ink-1)] cursor-pointer"
+            <div className="relative" ref={sortMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsSortOpen((prev) => !prev)}
+                className="w-full sm:w-[210px] flex items-center justify-between pl-4 pr-10 py-2 rounded-full bg-[var(--paper-2)] border border-[var(--paper-edge)] hover:border-[var(--surge-pale-2)] focus:outline-none focus:border-[var(--surge-pale-2)] focus:ring-1 focus:ring-[var(--surge-pale-2)] transition-all font-secondary text-[13px] text-[var(--ink-1)] cursor-pointer"
+                aria-haspopup="menu"
+                aria-expanded={isSortOpen}
               >
-                <option value="apy-desc">Highest APY</option>
-                <option value="apy-asc">Lowest APY</option>
-                <option value="duration-asc">Shortest Duration</option>
-                <option value="duration-desc">Longest Duration</option>
-                <option value="min-asc">Lowest Min. Invest</option>
-                <option value="min-desc">Highest Min. Invest</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-4)] pointer-events-none" size={14} />
+                <span className="truncate">{selectedSortLabel}</span>
+              </button>
+              <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ink-4)] pointer-events-none transition-transform ${isSortOpen ? 'rotate-180' : ''}`} size={14} />
+              {isSortOpen && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-full sm:w-[240px] z-20 paper-card p-1 rounded-[var(--r-md)]">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        setSortBy(option.value);
+                        setIsSortOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-[8px] font-secondary text-[13px] transition-colors ${
+                        sortBy === option.value
+                          ? 'bg-[var(--surge-pale)] text-[var(--surge)]'
+                          : 'text-[var(--ink-2)] hover:bg-[var(--paper-3)]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </header>

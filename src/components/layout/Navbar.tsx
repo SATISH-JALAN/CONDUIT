@@ -28,7 +28,7 @@ export function Navbar() {
     }
   }, []);
 
-  if (['/dashboard', '/bonds', '/agent', '/race'].includes(location.pathname)) {
+  if (['/dashboard', '/bonds', '/agent', '/race', '/nfts'].includes(location.pathname)) {
     return null;
   }
 

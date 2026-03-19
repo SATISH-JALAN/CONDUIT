@@ -32,7 +32,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Bonds', path: '/bonds', icon: Wallet },
     { name: 'COND', path: '/agent', icon: Bot },
     { name: 'Race', path: '/race', icon: Flag },
-    { name: 'NFTs', path: '#', icon: ImageIcon },
+    { name: 'NFTs', path: '/nfts', icon: ImageIcon },
     { name: 'Creators', path: '#', icon: Users },
     { name: 'Settings', path: '#', icon: Settings },
   ];

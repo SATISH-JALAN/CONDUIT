@@ -13,6 +13,7 @@ import { Bonds } from '@/pages/Bonds';
 import { Agent } from '@/pages/Agent';
 import { Onboarding } from '@/pages/Onboarding';
 import { Race } from '@/pages/Race';
+import { NFTs } from '@/pages/NFTs';
 import { CustomCursor } from '@/components/ui/CustomCursor';
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/bonds" element={<Bonds />} />
           <Route path="/agent" element={<Agent />} />
           <Route path="/race" element={<Race />} />
+          <Route path="/nfts" element={<NFTs />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>

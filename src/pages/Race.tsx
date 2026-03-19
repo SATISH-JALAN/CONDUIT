@@ -22,7 +22,7 @@ export function Race() {
       gsap.fromTo(
         '.race-item',
         { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: 'power2.out' }
+        { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: 'power2.out', clearProps: 'opacity,transform,visibility' }
       );
     }, containerRef);
 

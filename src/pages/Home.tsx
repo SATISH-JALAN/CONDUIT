@@ -53,19 +53,24 @@ export function Home() {
       });
 
       // Bento Card Entrance
-      gsap.from('.bento-card', {
-        y: 48,
-        autoAlpha: 0,
-        scale: 0.96,
-        duration: 0.75,
-        stagger: 0.15,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.bento-grid',
-          start: 'top 85%',
-          toggleActions: 'play none none reverse'
+      gsap.fromTo(
+        '.bento-card',
+        { y: 48, opacity: 0, scale: 0.96 },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 0.75,
+          stagger: 0.15,
+          ease: 'power3.out',
+          clearProps: 'opacity,transform,visibility',
+          scrollTrigger: {
+            trigger: '.bento-grid',
+            start: 'top 85%',
+            toggleActions: 'play none none reverse'
+          }
         }
-      });
+      );
 
       // Floating Counter Card
       gsap.to('.hero-counter-card', {

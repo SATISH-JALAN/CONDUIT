@@ -54,10 +54,10 @@ export function YieldCounter({ initialValue = 1420.50, ratePerSecond = 0.0012 }:
       <div className="relative z-10 flex flex-col items-center">
         <div 
           ref={valueRef}
-          className="flex items-baseline font-display text-[var(--ink-1)] tracking-tight"
+          className="flex items-baseline font-display text-(--ink-1) tracking-tight"
         >
           <span className="text-5xl md:text-7xl font-semibold">{integerPart}</span>
-          <span className="text-3xl md:text-5xl font-medium text-[var(--ink-2)]">.{fractionalPart}</span>
+          <span className="text-3xl md:text-5xl font-medium text-(--ink-2)">.{fractionalPart}</span>
         </div>
       </div>
     </div>

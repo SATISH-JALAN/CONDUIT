@@ -34,7 +34,7 @@ export function Bonds() {
       gsap.fromTo(
         '.bond-card',
         { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: 'power3.out' }
+        { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: 'power3.out', clearProps: 'opacity,transform,visibility' }
       );
     }
   }, [loading]);

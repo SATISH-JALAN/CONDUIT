@@ -31,7 +31,7 @@ export function Dashboard() {
       gsap.fromTo(
         '.dash-item',
         { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }
+        { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out', clearProps: 'opacity,transform,visibility' }
       );
       
       // Animate chart data drawing
@@ -288,4 +288,3 @@ export function Dashboard() {
     </AppLayout>
   );
 }
-

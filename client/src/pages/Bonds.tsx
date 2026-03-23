@@ -4,15 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Search, ChevronDown, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Tooltip } from '@/components/ui/Tooltip';
-
-const allBonds = [
-  { id: '1', flag: '🇺🇸', name: 'US Treasury 10Y', type: 'Government', risk: 'Low', apy: 4.2, duration: 10, min: 100 },
-  { id: '2', flag: '🏢', name: 'Corporate Bond A', type: 'Corporate', risk: 'Medium', apy: 6.5, duration: 5, min: 500 },
-  { id: '3', flag: '🌍', name: 'Emerging Market B', type: 'Sovereign', risk: 'High', apy: 12.0, duration: 3, min: 1000 },
-  { id: '4', flag: '🌱', name: 'Green Energy Fund', type: 'Corporate', risk: 'Medium', apy: 7.8, duration: 7, min: 250 },
-  { id: '5', flag: '💻', name: 'Tech Growth Bond', type: 'Corporate', risk: 'High', apy: 15.5, duration: 2, min: 5000 },
-  { id: '6', flag: '🇩🇪', name: 'German Bund 2027', type: 'Government', risk: 'Low', apy: 3.84, duration: 3, min: 100 },
-];
+import { api, type BondBox } from '@/lib/api';
 
 type SortOption = 'apy-desc' | 'apy-asc' | 'duration-asc' | 'duration-desc' | 'min-asc' | 'min-desc';
 
@@ -20,6 +12,7 @@ export function Bonds() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
+  const [allBonds, setAllBonds] = useState<BondBox[]>([]);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('apy-desc');
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -35,11 +28,17 @@ export function Bonds() {
 
   const selectedSortLabel = sortOptions.find((option) => option.value === sortBy)?.label ?? 'Highest APY';
 
+  // Fetch bond boxes from API
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    api.getBoxes()
+      .then((boxes) => {
+        setAllBonds(boxes);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch bond boxes:', err);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {

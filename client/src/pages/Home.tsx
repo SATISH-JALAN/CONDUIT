@@ -8,6 +8,7 @@ import { SplitText } from '@/components/ui/SplitText';
 import { ScrambleText } from '@/components/ui/ScrambleText';
 import NumberFlow from '@number-flow/react';
 import { ArrowRight, Zap, ShieldCheck, Activity } from 'lucide-react';
+import { calculateValue } from '@/lib/formula';
 
 export function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -16,17 +17,19 @@ export function Home() {
   const pendingRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    // Yield Counter Math
-    const P = 10000;
-    const APY = 0.0521;
-    const r = APY / 365 / 86400;
-    const syncTs = Date.now() / 1000;
+    // Yield Counter Math using shared formula
+    const anchor = {
+      principal: 10000,
+      apy_bps: 521, // 5.21%
+      sync_ts: Date.now() / 1000,
+      box_id: 'demo',
+    };
+    
     let animationFrameId: number;
 
     const updateCounter = () => {
-      const dt = Math.max(0, Date.now() / 1000 - syncTs);
-      const vt = Math.max(0, P * (Math.exp(r * dt) - 1));
-      const total = P + vt;
+      const total = calculateValue(anchor);
+      const vt = total - anchor.principal;
 
       const intPart = Math.floor(total);
       const decPart = (total - intPart).toFixed(6).slice(1);

@@ -3,8 +3,16 @@ import { cors } from 'hono/cors';
 import { logger as honoLogger } from 'hono/logger';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
+import { boxRoutes } from './routes/boxes.js';
+import { positionRoutes } from './routes/position.js';
 import { logger } from './shared/logger.js';
 import { redis } from './shared/redis.js';
+import type { ServerWebSocket } from 'bun';
+
+// ── Types ──
+interface WSData {
+  wallet: string;
+}
 
 // ── App ──
 const app = new Hono().basePath('/api');
@@ -19,30 +27,31 @@ app.use('*', honoLogger());
 // ── Routes ──
 app.route('/health', healthRoutes);
 app.route('/auth', authRoutes);
+app.route('/boxes', boxRoutes);
+app.route('/position', positionRoutes);
 
 // ── WebSocket upgrade map (used by Bun.serve) ──
-const wsClients = new Map<string, Set<ServerWebSocket<{ wallet: string }>>>();
+const wsClients = new Map<string, Set<ServerWebSocket<WSData>>>();
 
 // ── Start ──
 const PORT = parseInt(process.env.PORT || '5000');
 
-const server = Bun.serve({
+const server = Bun.serve<WSData>({
   port: PORT,
   fetch: app.fetch,
   websocket: {
-    open(ws) {
+    open(ws: ServerWebSocket<WSData>) {
       const wallet = ws.data?.wallet || 'anonymous';
       if (!wsClients.has(wallet)) wsClients.set(wallet, new Set());
       wsClients.get(wallet)!.add(ws);
       logger.info({ wallet }, 'WS connected');
     },
-    message(ws, message) {
-      // Handle PING/PONG keepalive
+    message(ws: ServerWebSocket<WSData>, message: string | Buffer) {
       if (message === 'PING') {
         ws.send('PONG');
       }
     },
-    close(ws) {
+    close(ws: ServerWebSocket<WSData>) {
       const wallet = ws.data?.wallet || 'anonymous';
       wsClients.get(wallet)?.delete(ws);
       if (wsClients.get(wallet)?.size === 0) wsClients.delete(wallet);
@@ -62,4 +71,4 @@ process.on('SIGINT', async () => {
 });
 
 export { wsClients, server };
-export type { ServerWebSocket } from 'bun';
+

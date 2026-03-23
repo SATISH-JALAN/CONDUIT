@@ -7,6 +7,9 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Pencil, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { usePortfolioStore } from '@/stores/portfolioStore';
+
+const DEMO_WALLET = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7';
 
 const splitData = [
   { name: 'Main Wallet', value: 70, color: 'var(--surge)' },
@@ -19,12 +22,36 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<{name: string, value: number, color: string}[]>([]);
 
+  // Portfolio store
+  const {
+    totalValue,
+    totalPrincipal,
+    pendingYield,
+    totalYieldPerSecond,
+    avgApy,
+    positions,
+    setWallet,
+    fetchPositions,
+    tick,
+  } = usePortfolioStore();
+
+  // Fetch positions on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    setWallet(DEMO_WALLET);
+    fetchPositions().then(() => setLoading(false));
   }, []);
+
+  // Live counter tick loop
+  useEffect(() => {
+    if (loading) return;
+    let raf: number;
+    const loop = () => {
+      tick();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [loading, tick]);
 
   useEffect(() => {
     if (!loading && containerRef.current) {
@@ -64,13 +91,13 @@ export function Dashboard() {
               </div>
 
               <div className="mb-4">
-                <YieldCounter initialValue={50000} ratePerSecond={0.0082} />
+                <YieldCounter initialValue={totalValue || 50000} ratePerSecond={totalYieldPerSecond || 0.0082} />
               </div>
 
               <div className="mb-8">
                 <div className="flex justify-between text-mono text-[10px] text-[var(--ink-4)] mb-2 uppercase">
                   <span>Live Yield</span>
-                  <span>+$0.0082 / sec</span>
+                  <span>+${totalYieldPerSecond.toFixed(4)} / sec</span>
                 </div>
                 <div className="h-[4px] bg-[var(--paper-3)] rounded-full overflow-hidden">
                   <div className="stream-bar-fill"></div>
@@ -85,7 +112,7 @@ export function Dashboard() {
                       <Info size={10} className="text-[var(--ink-3)] cursor-help" />
                     </Tooltip>
                   </div>
-                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">$42.50</div>
+                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">${pendingYield.toFixed(2)}</div>
                 </div>
                 <div className="border-r border-[var(--paper-edge)] pl-4">
                   <div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mb-1 flex items-center gap-1">
@@ -94,7 +121,7 @@ export function Dashboard() {
                       <Info size={10} className="text-[var(--ink-3)] cursor-help" />
                     </Tooltip>
                   </div>
-                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">5.21%</div>
+                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">{avgApy.toFixed(2)}%</div>
                 </div>
                 <div className="pl-4">
                   <div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mb-1 flex items-center gap-1">

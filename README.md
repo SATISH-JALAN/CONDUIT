@@ -53,6 +53,7 @@ Conduit is built on Stellar + Soroban to make continuous distribution viable:
 - **~$0.00001 transaction fees**
 - High-throughput, low-latency settlement
 - Cost structure suitable for frequent micro-accrual operations
+- Native RWA ecosystem (BENJI, USDY already on Stellar)
 
 This allows user experiences that are economically impractical on high-fee chains.
 
@@ -74,7 +75,7 @@ The interface is intentionally selection-first and familiar, like choosing playl
 
 ## COND: Autonomous Portfolio Agent
 
-COND is Conduit’s AI portfolio layer, built on **LangGraph** with **Claude** as the reasoning engine.
+COND is Conduit's AI portfolio layer, built on **LangGraph** with **Claude** as the reasoning engine.
 
 Capabilities include:
 - Monitoring market and credit conditions
@@ -105,84 +106,243 @@ Beyond core streaming yield:
 
 ## Tech Stack
 
-### Smart Contracts
-- Soroban smart contracts (**Rust**)
-
-### Backend
-- **Bun + TypeScript** monolith
-
-### AI/Agent Layer
-- **Python + LangGraph + Claude**
-
-### Client Apps
-- **React Native + Expo** (mobile)
-- **Next.js** (web portal)
-
-### Data Layer
-- **PostgreSQL**
-- **TimescaleDB**
-- **Redis**
+| Layer | Technology |
+|---|---|
+| **Smart Contracts** | Rust → WASM on Soroban (Stellar) |
+| **Backend** | Bun + Hono + TypeScript |
+| **Database** | PostgreSQL + TimescaleDB |
+| **Cache** | Redis (anchor data for live counter) |
+| **AI Agent** | Python + LangGraph + Claude Sonnet |
+| **Frontend** | React + Vite + TailwindCSS + GSAP |
+| **Auth** | JWT (jose) — wallet-based |
 
 ---
 
-## Current Status
+## Project Structure
 
-**MVP deployed on Stellar Futurenet testnet.**
-
-Operational modules include:
-- `compliance.rs`
-- `stream_router.rs`
-- `bond_box.rs`
-
-Current frontend includes:
-- Landing page
-- Live yield counter
-- Bond Box selection
-- COND terminal log
-- Leaderboard + race mechanics
+```
+Conduit/
+├── client/                    # Frontend (Vite + React)
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── counter/       # YieldCounter
+│   │   │   ├── layout/        # Navbar, AppLayout
+│   │   │   └── ui/            # TiltCard, MagneticButton, SpotlightCard, etc.
+│   │   ├── lib/               # GSAP setup, utilities
+│   │   ├── pages/             # Home, Dashboard, Bonds, Agent, Race, NFTs, Creators, Onboarding
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── index.html
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── server/                    # Backend (Bun + Hono)
+│   ├── src/
+│   │   ├── db/
+│   │   │   ├── schema.ts      # Drizzle ORM schema (9 tables)
+│   │   │   └── migrate.ts     # Migration runner
+│   │   ├── routes/
+│   │   │   ├── health.ts      # GET /api/health
+│   │   │   └── auth.ts        # POST /api/auth/connect, /api/auth/refresh
+│   │   ├── shared/
+│   │   │   ├── auth.ts        # JWT generation + middleware
+│   │   │   ├── db.ts          # Drizzle + postgres.js client
+│   │   │   ├── logger.ts      # Pino structured logging
+│   │   │   ├── redis.ts       # ioredis client
+│   │   │   └── types.ts       # Zod schemas for all API types
+│   │   └── index.ts           # Hono app + Bun.serve() with native WebSocket
+│   ├── drizzle/               # Generated SQL migrations
+│   ├── drizzle.config.ts
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── docs/                      # Architecture documentation
+│   ├── systemarch.md
+│   └── backendarch.md
+│
+├── docker-compose.yml         # Postgres + Redis + Stellar Quickstart
+├── .env / .env.example        # Environment variables
+├── package.json               # pnpm workspace orchestrator
+├── pnpm-workspace.yaml
+└── README.md
+```
 
 ---
 
-## Local Frontend (this repository)
+## Prerequisites
 
-### Prerequisites
-- Node.js 18+
-- pnpm
+| Tool | Version | Purpose |
+|---|---|---|
+| **Node.js** | 18+ | Client dev server |
+| **pnpm** | 9+ | Package manager |
+| **Bun** | 1.0+ | Server runtime |
+| **Docker Desktop** | Latest | Postgres, Redis, Stellar |
+| **Rust** | 1.70+ | Soroban smart contracts |
+| **Stellar CLI** | 23+ | Contract deployment |
 
-### Install
+---
+
+## Getting Started
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/SATISH-JALAN/Conduit.git
+cd Conduit
+```
+
+### 2. Set up environment variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your values (defaults work for local dev):
+
+```env
+DATABASE_URL=postgresql://conduit:conduit_dev@localhost:5432/conduit
+REDIS_URL=redis://localhost:6379
+STELLAR_RPC_URL=http://localhost:8000/soroban/rpc
+PORT=5000
+JWT_SECRET=your-secret-here
+CLIENT_URL=http://localhost:3000
+```
+
+### 3. Start infrastructure
+
+```bash
+docker compose up -d
+```
+
+This starts:
+- **PostgreSQL 16 + TimescaleDB** on port `5432`
+- **Redis 7** on port `6379`
+- **Stellar Quickstart** (local blockchain) on port `8000`
+
+### 4. Install dependencies
+
 ```bash
 pnpm install
 ```
 
-### Run locally
+### 5. Run database migrations
+
 ```bash
-pnpm dev
+pnpm --filter server db:migrate
 ```
 
-Default local URL:
-- `http://localhost:3000`
+### 6. Start the app
 
-### Type-check
 ```bash
-pnpm lint
+# Terminal 1 — Backend
+pnpm --filter server dev      # → http://localhost:5000
+
+# Terminal 2 — Frontend
+pnpm --filter client dev      # → http://localhost:3000
 ```
 
-### Build
+### Verify it works
+
 ```bash
-pnpm build
+# Health check (should return {"status":"healthy"})
+curl http://localhost:5000/api/health
 ```
 
 ---
 
-## Project Routes
+## API Endpoints
 
-| Route | Description |
+### Public
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/health` | Server health + DB/Redis status |
+
+### Auth
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/auth/connect` | Connect wallet → returns JWT |
+| `POST` | `/api/auth/refresh` | Refresh access token |
+
+*More endpoints added as features are built.*
+
+---
+
+## Frontend Routes
+
+| Route | Page | Description |
+|---|---|---|
+| `/` | Home | Landing page with live demo counter |
+| `/dashboard` | Dashboard | Yield counter, split config, holdings |
+| `/bonds` | Bond Market | Browse and filter bond boxes |
+| `/agent` | COND Agent | AI chat interface + strategy settings |
+| `/race` | Yield Race | Leaderboard + competitions |
+| `/nfts` | Yield NFTs | Tokenized future yield marketplace |
+| `/creators` | Creator Pools | Fan deposits + creator yield share |
+| `/creators/:id` | Creator Profile | Individual creator pool details |
+| `/onboarding` | Onboarding | Wallet connection (Freighter/Albedo) |
+
+---
+
+## Database Schema
+
+9 tables managed via Drizzle ORM:
+
+| Table | Purpose |
 |---|---|
-| `/` | Marketing landing page |
-| `/dashboard` | Stream dashboard |
-| `/bonds` | Bond Box marketplace |
-| `/agent` | COND agent interface |
-| `/race` | Yield race and leaderboard |
-| `/onboarding` | User onboarding flow |
+| `users` | Wallet addresses + KYC status |
+| `bond_boxes` | Curated yield strategies |
+| `positions` | User holdings (principal, APY, sync timestamp) |
+| `split_configs` | Yield routing to multiple destinations |
+| `mandates` | COND agent preferences per user |
+| `harvests` | Harvest history (TimescaleDB hypertable) |
+| `apy_history` | APY tracking over time |
+| `compliance_logs` | KYC/sanctions audit trail |
+| `cond_decisions` | AI agent decision log |
 
 ---
+
+## Useful Commands
+
+```bash
+# Infrastructure
+docker compose up -d               # Start Postgres, Redis, Stellar
+docker compose down                # Stop all containers
+
+# Development
+pnpm --filter server dev           # Backend on :5000
+pnpm --filter client dev           # Frontend on :3000
+
+# Database
+pnpm --filter server db:generate   # Generate migration SQL from schema changes
+pnpm --filter server db:migrate    # Apply migrations
+pnpm --filter server db:studio     # Open Drizzle Studio (DB browser)
+
+# Build
+pnpm --filter client build         # Production frontend build
+pnpm --filter server build         # Production server build
+```
+
+---
+
+## Feature Roadmap
+
+| Feature | Status | Description |
+|---|---|---|
+| Bond Box Catalog | 🔜 Next | Browse tokenized bond strategies |
+| Live Yield Counter | 📋 Planned | Real-time streaming via WebSocket |
+| Deposit & Harvest | 📋 Planned | On-chain transactions via Soroban |
+| Yield Split | 📋 Planned | Route yield to multiple wallets |
+| Yield Race | 📋 Planned | Social leaderboard competitions |
+| COND Agent v1 | 📋 Planned | Rule-based AI portfolio manager |
+| KYC & Compliance | 📋 Planned | Persona + Chainalysis integration |
+| Creator Pools | 📋 Planned | Fan deposits, creator yield share |
+| Yield NFTs | 📋 Planned | Tokenized future yield |
+| COND Agent v2 | 📋 Planned | LangGraph + Claude reasoning |
+| Stableswap AMM | 📋 Planned | Curve-style in-box bond swaps |
+
+---
+
+## License
+
+MIT

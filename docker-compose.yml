@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: conduit
+      POSTGRES_PASSWORD: conduit_dev
+      POSTGRES_DB: conduit
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conduit"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  stellar:
+    image: stellar/quickstart:latest
+    ports:
+      - "8000:8000"
+    command: --standalone --enable-soroban-rpc
+    volumes:
+      - stellar_data:/opt/stellar
+
+volumes:
+  pg_data:
+  redis_data:
+  stellar_data:

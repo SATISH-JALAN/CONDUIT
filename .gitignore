@@ -1,8 +1,33 @@
+# Dependencies
 node_modules/
+
+# Build output
 build/
 dist/
-coverage/
-.DS_Store
-*.log
+*.tsbuildinfo
+
+# Environment
 .env*
 !.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test coverage
+coverage/
+
+# Drizzle
+server/drizzle/meta/
+
+# Docker
+docker-compose.override.yml

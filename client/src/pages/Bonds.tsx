@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Search, ChevronDown, Info } from 'lucide-react';
@@ -11,6 +12,7 @@ type SortOption = 'apy-desc' | 'apy-asc' | 'duration-asc' | 'duration-desc' | 'm
 export function Bonds() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [allBonds, setAllBonds] = useState<BondBox[]>([]);
   const [search, setSearch] = useState('');
@@ -77,7 +79,7 @@ export function Bonds() {
     });
     
     return result;
-  }, [search, sortBy]);
+  }, [allBonds, search, sortBy]);
 
   return (
     <AppLayout>
@@ -145,7 +147,8 @@ export function Bonds() {
             {filteredAndSortedBonds.map((bond) => (
               <div 
                 key={bond.id} 
-                className="bond-card bg-[var(--paper-1)] border border-[var(--paper-edge)] rounded-[var(--r-xl)] p-6 hover:-translate-y-1 hover:border-[var(--surge-pale-2)] hover:shadow-[0_8px_30px_var(--paper-shadow)] transition-all duration-300 cursor-pointer flex flex-col"
+                onClick={() => navigate(`/bonds/${bond.id}`)}
+                className="bond-card bg-[var(--paper-1)] border border-[var(--paper-edge)] rounded-[var(--r-xl)] p-6 hover:-translate-y-1 hover:border-[var(--surge-pale-2)] hover:shadow-[0_8px_30px_var(--paper-shadow)] transition-all duration-300 cursor-pointer flex flex-col group"
               >
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-2xl">{bond.flag}</span>
@@ -192,6 +195,12 @@ export function Bonds() {
                     </div>
                     <div className="font-secondary text-[14px] text-[var(--ink-1)]">${bond.min.toLocaleString()}</div>
                   </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-[var(--paper-edge)] text-center">
+                  <span className="text-mono text-[11px] text-[var(--ink-4)] group-hover:text-[var(--surge)] transition-colors uppercase tracking-wider">
+                    View Details →
+                  </span>
                 </div>
               </div>
             ))}

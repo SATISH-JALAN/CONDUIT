@@ -3,11 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { gsap } from '@/lib/gsap';
 import { cn } from '@/lib/utils';
 import { MagneticButton } from '@/components/ui/MagneticButton';
+import { useWalletStore } from '@/stores/walletStore';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
+  const { isConnected, publicKey } = useWalletStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,11 +79,21 @@ export function Navbar() {
             <span className="dot-live"></span>
             <span className="font-display text-[11px] font-medium text-[var(--surge)] uppercase tracking-wider">Testnet Live</span>
           </div>
-          <Link to="/dashboard">
-            <MagneticButton variant="primary" className="font-display text-[14px] px-5 py-2 rounded-[var(--r-md)] transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
-              Launch App
-            </MagneticButton>
-          </Link>
+          
+          {isConnected && publicKey ? (
+            <Link to="/dashboard">
+              <div className="flex flex-col items-end mr-2">
+                <span className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider">Connected</span>
+                <span className="font-mono text-[13px] text-[var(--surge)]">{publicKey.slice(0, 4)}...{publicKey.slice(-4)}</span>
+              </div>
+            </Link>
+          ) : (
+            <Link to="/onboarding">
+              <MagneticButton variant="primary" className="font-display text-[14px] px-5 py-2 rounded-[var(--r-md)] transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
+                Connect Wallet
+              </MagneticButton>
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -19,6 +19,7 @@ app.get('/:wallet', async (c) => {
       yieldPerSecond: 0,
       yieldPerDay: 0,
       avgApyBps: 0,
+      avgApy: 0,
       positions: [],
     });
   }

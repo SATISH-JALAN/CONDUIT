@@ -5,6 +5,8 @@ import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { boxRoutes } from './routes/boxes.js';
 import { positionRoutes } from './routes/position.js';
+import { depositRoutes } from './routes/deposit.js';
+import { harvestRoutes } from './routes/harvest.js';
 import { logger } from './shared/logger.js';
 import { redis } from './shared/redis.js';
 import type { ServerWebSocket } from 'bun';
@@ -15,7 +17,7 @@ interface WSData {
 }
 
 // ── App ──
-const app = new Hono().basePath('/api');
+const app = new Hono().basePath('/api'); // switch to testnet
 
 // ── Middleware ──
 app.use('*', cors({
@@ -29,6 +31,8 @@ app.route('/health', healthRoutes);
 app.route('/auth', authRoutes);
 app.route('/boxes', boxRoutes);
 app.route('/position', positionRoutes);
+app.route('/deposit', depositRoutes);
+app.route('/harvest', harvestRoutes);
 
 // ── WebSocket upgrade map (used by Bun.serve) ──
 const wsClients = new Map<string, Set<ServerWebSocket<WSData>>>();

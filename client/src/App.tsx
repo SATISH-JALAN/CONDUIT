@@ -10,6 +10,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Home } from '@/pages/Home';
 import { Dashboard } from '@/pages/Dashboard';
 import { Bonds } from '@/pages/Bonds';
+import { BondDetail } from '@/pages/BondDetail';
 import { Agent } from '@/pages/Agent';
 import { Onboarding } from '@/pages/Onboarding';
 import { Race } from '@/pages/Race';
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/bonds" element={<Bonds />} />
+          <Route path="/bonds/:id" element={<BondDetail />} />
           <Route path="/agent" element={<Agent />} />
           <Route path="/race" element={<Race />} />
           <Route path="/nfts" element={<NFTs />} />

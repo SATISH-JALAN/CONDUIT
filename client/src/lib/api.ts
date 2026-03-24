@@ -65,6 +65,38 @@ export const api = {
 
   seedDemo: () =>
     request<{ ok: boolean }>('/position/seed-demo', { method: 'POST' }),
+
+  // Deposit
+  depositBuild: (wallet: string, box_id: string, amount: number) =>
+    request<BuildTxResponse>('/deposit/build', {
+      method: 'POST',
+      body: JSON.stringify({ wallet, box_id, amount }),
+    }),
+
+  depositSubmit: (wallet: string, box_id: string, amount: number, signedXdr: string) =>
+    request<DepositSubmitResponse>('/deposit/submit', {
+      method: 'POST',
+      body: JSON.stringify({ wallet, box_id, amount, signedXdr }),
+    }),
+
+  fundAccount: (wallet: string) =>
+    request<{ ok: boolean; message: string }>('/deposit/fund', {
+      method: 'POST',
+      body: JSON.stringify({ wallet }),
+    }),
+
+  // Harvest
+  harvestBuild: (wallet: string, box_id: string) =>
+    request<BuildTxResponse & { amount: number }>('/harvest/build', {
+      method: 'POST',
+      body: JSON.stringify({ wallet, box_id }),
+    }),
+
+  harvestSubmit: (wallet: string, box_id: string, amount: number, signedXdr: string) =>
+    request<HarvestSubmitResponse>('/harvest/submit', {
+      method: 'POST',
+      body: JSON.stringify({ wallet, box_id, amount, signedXdr }),
+    }),
 };
 
 // ── Types ──
@@ -104,4 +136,29 @@ export interface PositionResponse {
   avgApyBps: number;
   avgApy: number;
   positions: PositionData[];
+}
+
+export interface BuildTxResponse {
+  xdr: string;
+  networkPassphrase: string;
+  box_id: string;
+  amount: number;
+}
+
+export interface DepositSubmitResponse {
+  ok: boolean;
+  txHash: string | null;
+  position: {
+    wallet: string;
+    box_id: string;
+    principal: number;
+    apy_bps: number;
+    sync_ts: number;
+  };
+}
+
+export interface HarvestSubmitResponse {
+  ok: boolean;
+  txHash: string | null;
+  amount: number;
 }

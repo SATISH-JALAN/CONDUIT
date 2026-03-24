@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from '@/lib/gsap';
 import { YieldCounter } from '@/components/counter/YieldCounter';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Pencil, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
+import { Pencil, ArrowUpRight, ArrowDownRight, Info, Loader2, CheckCircle, ExternalLink, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { usePortfolioStore } from '@/stores/portfolioStore';
-
-const DEMO_WALLET = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7';
+import { useWalletStore } from '@/stores/walletStore';
+import { api } from '@/lib/api';
 
 const splitData = [
   { name: 'Main Wallet', value: 70, color: 'var(--surge)' },
@@ -17,10 +18,20 @@ const splitData = [
   { name: 'Charity Pool', value: 10, color: 'var(--amber)' },
 ];
 
+type HarvestState = 'idle' | 'building' | 'signing' | 'submitting' | 'success' | 'error';
+
 export function Dashboard() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<{name: string, value: number, color: string}[]>([]);
+  
+  // Harvest state
+  const [harvestState, setHarvestState] = useState<HarvestState>('idle');
+  const [harvestTx, setHarvestTx] = useState<string | null>(null);
+
+  // Wallet
+  const { publicKey, isConnected, signTx } = useWalletStore();
 
   // Portfolio store
   const {
@@ -35,11 +46,16 @@ export function Dashboard() {
     tick,
   } = usePortfolioStore();
 
-  // Fetch positions on mount
+  // Route protection & Fetch positions
   useEffect(() => {
-    setWallet(DEMO_WALLET);
+    if (!isConnected || !publicKey) {
+      navigate('/onboarding');
+      return;
+    }
+
+    setWallet(publicKey);
     fetchPositions().then(() => setLoading(false));
-  }, []);
+  }, [isConnected, publicKey, navigate, setWallet, fetchPositions]);
 
   // Live counter tick loop
   useEffect(() => {
@@ -68,6 +84,49 @@ export function Dashboard() {
     }
   }, [loading]);
 
+  // ── Harvest Flow ──
+  const handleHarvest = async () => {
+    if (!publicKey || positions.length === 0 || pendingYield <= 0) return;
+
+    // For now, harvest the first active position with pending yield
+    // A future upgrade would batch these or let users select which box to harvest
+    const posToHarvest = positions.find(p => p.pendingYield > 0.0001);
+    if (!posToHarvest) return;
+
+    setHarvestState('building');
+    try {
+      // 1. Build
+      const buildRes = await api.harvestBuild(publicKey, posToHarvest.box_id);
+
+      // 2. Sign
+      setHarvestState('signing');
+      const signedXdr = await signTx(buildRes.xdr, buildRes.networkPassphrase);
+
+      // 3. Submit
+      setHarvestState('submitting');
+      const submitRes = await api.harvestSubmit(publicKey, posToHarvest.box_id, buildRes.amount, signedXdr);
+
+      setHarvestTx(submitRes.txHash);
+      setHarvestState('success');
+
+      // Refresh positions to zero out the counter
+      await fetchPositions();
+
+      // Reset UI after 5 seconds
+      setTimeout(() => {
+        setHarvestState('idle');
+        setHarvestTx(null);
+      }, 5000);
+
+    } catch (err) {
+      console.error('Harvest failed', err);
+      setHarvestState('error');
+      setTimeout(() => setHarvestState('idle'), 3000);
+    }
+  };
+
+  const isHarvesting = ['building', 'signing', 'submitting'].includes(harvestState);
+
   return (
     <AppLayout>
       <div className="max-w-[1000px] mx-auto" ref={containerRef}>
@@ -91,7 +150,7 @@ export function Dashboard() {
               </div>
 
               <div className="mb-4">
-                <YieldCounter initialValue={totalValue || 50000} ratePerSecond={totalYieldPerSecond || 0.0082} />
+                <YieldCounter initialValue={totalValue || 0} ratePerSecond={totalYieldPerSecond || 0} />
               </div>
 
               <div className="mb-8">
@@ -99,8 +158,8 @@ export function Dashboard() {
                   <span>Live Yield</span>
                   <span>+${totalYieldPerSecond.toFixed(4)} / sec</span>
                 </div>
-                <div className="h-[4px] bg-[var(--paper-3)] rounded-full overflow-hidden">
-                  <div className="stream-bar-fill"></div>
+                <div className="h-[4px] bg-[var(--paper-3)] rounded-full overflow-hidden relative">
+                  {totalYieldPerSecond > 0 && <div className="stream-bar-fill"></div>}
                 </div>
               </div>
 
@@ -112,7 +171,7 @@ export function Dashboard() {
                       <Info size={10} className="text-[var(--ink-3)] cursor-help" />
                     </Tooltip>
                   </div>
-                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">${pendingYield.toFixed(2)}</div>
+                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">${(pendingYield || 0).toFixed(2)}</div>
                 </div>
                 <div className="border-r border-[var(--paper-edge)] pl-4">
                   <div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mb-1 flex items-center gap-1">
@@ -121,7 +180,7 @@ export function Dashboard() {
                       <Info size={10} className="text-[var(--ink-3)] cursor-help" />
                     </Tooltip>
                   </div>
-                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">{avgApy.toFixed(2)}%</div>
+                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">{(avgApy || 0).toFixed(2)}%</div>
                 </div>
                 <div className="pl-4">
                   <div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mb-1 flex items-center gap-1">
@@ -130,13 +189,45 @@ export function Dashboard() {
                       <Info size={10} className="text-[var(--ink-3)] cursor-help" />
                     </Tooltip>
                   </div>
-                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">$7.13</div>
+                  <div className="font-display text-[24px] text-[var(--ink-1)] font-medium">${((totalYieldPerSecond || 0) * 86400).toFixed(2)}</div>
                 </div>
               </div>
 
-              <MagneticButton variant="primary" className="w-full font-display text-[16px] py-[16px] rounded-[var(--r-lg)] transition-all shadow-[0_4px_14px_rgba(0,122,94,0.3)]">
-                Harvest Yield
-              </MagneticButton>
+              <div className="flex items-center gap-4 mt-6">
+                <MagneticButton
+                  variant="custom"
+                  className={`flex-1 py-[16px] px-8 rounded-[var(--r-lg)] transition-all font-display text-[16px] font-medium flex items-center justify-center gap-2 ${
+                    pendingYield <= 0
+                      ? 'bg-[var(--paper-2)] text-[var(--ink-4)] cursor-not-allowed border border-[var(--paper-edge)]'
+                      : isHarvesting
+                      ? 'bg-[var(--surge)] text-white opacity-80 cursor-wait'
+                      : harvestState === 'success'
+                      ? 'bg-[var(--surge-pale)] text-[var(--surge)] border border-[var(--surge-pale-2)]'
+                      : harvestState === 'error'
+                      ? 'bg-[var(--rose-pale)] text-[var(--rose)] border border-[var(--rose-pale-2)]'
+                      : 'bg-[var(--surge)] text-white hover:brightness-110 shadow-[0_4px_14px_rgba(0,122,94,0.3)] cursor-pointer'
+                  }`}
+                  onClick={isHarvesting || pendingYield <= 0 ? undefined : handleHarvest}
+                >
+                  {harvestState === 'building' && <><Loader2 size={18} className="animate-spin" /> Building TX...</>}
+                  {harvestState === 'signing' && <><Loader2 size={18} className="animate-spin" /> Sign in Wallet...</>}
+                  {harvestState === 'submitting' && <><Loader2 size={18} className="animate-spin" /> Submitting...</>}
+                  {harvestState === 'success' && <><CheckCircle size={18} /> Harvested!</>}
+                  {harvestState === 'error' && <><AlertCircle size={18} /> Failed — Try Again</>}
+                  {harvestState === 'idle' && (pendingYield > 0 ? 'Harvest Yield' : 'Nothing to Harvest')}
+                </MagneticButton>
+
+                {harvestTx && (
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${harvestTx}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-mono text-[11px] text-[var(--surge)] hover:underline uppercase tracking-wider px-4"
+                  >
+                    <ExternalLink size={12} /> View TX
+                  </a>
+                )}
+              </div>
             </TiltCard>
 
             <div className="grid lg:grid-cols-[1fr_300px] gap-8">
@@ -150,8 +241,7 @@ export function Dashboard() {
                 </div>
                 <div className="flex-1 flex flex-col md:flex-row items-center gap-8">
                   <div className="w-[160px] h-[160px] relative shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                    <PieChart width={160} height={160}>
                         <Pie
                           data={chartData}
                           cx="50%"
@@ -181,7 +271,6 @@ export function Dashboard() {
                           formatter={(value: number) => [`${value}%`, 'Allocation']}
                         />
                       </PieChart>
-                    </ResponsiveContainer>
                     {/* Inner circle for donut effect */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-[100px] h-[100px] rounded-full bg-[var(--paper-2)] shadow-inner flex items-center justify-center">
@@ -266,44 +355,44 @@ export function Dashboard() {
                   <thead>
                     <tr className="bg-[var(--paper-1)] border-b border-[var(--paper-edge)]">
                       <th className="p-4 font-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider font-normal">Asset</th>
-                      <th className="p-4 font-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider font-normal">Rating</th>
                       <th className="p-4 font-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider font-normal">APY</th>
+                      <th className="p-4 font-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider font-normal">Principal</th>
                       <th className="p-4 font-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider font-normal">Value</th>
-                      <th className="p-4 font-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider font-normal">24h Δ</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { flag: '🇺🇸', name: 'US Treasury 2026', rating: 'AAA', apy: '5.21%', value: '$20,000', trend: '+0.02%', up: true },
-                      { flag: '🌐', name: 'Ondo USDY', rating: 'AAA', apy: '5.10%', value: '$15,000', trend: '+0.01%', up: true },
-                      { flag: '🇩🇪', name: 'German Bund 2027', rating: 'AAA', apy: '3.84%', value: '$10,000', trend: '0.00%', up: null },
-                      { flag: '🍎', name: 'Apple Corp 2025', rating: 'AA+', apy: '5.68%', value: '$5,000', trend: '-0.05%', up: false },
-                    ].map((asset, i) => (
-                      <tr key={i} className="border-b border-[var(--paper-edge)] last:border-0 hover:bg-[var(--paper-1)] transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{asset.flag}</span>
-                            <span className="font-secondary text-[15px] text-[var(--ink-1)] font-medium">{asset.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <Tooltip content={`Credit rating: ${asset.rating}`}>
-                            <span className="px-2 py-1 rounded-[var(--r-sm)] bg-[var(--paper-3)] border border-[var(--paper-edge)] font-mono text-[11px] text-[var(--ink-2)] cursor-help">
-                              {asset.rating}
-                            </span>
-                          </Tooltip>
-                        </td>
-                        <td className="p-4 font-mono text-[13px] text-[var(--surge)]">{asset.apy}</td>
-                        <td className="p-4 font-mono text-[13px] text-[var(--ink-1)]">{asset.value}</td>
-                        <td className="p-4">
-                          <div className={`flex items-center gap-1 font-mono text-[12px] ${asset.up === true ? 'text-[var(--surge)]' : asset.up === false ? 'text-[var(--rose)]' : 'text-[var(--ink-3)]'}`}>
-                            {asset.up === true && <ArrowUpRight size={14} />}
-                            {asset.up === false && <ArrowDownRight size={14} />}
-                            {asset.trend}
-                          </div>
+                    {positions.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-[var(--ink-3)] font-secondary text-[14px]">
+                          No active holdings. Head to the <a href="/bonds" className="text-[var(--surge)] hover:underline">Bond Market</a> to deposit.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      positions.map((pos, i) => (
+                        <tr key={i} className="border-b border-[var(--paper-edge)] last:border-0 hover:bg-[var(--paper-1)] transition-colors">
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              {/* Quick mapped flag for demo sake */}
+                              <span className="text-xl">
+                                {pos.box_id.includes('german') ? '🇩🇪' : pos.box_id.includes('treasury') ? '🇺🇸' : '🌐'}
+                              </span>
+                              <span className="font-secondary text-[15px] text-[var(--ink-1)] font-medium">
+                                {pos.box_id}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-4 font-mono text-[13px] text-[var(--surge)]">
+                            {pos.apy.toFixed(2)}%
+                          </td>
+                          <td className="p-4 font-mono text-[13px] text-[var(--ink-1)]">
+                            ${pos.principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="p-4 font-mono text-[13px] text-[var(--ink-1)]">
+                            ${pos.currentValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

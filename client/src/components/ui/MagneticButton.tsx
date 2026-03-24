@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface MagneticButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: 'neo' | 'ghost' | 'primary';
+  variant?: 'neo' | 'ghost' | 'primary' | 'custom';
   magneticStrength?: number;
 }
 
@@ -67,6 +67,7 @@ export const MagneticButton = React.forwardRef<HTMLButtonElement, MagneticButton
       neo: 'neo-btn text-[var(--ink-1)] font-medium px-6 py-3',
       ghost: 'bg-transparent text-[var(--ink-2)] hover:text-[var(--ink-1)] px-6 py-3 transition-colors',
       primary: 'bg-[var(--surge)] text-[var(--paper-1)] hover:bg-[var(--surge-mid)] px-6 py-3 rounded-[var(--r-md)] transition-colors shadow-lg shadow-[rgba(0,122,94,0.25)]',
+      custom: '',
     };
 
     return (

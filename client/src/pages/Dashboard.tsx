@@ -218,6 +218,7 @@ export function Dashboard() {
               <div className="flex items-center gap-4 mt-6">
                 <MagneticButton
                   variant="custom"
+                  magneticStrength={0}
                   className={`flex-1 py-4 px-8 rounded-(--r-lg) transition-all font-display text-[16px] font-medium flex items-center justify-center gap-2 ${
                     pendingYield <= 0
                       ? 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed border border-(--paper-edge)'
@@ -302,44 +303,46 @@ export function Dashboard() {
                   </div>
                   
                   <div className="flex-1 space-y-4 w-full">
-                    {splits.map((split, i) => (
-                      <div key={`${split.destination}-${i}`} className="flex items-center justify-between p-4 rounded-(--r-md) bg-(--paper-1) border border-(--paper-edge) group">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full bg-(--surge)"></div>
-                          <input
-                            value={split.label}
-                            onChange={(e) => updateSplitLabel(i, e.target.value)}
-                            className="font-secondary text-[15px] text-(--ink-1) bg-transparent border-b border-(--paper-edge) focus:outline-none focus:border-(--surge)"
-                            maxLength={50}
-                          />
+                    <div className="max-h-56 overflow-y-auto pr-1 space-y-4">
+                      {splits.map((split, i) => (
+                        <div key={`${split.destination}-${i}`} className="flex items-center justify-between p-4 rounded-(--r-md) bg-(--paper-1) border border-(--paper-edge) group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-3 h-3 rounded-full bg-(--surge)"></div>
+                            <input
+                              value={split.label}
+                              onChange={(e) => updateSplitLabel(i, e.target.value)}
+                              className="font-secondary text-[15px] text-(--ink-1) bg-transparent border-b border-(--paper-edge) focus:outline-none focus:border-(--surge)"
+                              maxLength={50}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <input
+                              value={split.destination}
+                              onChange={(e) => updateSplitDestination(i, e.target.value.toUpperCase())}
+                              className="w-52.5 font-mono text-[11px] text-(--ink-3) bg-transparent border border-(--paper-edge) rounded-(--r-sm) px-2 py-1 focus:outline-none focus:border-(--surge)"
+                            />
+                            <input
+                              type="number"
+                              value={split.percentage}
+                              onChange={(e) => updateSplitPercentage(i, Number(e.target.value))}
+                              min={0}
+                              max={100}
+                              className="w-16 font-mono text-[13px] text-(--ink-3) bg-transparent border border-(--paper-edge) rounded-(--r-sm) px-2 py-1 focus:outline-none focus:border-(--surge)"
+                            />
+                            <span className="font-mono text-[12px] text-(--ink-3)">%</span>
+                            <span className="font-mono text-[13px] text-(--ink-2) w-22.5 text-right">
+                              ${(((totalYieldPerSecond || 0) * 86400 * split.percentage) / 100).toFixed(2)}/day
+                            </span>
+                            <button
+                              className="text-(--ink-4) group-hover:text-(--rose) transition-colors text-[12px] px-2 py-1 border border-(--paper-edge) rounded-(--r-sm)"
+                              onClick={() => removeSplit(i)}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <input
-                            value={split.destination}
-                            onChange={(e) => updateSplitDestination(i, e.target.value.toUpperCase())}
-                            className="w-52.5 font-mono text-[11px] text-(--ink-3) bg-transparent border border-(--paper-edge) rounded-(--r-sm) px-2 py-1 focus:outline-none focus:border-(--surge)"
-                          />
-                          <input
-                            type="number"
-                            value={split.percentage}
-                            onChange={(e) => updateSplitPercentage(i, Number(e.target.value))}
-                            min={0}
-                            max={100}
-                            className="w-16 font-mono text-[13px] text-(--ink-3) bg-transparent border border-(--paper-edge) rounded-(--r-sm) px-2 py-1 focus:outline-none focus:border-(--surge)"
-                          />
-                          <span className="font-mono text-[12px] text-(--ink-3)">%</span>
-                          <span className="font-mono text-[13px] text-(--ink-2) w-22.5 text-right">
-                            ${(((totalYieldPerSecond || 0) * 86400 * split.percentage) / 100).toFixed(2)}/day
-                          </span>
-                          <button
-                            className="text-(--ink-4) group-hover:text-(--rose) transition-colors text-[12px] px-2 py-1 border border-(--paper-edge) rounded-(--r-sm)"
-                            onClick={() => removeSplit(i)}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
 
                     <div className="flex items-center justify-between gap-3 pt-2">
                       <button

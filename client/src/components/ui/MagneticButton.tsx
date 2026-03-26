@@ -9,7 +9,7 @@ interface MagneticButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
 }
 
 export const MagneticButton = React.forwardRef<HTMLButtonElement, MagneticButtonProps>(
-  ({ children, className, variant = 'neo', magneticStrength = 0.3, ...props }, ref) => {
+  ({ children, className, variant = 'neo', magneticStrength = 0.12, ...props }, ref) => {
     const buttonRef = useRef<HTMLButtonElement>(null);
     const textRef = useRef<HTMLSpanElement>(null);
 
@@ -27,15 +27,15 @@ export const MagneticButton = React.forwardRef<HTMLButtonElement, MagneticButton
         gsap.to(button, {
           x: x * magneticStrength,
           y: y * magneticStrength,
-          duration: 1,
-          ease: 'power3.out',
+          duration: 0.35,
+          ease: 'power2.out',
         });
 
         gsap.to(text, {
           x: x * (magneticStrength * 0.5),
           y: y * (magneticStrength * 0.5),
-          duration: 1,
-          ease: 'power3.out',
+          duration: 0.35,
+          ease: 'power2.out',
         });
       };
 
@@ -43,14 +43,14 @@ export const MagneticButton = React.forwardRef<HTMLButtonElement, MagneticButton
         gsap.to(button, {
           x: 0,
           y: 0,
-          duration: 1,
-          ease: 'elastic.out(1, 0.3)',
+          duration: 0.35,
+          ease: 'power2.out',
         });
         gsap.to(text, {
           x: 0,
           y: 0,
-          duration: 1,
-          ease: 'elastic.out(1, 0.3)',
+          duration: 0.35,
+          ease: 'power2.out',
         });
       };
 

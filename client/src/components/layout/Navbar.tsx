@@ -45,16 +45,16 @@ export function Navbar() {
     <header
       ref={navRef}
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 h-[64px] transition-all duration-300 flex items-center',
+        'fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 flex items-center',
         scrolled ? 'frosted-heavy shadow-[0_4px_20px_var(--paper-shadow)]' : 'bg-transparent'
       )}
     >
-      <div className="w-full max-w-[1280px] mx-auto px-[24px] md:px-[56px] flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-14 flex items-center justify-between">
         <Link to="/" className="flex items-center group relative">
-          <span className="font-display font-bold text-[18px] tracking-tight text-[var(--ink-1)]">
+          <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1)">
             CONDUIT
           </span>
-          <span className="absolute bottom-[2px] right-[-2px] w-[3px] h-[3px] rounded-full bg-[var(--surge)]"></span>
+          <span className="absolute bottom-0.5 -right-0.5 w-0.75 h-0.75 rounded-full bg-(--surge)"></span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
@@ -65,8 +65,8 @@ export function Navbar() {
               className={cn(
                 'nav-link font-secondary text-[13px] font-normal pb-1',
                 location.pathname === link.path
-                  ? 'text-[var(--ink-1)] active'
-                  : 'text-[var(--ink-3)]'
+                  ? 'text-(--ink-1) active'
+                  : 'text-(--ink-3)'
               )}
             >
               {link.name}
@@ -75,21 +75,21 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--paper-3)] border border-[var(--surge-pale-2)]">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--paper-3) border border-(--surge-pale-2)">
             <span className="dot-live"></span>
-            <span className="font-display text-[11px] font-medium text-[var(--surge)] uppercase tracking-wider">Testnet Live</span>
+            <span className="font-display text-[11px] font-medium text-(--surge) uppercase tracking-wider">Testnet Live</span>
           </div>
           
           {isConnected && publicKey ? (
             <Link to="/dashboard">
               <div className="flex flex-col items-end mr-2">
-                <span className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider">Connected</span>
-                <span className="font-mono text-[13px] text-[var(--surge)]">{publicKey.slice(0, 4)}...{publicKey.slice(-4)}</span>
+                <span className="text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">Connected</span>
+                <span className="font-mono text-[13px] text-(--surge)">{publicKey.slice(0, 4)}...{publicKey.slice(-4)}</span>
               </div>
             </Link>
           ) : (
             <Link to="/onboarding">
-              <MagneticButton variant="primary" className="font-display text-[14px] px-5 py-2 rounded-[var(--r-md)] transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
+              <MagneticButton variant="primary" className="font-display text-[14px] px-5 py-2 rounded-(--r-md) transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
                 Connect Wallet
               </MagneticButton>
             </Link>

@@ -13,9 +13,11 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { useWalletStore } from '@/stores/walletStore';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { publicKey } = useWalletStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const path = location.pathname.split('/')[1];
@@ -115,7 +117,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Menu size={24} />
             </button>
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--surge)] to-[var(--sky)] shrink-0"></div>
-            <div className="text-mono text-[12px] text-[var(--ink-4)] hidden sm:block">0x7F...3A92</div>
+            <div className="text-mono text-[12px] text-[var(--ink-4)] hidden sm:block">
+              {publicKey ? `${publicKey.slice(0, 6)}...${publicKey.slice(-6)}` : 'Wallet not connected'}
+            </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex items-center gap-2">

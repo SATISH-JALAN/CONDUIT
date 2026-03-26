@@ -1,12 +1,20 @@
-import * as StellarSdk from '@stellar/stellar-sdk';
-import { logger } from './logger.js';
+import * as StellarSdk from "@stellar/stellar-sdk";
+import { logger } from "./logger.js";
 
 // ── Config ──
 
-const HORIZON_URL = process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org';
-const NETWORK_PASSPHRASE = process.env.STELLAR_NETWORK_PASSPHRASE || 'Test SDF Network ; September 2015';
+const HORIZON_URL =
+  process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org";
+const NETWORK_PASSPHRASE =
+  process.env.STELLAR_NETWORK_PASSPHRASE || "Test SDF Network ; September 2015";
 
 const server = new StellarSdk.Horizon.Server(HORIZON_URL, { allowHttp: true });
+
+export interface HarvestSplitOperation {
+  destination: string;
+  amount: number;
+  label?: string;
+}
 
 // ── Public API ──
 
@@ -18,16 +26,22 @@ const server = new StellarSdk.Horizon.Server(HORIZON_URL, { allowHttp: true });
 export async function buildDepositTx(
   sourceWallet: string,
   amount: number,
-  boxId: string
+  boxId: string,
 ): Promise<{ xdr: string; networkPassphrase: string }> {
   let sourceAccount;
   try {
     sourceAccount = await server.loadAccount(sourceWallet);
   } catch (err: any) {
-    if (err.message === 'Not Found' || err?.response?.status === 404) {
-      logger.info({ sourceWallet }, 'Account not found, attempting auto-funding via Friendbot...');
+    if (err.message === "Not Found" || err?.response?.status === 404) {
+      logger.info(
+        { sourceWallet },
+        "Account not found, attempting auto-funding via Friendbot...",
+      );
       const funded = await fundWithFriendbot(sourceWallet);
-      if (!funded) throw new Error('Account does not exist and friendbot funding failed. Please fund manually.');
+      if (!funded)
+        throw new Error(
+          "Account does not exist and friendbot funding failed. Please fund manually.",
+        );
       sourceAccount = await server.loadAccount(sourceWallet);
     } else {
       throw err;
@@ -47,7 +61,7 @@ export async function buildDepositTx(
         destination: vaultAddress,
         asset: StellarSdk.Asset.native(),
         amount: amount.toFixed(7),
-      })
+      }),
     )
     .addMemo(StellarSdk.Memo.text(`deposit:${boxId}`.slice(0, 28)))
     .setTimeout(120)
@@ -66,7 +80,8 @@ export async function buildDepositTx(
 export async function buildHarvestTx(
   sourceWallet: string,
   amount: number,
-  boxId: string
+  boxId: string,
+  splits: HarvestSplitOperation[] = [],
 ): Promise<{ xdr: string; networkPassphrase: string }> {
   // For harvest, the source is the vault paying the user
   // On standalone, we simulate by building a self-payment
@@ -74,27 +89,41 @@ export async function buildHarvestTx(
   try {
     sourceAccount = await server.loadAccount(sourceWallet);
   } catch (err: any) {
-    if (err.message === 'Not Found' || err?.response?.status === 404) {
-      logger.info({ sourceWallet }, 'Account not found during harvest, attempting auto-funding via Friendbot...');
+    if (err.message === "Not Found" || err?.response?.status === 404) {
+      logger.info(
+        { sourceWallet },
+        "Account not found during harvest, attempting auto-funding via Friendbot...",
+      );
       const funded = await fundWithFriendbot(sourceWallet);
-      if (!funded) throw new Error('Account does not exist and friendbot funding failed. Please fund manually.');
+      if (!funded)
+        throw new Error(
+          "Account does not exist and friendbot funding failed. Please fund manually.",
+        );
       sourceAccount = await server.loadAccount(sourceWallet);
     } else {
       throw err;
     }
   }
 
-  const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
+  const txBuilder = new StellarSdk.TransactionBuilder(sourceAccount, {
     fee: StellarSdk.BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
-  })
-    .addOperation(
+  });
+
+  const ops =
+    splits.length > 0 ? splits : [{ destination: sourceWallet, amount }];
+
+  for (const split of ops) {
+    txBuilder.addOperation(
       StellarSdk.Operation.payment({
-        destination: sourceWallet,
+        destination: split.destination,
         asset: StellarSdk.Asset.native(),
-        amount: amount.toFixed(7),
-      })
-    )
+        amount: split.amount.toFixed(7),
+      }),
+    );
+  }
+
+  const tx = txBuilder
     .addMemo(StellarSdk.Memo.text(`harvest:${boxId}`.slice(0, 28)))
     .setTimeout(120)
     .build();
@@ -108,10 +137,15 @@ export async function buildHarvestTx(
 /**
  * Submit a signed XDR to the Stellar network.
  */
-export async function submitSignedTx(signedXdr: string): Promise<{ txHash: string }> {
-  const tx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
+export async function submitSignedTx(
+  signedXdr: string,
+): Promise<{ txHash: string }> {
+  const tx = StellarSdk.TransactionBuilder.fromXDR(
+    signedXdr,
+    NETWORK_PASSPHRASE,
+  );
   const result = await server.submitTransaction(tx);
-  logger.info({ hash: result.hash }, 'Transaction submitted');
+  logger.info({ hash: result.hash }, "Transaction submitted");
   return { txHash: result.hash };
 }
 
@@ -123,13 +157,16 @@ export async function fundWithFriendbot(publicKey: string): Promise<boolean> {
     const url = `https://friendbot.stellar.org/?addr=${publicKey}`;
     const res = await fetch(url);
     if (!res.ok) {
-      logger.warn({ publicKey, status: res.status }, 'Friendbot funding failed');
+      logger.warn(
+        { publicKey, status: res.status },
+        "Friendbot funding failed",
+      );
       return false;
     }
-    logger.info({ publicKey }, 'Account funded via friendbot');
+    logger.info({ publicKey }, "Account funded via friendbot");
     return true;
   } catch (err: any) {
-    logger.error({ err: err.message }, 'Friendbot error');
+    logger.error({ err: err.message }, "Friendbot error");
     return false;
   }
 }

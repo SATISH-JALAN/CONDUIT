@@ -1,10 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // ── Stellar ──
 
-export const stellarAddressSchema = z.string()
+export const stellarAddressSchema = z
+  .string()
   .length(56)
-  .regex(/^G[A-Z2-7]{55}$/, 'Invalid Stellar public key');
+  .regex(/^G[A-Z2-7]{55}$/, "Invalid Stellar public key");
 
 // ── Auth ──
 
@@ -31,11 +32,11 @@ export const bondBoxSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  risk: z.enum(['Low', 'Medium', 'High']),
+  risk: z.enum(["Low", "Medium", "High"]),
   apy_bps: z.number().int(),
   duration_years: z.number(),
   min_investment: z.number(),
-  asset_type: z.enum(['Government', 'Corporate', 'Sovereign']),
+  asset_type: z.enum(["Government", "Corporate", "Sovereign"]),
   flag: z.string(),
   accent_color: z.string().optional(),
   active: z.boolean().default(true),
@@ -55,46 +56,52 @@ export const harvestSchema = z.object({
 // ── Split Config ──
 
 export const splitDestinationSchema = z.object({
-  wallet: stellarAddressSchema,
+  destination: stellarAddressSchema,
   label: z.string().max(50),
-  percentage: z.number().min(1).max(100),
+  percentage: z.number().int().min(1).max(100),
 });
 
 export const splitConfigSchema = z.object({
-  destinations: z.array(splitDestinationSchema)
+  splits: z
+    .array(splitDestinationSchema)
     .min(1)
     .max(10)
     .refine(
       (d) => d.reduce((sum, dest) => sum + dest.percentage, 0) === 100,
-      'Split percentages must sum to 100'
+      "Split percentages must sum to 100",
     ),
+});
+
+export const saveSplitConfigSchema = splitConfigSchema.extend({
+  // Optional fallback for clients that do not use Authorization middleware yet.
+  wallet: stellarAddressSchema.optional(),
 });
 
 // ── Mandates (COND agent settings) ──
 
 export const mandateSchema = z.object({
-  risk_tolerance: z.enum(['Conservative', 'Moderate', 'Aggressive']),
+  risk_tolerance: z.enum(["Conservative", "Moderate", "Aggressive"]),
   auto_compound: z.boolean(),
   compound_threshold_cents: z.number().int().min(100).default(5000),
-  min_credit_rating: z.enum(['AAA', 'AA', 'A', 'BBB']).default('A'),
+  min_credit_rating: z.enum(["AAA", "AA", "A", "BBB"]).default("A"),
 });
 
 // ── WebSocket Messages ──
 
-export const wsMessageSchema = z.discriminatedUnion('type', [
+export const wsMessageSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal('ANCHOR_UPDATE'),
+    type: z.literal("ANCHOR_UPDATE"),
     data: anchorSchema,
   }),
   z.object({
-    type: z.literal('HARVEST_COMPLETE'),
+    type: z.literal("HARVEST_COMPLETE"),
     data: z.object({
       amount: z.number(),
       tx_hash: z.string(),
     }),
   }),
   z.object({
-    type: z.literal('COND_ACTION'),
+    type: z.literal("COND_ACTION"),
     data: z.object({
       action: z.string(),
       reasoning: z.string(),
@@ -102,7 +109,7 @@ export const wsMessageSchema = z.discriminatedUnion('type', [
     }),
   }),
   z.object({
-    type: z.literal('APY_UPDATE'),
+    type: z.literal("APY_UPDATE"),
     data: z.object({
       box_id: z.string(),
       new_apy_bps: z.number(),
@@ -119,5 +126,6 @@ export type BondBox = z.infer<typeof bondBoxSchema>;
 export type Deposit = z.infer<typeof depositSchema>;
 export type Harvest = z.infer<typeof harvestSchema>;
 export type SplitConfig = z.infer<typeof splitConfigSchema>;
+export type SaveSplitConfig = z.infer<typeof saveSplitConfigSchema>;
 export type Mandate = z.infer<typeof mandateSchema>;
 export type WSMessage = z.infer<typeof wsMessageSchema>;

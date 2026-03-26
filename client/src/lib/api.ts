@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 let accessToken: string | null = null;
 
@@ -12,12 +12,12 @@ export function getAccessToken(): string | null {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
   };
 
   if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
@@ -37,65 +37,93 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export const api = {
   // Health
-  health: () => request<{ status: string; checks: Record<string, string> }>('/health'),
+  health: () =>
+    request<{ status: string; checks: Record<string, string> }>("/health"),
 
   // Auth
   connect: (wallet: string) =>
-    request<{ accessToken: string; refreshToken: string; wallet: string }>('/auth/connect', {
-      method: 'POST',
-      body: JSON.stringify({ wallet }),
-    }),
+    request<{ accessToken: string; refreshToken: string; wallet: string }>(
+      "/auth/connect",
+      {
+        method: "POST",
+        body: JSON.stringify({ wallet }),
+      },
+    ),
 
   refresh: (refreshToken: string) =>
-    request<{ accessToken: string; wallet: string }>('/auth/refresh', {
-      method: 'POST',
+    request<{ accessToken: string; wallet: string }>("/auth/refresh", {
+      method: "POST",
       body: JSON.stringify({ refreshToken }),
     }),
 
   // Bond Boxes
-  getBoxes: () =>
-    request<BondBox[]>('/boxes'),
+  getBoxes: () => request<BondBox[]>("/boxes"),
 
   getBox: (id: string) =>
-    request<BondBox & { contractId?: string; createdAt: string }>(`/boxes/${id}`),
+    request<BondBox & { contractId?: string; createdAt: string }>(
+      `/boxes/${id}`,
+    ),
 
   // Positions
   getPosition: (wallet: string) =>
     request<PositionResponse>(`/position/${wallet}`),
 
   seedDemo: () =>
-    request<{ ok: boolean }>('/position/seed-demo', { method: 'POST' }),
+    request<{ ok: boolean }>("/position/seed-demo", { method: "POST" }),
 
   // Deposit
   depositBuild: (wallet: string, box_id: string, amount: number) =>
-    request<BuildTxResponse>('/deposit/build', {
-      method: 'POST',
+    request<BuildTxResponse>("/deposit/build", {
+      method: "POST",
       body: JSON.stringify({ wallet, box_id, amount }),
     }),
 
-  depositSubmit: (wallet: string, box_id: string, amount: number, signedXdr: string) =>
-    request<DepositSubmitResponse>('/deposit/submit', {
-      method: 'POST',
+  depositSubmit: (
+    wallet: string,
+    box_id: string,
+    amount: number,
+    signedXdr: string,
+  ) =>
+    request<DepositSubmitResponse>("/deposit/submit", {
+      method: "POST",
       body: JSON.stringify({ wallet, box_id, amount, signedXdr }),
     }),
 
   fundAccount: (wallet: string) =>
-    request<{ ok: boolean; message: string }>('/deposit/fund', {
-      method: 'POST',
+    request<{ ok: boolean; message: string }>("/deposit/fund", {
+      method: "POST",
       body: JSON.stringify({ wallet }),
     }),
 
   // Harvest
   harvestBuild: (wallet: string, box_id: string) =>
-    request<BuildTxResponse & { amount: number }>('/harvest/build', {
-      method: 'POST',
-      body: JSON.stringify({ wallet, box_id }),
+    request<BuildTxResponse & { amount: number; splits: SplitAllocation[] }>(
+      "/harvest/build",
+      {
+        method: "POST",
+        body: JSON.stringify({ wallet, box_id }),
+      },
+    ),
+
+  harvestSubmit: (
+    wallet: string,
+    box_id: string,
+    amount: number,
+    signedXdr: string,
+  ) =>
+    request<HarvestSubmitResponse>("/harvest/submit", {
+      method: "POST",
+      body: JSON.stringify({ wallet, box_id, amount, signedXdr }),
     }),
 
-  harvestSubmit: (wallet: string, box_id: string, amount: number, signedXdr: string) =>
-    request<HarvestSubmitResponse>('/harvest/submit', {
-      method: 'POST',
-      body: JSON.stringify({ wallet, box_id, amount, signedXdr }),
+  // Yield Split Config
+  getSplitConfig: (wallet: string) =>
+    request<SplitConfigResponse>(`/split/${wallet}`),
+
+  saveSplitConfig: (wallet: string, splits: SplitConfigItem[]) =>
+    request<SaveSplitResponse>("/split", {
+      method: "POST",
+      body: JSON.stringify({ wallet, splits }),
     }),
 };
 
@@ -105,11 +133,11 @@ export interface BondBox {
   id: string;
   name: string;
   description: string;
-  risk: 'Low' | 'Medium' | 'High';
+  risk: "Low" | "Medium" | "High";
   apy: number;
   duration: number;
   min: number;
-  type: 'Government' | 'Corporate' | 'Sovereign';
+  type: "Government" | "Corporate" | "Sovereign";
   flag: string;
   accentColor?: string;
 }
@@ -143,6 +171,27 @@ export interface BuildTxResponse {
   networkPassphrase: string;
   box_id: string;
   amount: number;
+}
+
+export interface SplitConfigItem {
+  destination: string;
+  label: string;
+  percentage: number;
+}
+
+export interface SplitAllocation extends SplitConfigItem {
+  amount: number;
+}
+
+export interface SplitConfigResponse {
+  wallet: string;
+  splits: SplitConfigItem[];
+}
+
+export interface SaveSplitResponse {
+  ok: boolean;
+  wallet: string;
+  splits: SplitConfigItem[];
 }
 
 export interface DepositSubmitResponse {

@@ -8,8 +8,14 @@ import { positionRoutes } from "./routes/position.js";
 import { depositRoutes } from "./routes/deposit.js";
 import { harvestRoutes } from "./routes/harvest.js";
 import { splitRoutes } from "./routes/split.js";
+import { leaderboardRoutes } from "./routes/leaderboard.js";
+import { raceRoutes } from "./routes/race.js";
 import { logger } from "./shared/logger.js";
 import { redis } from "./shared/redis.js";
+import {
+  startLeaderboardJob,
+  stopLeaderboardJob,
+} from "./shared/leaderboard.js";
 import type { ServerWebSocket } from "bun";
 
 // ── Types ──
@@ -38,6 +44,8 @@ app.route("/position", positionRoutes);
 app.route("/deposit", depositRoutes);
 app.route("/harvest", harvestRoutes);
 app.route("/split", splitRoutes);
+app.route("/leaderboard", leaderboardRoutes);
+app.route("/race", raceRoutes);
 
 // ── WebSocket upgrade map (used by Bun.serve) ──
 const wsClients = new Map<string, Set<ServerWebSocket<WSData>>>();
@@ -70,10 +78,12 @@ const server = Bun.serve<WSData>({
 });
 
 logger.info({ port: PORT }, "🚀 Conduit server running");
+startLeaderboardJob();
 
 // ── Graceful shutdown ──
 process.on("SIGINT", async () => {
   logger.info("Shutting down...");
+  stopLeaderboardJob();
   redis.disconnect();
   server.stop();
   process.exit(0);

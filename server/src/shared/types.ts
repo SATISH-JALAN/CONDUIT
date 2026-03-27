@@ -77,6 +77,19 @@ export const saveSplitConfigSchema = splitConfigSchema.extend({
   wallet: stellarAddressSchema.optional(),
 });
 
+// ── Feature 5: Leaderboard / Race ──
+
+export const leaderboardPeriodSchema = z.enum(["7d", "30d"]);
+
+export const leaderboardQuerySchema = z.object({
+  period: leaderboardPeriodSchema.default("7d"),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+export const raceJoinSchema = z.object({
+  raceId: z.string().uuid().optional(),
+});
+
 // ── Mandates (COND agent settings) ──
 
 export const mandateSchema = z.object({
@@ -127,5 +140,8 @@ export type Deposit = z.infer<typeof depositSchema>;
 export type Harvest = z.infer<typeof harvestSchema>;
 export type SplitConfig = z.infer<typeof splitConfigSchema>;
 export type SaveSplitConfig = z.infer<typeof saveSplitConfigSchema>;
+export type LeaderboardPeriod = z.infer<typeof leaderboardPeriodSchema>;
+export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
+export type RaceJoin = z.infer<typeof raceJoinSchema>;
 export type Mandate = z.infer<typeof mandateSchema>;
 export type WSMessage = z.infer<typeof wsMessageSchema>;

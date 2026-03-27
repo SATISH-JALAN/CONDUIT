@@ -7,6 +7,8 @@ import {
   numeric,
   pgEnum,
   jsonb,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ── Enums ──
@@ -172,3 +174,75 @@ export const condDecisions = pgTable("cond_decisions", {
   txHash: text("tx_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ── Leaderboard Snapshots (Feature 5) ──
+
+export const leaderboardCache = pgTable(
+  "leaderboard_cache",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    period: text("period").notNull(), // '7d' | '30d'
+    wallet: text("wallet")
+      .notNull()
+      .references(() => users.wallet),
+    rank: integer("rank").notNull(),
+    apyBps: integer("apy_bps").notNull(),
+    tvl: numeric("tvl", { precision: 20, scale: 7 }).notNull(),
+    changeBps: integer("change_bps").default(0).notNull(),
+    computedAt: timestamp("computed_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    periodComputedIdx: index("leaderboard_cache_period_computed_idx").on(
+      table.period,
+      table.computedAt,
+    ),
+    periodRankIdx: index("leaderboard_cache_period_rank_idx").on(
+      table.period,
+      table.rank,
+    ),
+  }),
+);
+
+// ── Yield Races (Feature 5) ──
+
+export const yieldRaces = pgTable("yield_races", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  period: text("period").default("7d").notNull(),
+  entryFee: numeric("entry_fee", { precision: 20, scale: 7 })
+    .default("5.0000000")
+    .notNull(),
+  prizePool: numeric("prize_pool", { precision: 20, scale: 7 })
+    .default("0")
+    .notNull(),
+  status: text("status").default("active").notNull(), // active | closed
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const raceEntries = pgTable(
+  "race_entries",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    raceId: text("race_id")
+      .notNull()
+      .references(() => yieldRaces.id),
+    wallet: text("wallet")
+      .notNull()
+      .references(() => users.wallet),
+    entryFee: numeric("entry_fee", { precision: 20, scale: 7 }).notNull(),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    raceWalletUnique: uniqueIndex("race_entries_race_wallet_idx").on(
+      table.raceId,
+      table.wallet,
+    ),
+  }),
+);

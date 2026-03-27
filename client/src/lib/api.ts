@@ -125,6 +125,20 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ wallet, splits }),
     }),
+
+  // Feature 5: Leaderboard & Race
+  getLeaderboard: (period: LeaderboardPeriod = "7d", limit = 50) =>
+    request<LeaderboardResponse>(
+      `/leaderboard?period=${encodeURIComponent(period)}&limit=${limit}`,
+    ),
+
+  getActiveRace: () => request<ActiveRaceResponse>("/race/active"),
+
+  joinRace: (raceId?: string) =>
+    request<JoinRaceResponse>("/race/join", {
+      method: "POST",
+      body: JSON.stringify(raceId ? { raceId } : {}),
+    }),
 };
 
 // ── Types ──
@@ -192,6 +206,42 @@ export interface SaveSplitResponse {
   ok: boolean;
   wallet: string;
   splits: SplitConfigItem[];
+}
+
+export type LeaderboardPeriod = "7d" | "30d";
+
+export interface LeaderboardEntry {
+  rank: number;
+  wallet: string;
+  displayName: string;
+  apy: number;
+  tvl: number;
+  change24h: number;
+}
+
+export interface LeaderboardResponse {
+  period: LeaderboardPeriod;
+  asOf: string;
+  totalTvl: number;
+  entries: LeaderboardEntry[];
+}
+
+export interface ActiveRaceResponse {
+  id: string;
+  period: LeaderboardPeriod;
+  entryFee: number;
+  prizePool: number;
+  status: "active" | "closed";
+  startsAt: string;
+  endsAt: string;
+  participants: number;
+  joined: boolean;
+}
+
+export interface JoinRaceResponse {
+  ok: boolean;
+  joined: boolean;
+  race: ActiveRaceResponse;
 }
 
 export interface DepositSubmitResponse {

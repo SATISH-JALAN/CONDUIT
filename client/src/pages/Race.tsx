@@ -1,21 +1,85 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Trophy, TrendingUp, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
+import { Trophy, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
+import { MagneticButton } from '@/components/ui/MagneticButton';
+import { useRaceStore } from '@/stores/raceStore';
+import { useWalletStore } from '@/stores/walletStore';
 
-const LEADERBOARD_DATA = [
-  { rank: 1, name: 'Alpha Yield Fund', manager: '0x7a...3f9', apy: '12.4%', tvl: '$2.4M', trend: 'up', change: '+1.2%' },
-  { rank: 2, name: 'Treasury Plus', manager: '0x1b...8c2', apy: '8.1%', tvl: '$15.1M', trend: 'up', change: '+0.4%' },
-  { rank: 3, name: 'Emerging Markets Debt', manager: '0x9d...4e1', apy: '14.2%', tvl: '$850K', trend: 'down', change: '-0.8%' },
-  { rank: 4, name: 'Corporate High Yield', manager: '0x3c...2a5', apy: '9.5%', tvl: '$4.2M', trend: 'up', change: '+0.1%' },
-  { rank: 5, name: 'Defi Stable Income', manager: '0x5e...9b4', apy: '11.0%', tvl: '$1.1M', trend: 'up', change: '+2.5%' },
-  { rank: 6, name: 'Global Sovereign', manager: '0x8f...1d7', apy: '6.5%', tvl: '$22.5M', trend: 'down', change: '-0.2%' },
-  { rank: 7, name: 'Muni Tax-Free', manager: '0x2a...6c8', apy: '5.2%', tvl: '$8.9M', trend: 'up', change: '+0.05%' },
-  { rank: 8, name: 'Green Energy Bonds', manager: '0x4b...7e3', apy: '7.8%', tvl: '$3.5M', trend: 'up', change: '+0.6%' },
-];
+function formatMoney(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: value >= 1000 ? 0 : 2,
+  }).format(value);
+}
+
+function formatCountdown(endAtIso: string | null, nowMs: number) {
+  if (!endAtIso) {
+    return { days: '00', hours: '00', minutes: '00', seconds: '00' };
+  }
+
+  const end = new Date(endAtIso).getTime();
+  const remaining = Math.max(0, end - nowMs);
+
+  const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((remaining / (1000 * 60)) % 60);
+  const seconds = Math.floor((remaining / 1000) % 60);
+
+  return {
+    days: String(days).padStart(2, '0'),
+    hours: String(hours).padStart(2, '0'),
+    minutes: String(minutes).padStart(2, '0'),
+    seconds: String(seconds).padStart(2, '0'),
+  };
+}
 
 export function Race() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [period, setPeriod] = useState<'7d' | '30d'>('7d');
+
+  const {
+    leaderboard,
+    totalTvl,
+    activeRace,
+    loading,
+    joining,
+    fetchLeaderboard,
+    fetchActiveRace,
+    joinRace,
+  } = useRaceStore();
+  const { isConnected } = useWalletStore();
+
+  const countdown = useMemo(
+    () => formatCountdown(activeRace?.endsAt ?? null, nowMs),
+    [activeRace?.endsAt, nowMs],
+  );
+
+  useEffect(() => {
+    void fetchActiveRace();
+  }, [fetchActiveRace]);
+
+  useEffect(() => {
+    void fetchLeaderboard(period, 50);
+  }, [fetchLeaderboard, period]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const onJoinRace = async () => {
+    if (!isConnected) {
+      navigate('/onboarding');
+      return;
+    }
+
+    await joinRace();
+  };
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -31,88 +95,150 @@ export function Race() {
 
   return (
     <AppLayout>
-      <div className="max-w-[1200px] mx-auto" ref={containerRef}>
+      <div className="max-w-300 mx-auto" ref={containerRef}>
         <header className="mb-8 race-item flex items-center justify-between">
           <div>
-            <h1 className="text-[32px] font-display font-medium text-[var(--ink-1)] tracking-tight">
+            <h1 className="text-[32px] font-display font-medium text-(--ink-1) tracking-tight">
               The Yield Race
             </h1>
-            <p className="text-[var(--ink-3)] font-secondary mt-1 text-[15px]">
-              Top performing portfolios and strategies across the network.
+            <p className="text-(--ink-3) font-secondary mt-1 text-[15px]">
+              Compete on APY and TVL with live rankings from on-chain portfolio data.
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="bg-[var(--paper-1)] border border-[var(--paper-edge)] px-4 py-2 rounded-[var(--r-md)] flex items-center gap-3">
-              <Activity size={16} className="text-[var(--surge)]" />
+            <div className="bg-(--paper-1) border border-(--paper-edge) px-2 py-1 rounded-(--r-md) flex items-center gap-1">
+              <button
+                className={`px-2.5 py-1 rounded-(--r-sm) text-mono text-[11px] ${
+                  period === '7d' ? 'bg-(--surge) text-white' : 'text-(--ink-3)'
+                }`}
+                onClick={() => setPeriod('7d')}
+              >
+                7D
+              </button>
+              <button
+                className={`px-2.5 py-1 rounded-(--r-sm) text-mono text-[11px] ${
+                  period === '30d' ? 'bg-(--surge) text-white' : 'text-(--ink-3)'
+                }`}
+                onClick={() => setPeriod('30d')}
+              >
+                30D
+              </button>
+            </div>
+            <div className="bg-(--paper-1) border border-(--paper-edge) px-4 py-2 rounded-(--r-md) flex items-center gap-3">
+              <Activity size={16} className="text-(--surge)" />
               <div>
-                <div className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-wider">Total Value Locked</div>
-                <div className="font-display font-medium text-[14px] text-[var(--ink-1)]">$58.5M</div>
+                <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">Total Value Locked</div>
+                <div className="font-display font-medium text-[14px] text-(--ink-1)">{formatMoney(totalTvl)}</div>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="bg-[var(--paper-1)] border border-[var(--paper-edge)] rounded-[var(--r-xl)] overflow-hidden race-item">
+        <div className="bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) overflow-hidden race-item">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[var(--paper-edge)] bg-[var(--paper-2)]">
-                  <th className="py-4 px-6 font-mono text-[11px] text-[var(--ink-4)] uppercase tracking-wider font-medium w-16">Rank</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-[var(--ink-4)] uppercase tracking-wider font-medium">Portfolio / Strategy</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-[var(--ink-4)] uppercase tracking-wider font-medium">Manager</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-[var(--ink-4)] uppercase tracking-wider font-medium text-right">TVL</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-[var(--ink-4)] uppercase tracking-wider font-medium text-right">30D APY</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-[var(--ink-4)] uppercase tracking-wider font-medium text-right">24h Change</th>
+                <tr className="border-b border-(--paper-edge) bg-(--paper-2)">
+                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium w-16">Rank</th>
+                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium">Participant</th>
+                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium">Manager</th>
+                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">TVL</th>
+                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">APY</th>
+                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">24h Change</th>
                 </tr>
               </thead>
               <tbody>
-                {LEADERBOARD_DATA.map((item, index) => (
+                {loading && leaderboard.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 px-6 text-center text-(--ink-3) font-secondary text-[14px]">
+                      Loading leaderboard...
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && leaderboard.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 px-6 text-center text-(--ink-3) font-secondary text-[14px]">
+                      No race participants yet. Be the first to join.
+                    </td>
+                  </tr>
+                )}
+
+                {leaderboard.map((item) => (
                   <tr 
-                    key={index} 
-                    className="border-b border-[var(--paper-edge)] last:border-0 hover:bg-[var(--paper-2)] transition-colors group cursor-pointer race-item"
+                    key={`${item.wallet}-${item.rank}`} 
+                    className="border-b border-(--paper-edge) last:border-0 hover:bg-(--paper-2) transition-colors group cursor-pointer race-item"
                   >
                     <td className="py-4 px-6">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-mono text-[12px] font-medium ${
-                        item.rank === 1 ? 'bg-[var(--amber-pale)] text-[var(--amber)] border border-[var(--amber-pale-2)]' :
-                        item.rank === 2 ? 'bg-[var(--paper-3)] text-[var(--ink-2)] border border-[var(--paper-edge)]' :
-                        item.rank === 3 ? 'bg-[var(--orange-pale)] text-[var(--orange)] border border-[var(--orange-pale-2)]' :
-                        'text-[var(--ink-3)]'
+                        item.rank === 1 ? 'bg-(--amber-pale) text-(--amber) border border-(--amber-pale-2)' :
+                        item.rank === 2 ? 'bg-(--paper-3) text-(--ink-2) border border-(--paper-edge)' :
+                        item.rank === 3 ? 'bg-(--orange-pale) text-(--orange) border border-(--orange-pale-2)' :
+                        'text-(--ink-3)'
                       }`}>
                         {item.rank === 1 ? <Trophy size={14} /> : item.rank}
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="font-display font-medium text-[15px] text-[var(--ink-1)] group-hover:text-[var(--surge)] transition-colors">
-                        {item.name}
+                      <div className="font-display font-medium text-[15px] text-(--ink-1) group-hover:text-(--surge) transition-colors">
+                        {item.displayName}
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="font-mono text-[13px] text-[var(--ink-3)] bg-[var(--paper-3)] px-2 py-1 rounded inline-block">
-                        {item.manager}
+                      <div className="font-mono text-[13px] text-(--ink-3) bg-(--paper-3) px-2 py-1 rounded inline-block">
+                        {item.displayName}
                       </div>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <div className="font-mono text-[14px] text-[var(--ink-1)]">
-                        {item.tvl}
+                      <div className="font-mono text-[14px] text-(--ink-1)">
+                        {formatMoney(item.tvl)}
                       </div>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <div className="font-display font-medium text-[16px] text-[var(--surge)]">
-                        {item.apy}
+                      <div className="font-display font-medium text-[16px] text-(--surge)">
+                        {item.apy.toFixed(2)}%
                       </div>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className={`flex items-center justify-end gap-1 font-mono text-[13px] ${
-                        item.trend === 'up' ? 'text-[var(--surge)]' : 'text-[var(--rose)]'
+                        item.change24h >= 0 ? 'text-(--surge)' : 'text-(--rose)'
                       }`}>
-                        {item.trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        {item.change}
+                        {item.change24h >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        {item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div className="mt-6 bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6 race-item">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">Active Race</div>
+              <div className="font-display text-[22px] text-(--ink-1) mt-1">Prize Pool: {formatMoney(activeRace?.prizePool ?? 0)}</div>
+              <div className="font-secondary text-[14px] text-(--ink-3) mt-1">
+                Entry fee: {formatMoney(activeRace?.entryFee ?? 0)} · Participants: {activeRace?.participants ?? 0}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
+              <div className="paper-card p-3 text-center"><div className="font-display text-[24px] leading-none">{countdown.days}</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Days</div></div>
+              <div className="paper-card p-3 text-center"><div className="font-display text-[24px] leading-none">{countdown.hours}</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Hrs</div></div>
+              <div className="paper-card p-3 text-center"><div className="font-display text-[24px] leading-none">{countdown.minutes}</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Min</div></div>
+              <div className="paper-card p-3 text-center"><div className="font-display text-[24px] leading-none">{countdown.seconds}</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Sec</div></div>
+            </div>
+
+            <MagneticButton
+              variant="primary"
+              className="font-display text-[15px] px-5 py-3 rounded-(--r-md)"
+              disabled={joining || activeRace?.joined}
+              onClick={onJoinRace}
+            >
+              {activeRace?.joined ? 'Joined' : joining ? 'Joining...' : isConnected ? 'Join Race' : 'Connect Wallet'}
+            </MagneticButton>
           </div>
         </div>
       </div>

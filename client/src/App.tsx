@@ -43,6 +43,7 @@ export default function App() {
           <Route path="/creators" element={<Creators />} />
           <Route path="/creators/:id" element={<CreatorProfile />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/docs/:topic" element={<Docs />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>

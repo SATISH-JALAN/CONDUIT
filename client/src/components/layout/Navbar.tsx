@@ -41,6 +41,14 @@ export function Navbar() {
     { name: 'Docs', path: '/docs' },
   ];
 
+  const isLinkActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === path;
+    }
+
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
   return (
     <header
       ref={navRef}
@@ -64,7 +72,7 @@ export function Navbar() {
               to={link.path}
               className={cn(
                 'nav-link font-secondary text-[13px] font-normal pb-1',
-                location.pathname === link.path
+                isLinkActive(link.path)
                   ? 'text-(--ink-1) active'
                   : 'text-(--ink-3)'
               )}

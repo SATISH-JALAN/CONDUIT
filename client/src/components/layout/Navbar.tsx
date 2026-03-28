@@ -38,7 +38,7 @@ export function Navbar() {
     { name: 'Bonds', path: '/bonds' },
     { name: 'COND', path: '/agent' },
     { name: 'Race', path: '/race' },
-    { name: 'Docs', path: '#' },
+    { name: 'Docs', path: '/docs' },
   ];
 
   return (

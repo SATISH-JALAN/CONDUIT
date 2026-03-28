@@ -17,6 +17,7 @@ import { Race } from '@/pages/Race';
 import { NFTs } from '@/pages/NFTs';
 import { Creators } from '@/pages/Creators';
 import { CreatorProfile } from '@/pages/CreatorProfile';
+import { Docs } from '@/pages/Docs';
 import { CustomCursor } from '@/components/ui/CustomCursor';
 
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/nfts" element={<NFTs />} />
           <Route path="/creators" element={<Creators />} />
           <Route path="/creators/:id" element={<CreatorProfile />} />
+          <Route path="/docs" element={<Docs />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </main>

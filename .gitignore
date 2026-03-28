@@ -31,3 +31,8 @@ server/drizzle/meta/
 
 # Docker
 docker-compose.override.yml
+
+# Rust / Soroban contracts
+contracts/target/
+contracts/.soroban/
+contracts/**/*.wasm

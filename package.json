@@ -6,6 +6,8 @@
     "dev:server": "pnpm --filter server dev",
     "dev": "pnpm dev:client",
     "build": "pnpm --filter client build",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "contracts:build": "cargo build --manifest-path contracts/Cargo.toml --target wasm32-unknown-unknown --release",
+    "contracts:test": "cargo test --manifest-path contracts/Cargo.toml"
   }
 }

@@ -6,6 +6,7 @@ import { Trophy, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { useRaceStore } from '@/stores/raceStore';
 import { useWalletStore } from '@/stores/walletStore';
+import { api } from '@/lib/api';
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat('en-US', {
@@ -41,6 +42,8 @@ export function Race() {
   const navigate = useNavigate();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [period, setPeriod] = useState<'7d' | '30d'>('7d');
+  const [following, setFollowing] = useState<Record<string, boolean>>({});
+  const [copyingWallet, setCopyingWallet] = useState<string | null>(null);
 
   const {
     leaderboard,
@@ -52,7 +55,7 @@ export function Race() {
     fetchActiveRace,
     joinRace,
   } = useRaceStore();
-  const { isConnected } = useWalletStore();
+  const { isConnected, publicKey } = useWalletStore();
 
   const countdown = useMemo(
     () => formatCountdown(activeRace?.endsAt ?? null, nowMs),
@@ -72,6 +75,25 @@ export function Race() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const syncFollowStatus = async () => {
+      if (!isConnected || leaderboard.length === 0) {
+        setFollowing({});
+        return;
+      }
+
+      const leaders = leaderboard.map((item) => item.wallet);
+      try {
+        const data = await api.getFollowStatus(leaders);
+        setFollowing(data.following);
+      } catch {
+        setFollowing({});
+      }
+    };
+
+    void syncFollowStatus();
+  }, [isConnected, leaderboard]);
+
   const onJoinRace = async () => {
     if (!isConnected) {
       navigate('/onboarding');
@@ -79,6 +101,29 @@ export function Race() {
     }
 
     await joinRace();
+  };
+
+  const toggleCopy = async (leaderWallet: string) => {
+    if (!isConnected || copyingWallet) {
+      return;
+    }
+
+    setCopyingWallet(leaderWallet);
+    try {
+      if (following[leaderWallet]) {
+        await api.unfollowLeader(leaderWallet);
+        setFollowing((prev) => ({ ...prev, [leaderWallet]: false }));
+      } else {
+        await api.followLeader(leaderWallet);
+        setFollowing((prev) => ({ ...prev, [leaderWallet]: true }));
+      }
+
+      await fetchLeaderboard(period, 50);
+    } catch {
+      // no-op
+    } finally {
+      setCopyingWallet(null);
+    }
   };
 
   useEffect(() => {
@@ -185,9 +230,10 @@ export function Race() {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="font-mono text-[13px] text-(--ink-3) bg-(--paper-3) px-2 py-1 rounded inline-block">
-                        {item.displayName}
+                      <div className="font-mono text-[13px] text-(--ink-3) bg-(--paper-3) px-2 py-1 rounded inline-block mb-1">
+                        {item.badge}
                       </div>
+                      <div className="text-mono text-[10px] text-(--ink-4)">{item.copiedBy} copiers</div>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="font-mono text-[14px] text-(--ink-1)">
@@ -200,12 +246,26 @@ export function Race() {
                       </div>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <div className={`flex items-center justify-end gap-1 font-mono text-[13px] ${
+                      <div className={`flex items-center justify-end gap-1 font-mono text-[13px] mb-2 ${
                         item.change24h >= 0 ? 'text-(--surge)' : 'text-(--rose)'
                       }`}>
                         {item.change24h >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                         {item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%
                       </div>
+                      {isConnected && publicKey !== item.wallet && (
+                        <button
+                          type="button"
+                          onClick={() => toggleCopy(item.wallet)}
+                          disabled={copyingWallet === item.wallet}
+                          className="px-2 py-1 rounded-(--r-sm) text-mono text-[10px] border border-(--paper-edge) bg-(--paper-2) hover:bg-(--paper-3) disabled:opacity-50"
+                        >
+                          {copyingWallet === item.wallet
+                            ? 'Updating...'
+                            : following[item.wallet]
+                              ? 'Following'
+                              : 'Copy'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

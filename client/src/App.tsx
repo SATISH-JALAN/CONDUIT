@@ -19,12 +19,19 @@ import { Creators } from '@/pages/Creators';
 import { CreatorProfile } from '@/pages/CreatorProfile';
 import { Docs } from '@/pages/Docs';
 import { CustomCursor } from '@/components/ui/CustomCursor';
+import { useWalletStore } from '@/stores/walletStore';
 
 export default function App() {
+  const checkConnection = useWalletStore((state) => state.checkConnection);
+
   useEffect(() => {
     const lenis = initSmoothScrolling();
     return () => lenis.destroy();
   }, []);
+
+  useEffect(() => {
+    void checkConnection();
+  }, [checkConnection]);
 
   return (
     <Router>

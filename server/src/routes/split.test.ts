@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { splitRoutes } from "./split.js";
 import { db } from "../shared/db.js";
 import { splitConfigs, users } from "../db/schema.js";
+import { generateAccessToken } from "../shared/auth.js";
 
 type SplitItem = { destination: string; percentage: number; label: string };
 type ErrorPayload = { error: string };
@@ -13,9 +14,14 @@ const TEST_DEST = "GBOVK4DPS2H34SHRVE74LJQOT3TDIFOVKBJ6TJ3SQ2UQ4JG7A6F2QX63";
 
 describe("split routes", () => {
   test("POST /api/split rejects invalid percentage total", async () => {
+    const token = await generateAccessToken(TEST_WALLET);
+
     const res = await splitRoutes.request("/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
         wallet: TEST_WALLET,
         splits: [
@@ -31,6 +37,8 @@ describe("split routes", () => {
   });
 
   test("POST /api/split saves valid config and GET returns it", async () => {
+    const token = await generateAccessToken(TEST_WALLET);
+
     await db
       .insert(users)
       .values({ wallet: TEST_WALLET })
@@ -38,7 +46,10 @@ describe("split routes", () => {
 
     const postRes = await splitRoutes.request("/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
         wallet: TEST_WALLET,
         splits: [

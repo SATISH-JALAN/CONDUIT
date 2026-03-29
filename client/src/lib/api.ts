@@ -1,29 +1,113 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-let accessToken: string | null = null;
+const ACCESS_TOKEN_STORAGE_KEY = "conduit:access-token";
+const REFRESH_TOKEN_STORAGE_KEY = "conduit:refresh-token";
+
+function readSessionStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionStorage(key: string, value: string | null) {
+  if (typeof window === "undefined") return;
+
+  try {
+    if (value === null) {
+      window.sessionStorage.removeItem(key);
+    } else {
+      window.sessionStorage.setItem(key, value);
+    }
+  } catch {
+    // no-op
+  }
+}
+
+let accessToken: string | null = readSessionStorage(ACCESS_TOKEN_STORAGE_KEY);
+let refreshToken: string | null = readSessionStorage(REFRESH_TOKEN_STORAGE_KEY);
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
+  writeSessionStorage(ACCESS_TOKEN_STORAGE_KEY, token);
 }
 
 export function getAccessToken(): string | null {
   return accessToken;
 }
 
+export function setRefreshToken(token: string | null) {
+  refreshToken = token;
+  writeSessionStorage(REFRESH_TOKEN_STORAGE_KEY, token);
+}
+
+export function getRefreshToken(): string | null {
+  return refreshToken;
+}
+
+export function clearAuthTokens() {
+  setAccessToken(null);
+  setRefreshToken(null);
+}
+
+async function refreshAccessTokenIfPossible(): Promise<boolean> {
+  if (!refreshToken) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      clearAuthTokens();
+      return false;
+    }
+
+    const data = (await res.json()) as { accessToken?: string };
+    if (!data.accessToken) {
+      clearAuthTokens();
+      return false;
+    }
+
+    setAccessToken(data.accessToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
+  const attempt = async (token: string | null): Promise<Response> => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...((options.headers as Record<string, string>) || {}),
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+    });
   };
 
-  if (accessToken) {
-    headers["Authorization"] = `Bearer ${accessToken}`;
-  }
+  let res = await attempt(accessToken);
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
+  if (res.status === 401) {
+    const refreshed = await refreshAccessTokenIfPossible();
+    if (refreshed) {
+      res = await attempt(accessToken);
+    }
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: res.statusText }));
@@ -139,6 +223,83 @@ export const api = {
       method: "POST",
       body: JSON.stringify(raceId ? { raceId } : {}),
     }),
+
+  // Feature 3: COND Agent
+  getAgentStatus: () => request<AgentStatusResponse>("/agent/status"),
+
+  updateAgentMandate: (payload: UpdateAgentMandatePayload) =>
+    request<{ ok: boolean }>("/agent/mandate", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  setAgentKillSwitch: (paused: boolean) =>
+    request<{ ok: boolean; paused: boolean }>("/agent/kill-switch", {
+      method: "POST",
+      body: JSON.stringify({ paused }),
+    }),
+
+  sendAgentMessage: (message: string) =>
+    request<AgentChatResponse>("/agent/chat", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
+
+  // Feature 4: Yield NFTs
+  getNftMarket: (limit = 20) =>
+    request<{ items: NftItem[] }>(`/nfts/market?limit=${limit}`),
+
+  getMyNfts: (status?: "active" | "redeemed" | "transferred") =>
+    request<{ wallet: string; items: NftItem[] }>(
+      status ? `/nfts?status=${encodeURIComponent(status)}` : "/nfts",
+    ),
+
+  mintNft: (payload: {
+    box_id: string;
+    notional: number;
+    duration_days: number;
+  }) =>
+    request<{ ok: boolean; item: NftItem }>("/nfts/mint", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  redeemNft: (nft_id: string) =>
+    request<{ ok: boolean; item: NftItem }>("/nfts/redeem", {
+      method: "POST",
+      body: JSON.stringify({ nft_id }),
+    }),
+
+  transferNft: (nft_id: string, to_wallet: string) =>
+    request<{ ok: boolean; item: NftItem }>("/nfts/transfer", {
+      method: "POST",
+      body: JSON.stringify({ nft_id, to_wallet }),
+    }),
+
+  // Feature 5: Social copy portfolios
+  getCopyingLeaders: () => request<CopyingResponse>("/social/copying"),
+
+  getFollowStatus: (leaders: string[]) =>
+    request<{ following: Record<string, boolean> }>(
+      `/social/status?leaders=${encodeURIComponent(leaders.join(","))}`,
+    ),
+
+  followLeader: (leader_wallet: string) =>
+    request<{ ok: boolean; leaderWallet: string; active: boolean }>(
+      "/social/copy",
+      {
+        method: "POST",
+        body: JSON.stringify({ leader_wallet }),
+      },
+    ),
+
+  unfollowLeader: (leaderWallet: string) =>
+    request<{ ok: boolean; leaderWallet: string; active: boolean }>(
+      `/social/copy/${leaderWallet}`,
+      {
+        method: "DELETE",
+      },
+    ),
 };
 
 // ── Types ──
@@ -217,6 +378,8 @@ export interface LeaderboardEntry {
   apy: number;
   tvl: number;
   change24h: number;
+  badge: "Legend" | "Elite" | "Rising" | "Contender";
+  copiedBy: number;
 }
 
 export interface LeaderboardResponse {
@@ -260,4 +423,61 @@ export interface HarvestSubmitResponse {
   ok: boolean;
   txHash: string | null;
   amount: number;
+}
+
+export interface AgentStatusResponse {
+  wallet: string;
+  active: boolean;
+  performanceBps: number;
+  managedAssets: number;
+  mandate: {
+    riskTolerance: "Conservative" | "Moderate" | "Aggressive";
+    autoCompound: boolean;
+    compoundThresholdCents: number;
+    minCreditRating: "AAA" | "AA" | "A" | "BBB";
+    paused: boolean;
+    updatedAt: string;
+  };
+  recentActions: Array<{
+    action: string;
+    reasoning: string;
+    executed: boolean;
+    time: string;
+  }>;
+}
+
+export interface UpdateAgentMandatePayload {
+  risk_tolerance?: "Conservative" | "Moderate" | "Aggressive";
+  auto_compound?: boolean;
+  compound_threshold_cents?: number;
+  min_credit_rating?: "AAA" | "AA" | "A" | "BBB";
+  paused?: boolean;
+}
+
+export interface AgentChatResponse {
+  reply: string;
+  action: string | null;
+  mandateRisk?: "Conservative" | "Moderate" | "Aggressive";
+}
+
+export interface NftItem {
+  id: string;
+  ownerWallet: string;
+  boxId: string;
+  notional: number;
+  yieldBps: number;
+  durationDays: number;
+  status: "active" | "redeemed" | "transferred";
+  txHash: string | null;
+  mintedAt: string;
+  expiresAt: string;
+}
+
+export interface CopyingResponse {
+  wallet: string;
+  leaders: Array<{
+    leaderWallet: string;
+    active: boolean;
+    updatedAt: string;
+  }>;
 }

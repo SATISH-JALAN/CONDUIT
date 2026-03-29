@@ -1,55 +1,103 @@
-import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
-import { db } from '../shared/db.js';
-import { users } from '../db/schema.js';
-import { connectWalletSchema, refreshTokenSchema } from '../shared/types.js';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../shared/auth.js';
-import { eq } from 'drizzle-orm';
-import { logger } from '../shared/logger.js';
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { db } from "../shared/db.js";
+import { users } from "../db/schema.js";
+import { connectWalletSchema, refreshTokenSchema } from "../shared/types.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../shared/auth.js";
+import { readWalletSanctionStatus } from "../shared/stellar.js";
+import { eq } from "drizzle-orm";
+import { logger } from "../shared/logger.js";
 
 const app = new Hono();
 
 // POST /api/auth/connect — wallet-based auth
-app.post('/connect', zValidator('json', connectWalletSchema), async (c) => {
-  const { wallet } = c.req.valid('json');
+app.post("/connect", zValidator("json", connectWalletSchema), async (c) => {
+  const { wallet } = c.req.valid("json");
+  const enforceSanctions =
+    process.env.SOROBAN_AUTH_ENFORCE_SANCTIONS === "true";
 
   try {
+    const sanctionCheck = await readWalletSanctionStatus(wallet);
+
+    if (
+      sanctionCheck.enabled &&
+      sanctionCheck.ok &&
+      sanctionCheck.value === true
+    ) {
+      logger.warn(
+        {
+          wallet,
+          method: sanctionCheck.method,
+          latencyMs: sanctionCheck.latencyMs,
+          enforcement: enforceSanctions,
+        },
+        "Sanctioned wallet detected during auth connect",
+      );
+
+      if (enforceSanctions) {
+        return c.json({ error: "Wallet is sanctioned" }, 403);
+      }
+    }
+
+    if (sanctionCheck.enabled && !sanctionCheck.ok) {
+      logger.warn(
+        {
+          wallet,
+          method: sanctionCheck.method,
+          latencyMs: sanctionCheck.latencyMs,
+          fallbackReason: sanctionCheck.fallbackReason || sanctionCheck.error,
+        },
+        "Sanctions read-check fallback during auth connect",
+      );
+    }
+
     // Upsert user
-    await db.insert(users)
-      .values({ wallet })
-      .onConflictDoNothing();
+    await db.insert(users).values({ wallet }).onConflictDoNothing();
 
     const accessToken = await generateAccessToken(wallet);
     const refreshToken = await generateRefreshToken(wallet);
 
-    logger.info({ wallet }, 'Wallet connected');
+    logger.info({ wallet }, "Wallet connected");
 
     return c.json({
       accessToken,
       refreshToken,
       wallet,
+      compliance: {
+        sanctionsCheck: {
+          enabled: sanctionCheck.enabled,
+          ok: sanctionCheck.ok,
+          sanctioned: sanctionCheck.value,
+          fallbackReason: sanctionCheck.fallbackReason,
+        },
+      },
     });
   } catch (err) {
-    logger.error({ err, wallet }, 'Auth connect failed');
-    return c.json({ error: 'Authentication failed' }, 500);
+    logger.error({ err, wallet }, "Auth connect failed");
+    return c.json({ error: "Authentication failed" }, 500);
   }
 });
 
 // POST /api/auth/refresh — refresh access token
-app.post('/refresh', zValidator('json', refreshTokenSchema), async (c) => {
-  const { refreshToken } = c.req.valid('json');
+app.post("/refresh", zValidator("json", refreshTokenSchema), async (c) => {
+  const { refreshToken } = c.req.valid("json");
 
   try {
     const payload = await verifyRefreshToken(refreshToken);
 
     // Verify user still exists
-    const user = await db.select()
+    const user = await db
+      .select()
       .from(users)
       .where(eq(users.wallet, payload.wallet))
       .limit(1);
 
     if (user.length === 0) {
-      return c.json({ error: 'User not found' }, 404);
+      return c.json({ error: "User not found" }, 404);
     }
 
     const accessToken = await generateAccessToken(payload.wallet);
@@ -59,7 +107,7 @@ app.post('/refresh', zValidator('json', refreshTokenSchema), async (c) => {
       wallet: payload.wallet,
     });
   } catch {
-    return c.json({ error: 'Invalid refresh token' }, 401);
+    return c.json({ error: "Invalid refresh token" }, 401);
   }
 });
 

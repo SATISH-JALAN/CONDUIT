@@ -4,8 +4,13 @@ import { db } from "../shared/db.js";
 import { harvests, splitConfigs } from "../db/schema.js";
 import { getAnchor, setAnchor } from "../stream/cache.js";
 import { calculatePendingYield } from "../stream/formula.js";
-import { buildHarvestTx, submitSignedTx } from "../shared/stellar.js";
-import { harvestSchema, stellarAddressSchema } from "../shared/types.js";
+import {
+  buildHarvestTx,
+  readOnChainAccrued,
+  submitSignedTx,
+} from "../shared/stellar.js";
+import { harvestSchema } from "../shared/types.js";
+import { authMiddleware } from "../shared/auth.js";
 import { logger } from "../shared/logger.js";
 import type { Anchor } from "../stream/formula.js";
 
@@ -43,20 +48,20 @@ function allocateSplitAmounts(
  * POST /api/harvest/build
  * Calculate pending yield and build an unsigned harvest transaction.
  */
-app.post("/build", async (c) => {
+app.post("/build", authMiddleware, async (c) => {
   try {
     const body = await c.req.json();
-    const walletResult = stellarAddressSchema.safeParse(body.wallet);
     const harvestResult = harvestSchema.safeParse(body);
-
-    if (!walletResult.success) {
-      return c.json({ error: "Invalid wallet address" }, 400);
-    }
     if (!harvestResult.success) {
       return c.json({ error: harvestResult.error.issues[0].message }, 400);
     }
 
-    const { wallet, box_id } = { wallet: body.wallet, ...harvestResult.data };
+    const wallet = c.get("wallet");
+    if (body.wallet && body.wallet !== wallet) {
+      return c.json({ error: "Wallet mismatch with authenticated user" }, 403);
+    }
+
+    const { box_id } = harvestResult.data;
 
     // Get anchor from Redis
     const anchor = await getAnchor(wallet, box_id);
@@ -68,6 +73,71 @@ app.post("/build", async (c) => {
     const pendingYield = calculatePendingYield(anchor);
     if (pendingYield <= 0) {
       return c.json({ error: "No yield to harvest yet" }, 400);
+    }
+
+    const onChainAccrued = await readOnChainAccrued(wallet);
+    let verification:
+      | {
+          enabled: boolean;
+          ok: boolean;
+          latencyMs: number;
+          localPending?: number;
+          onChainPending?: number;
+          divergenceBps?: number;
+          fallbackReason?: string;
+        }
+      | undefined;
+
+    if (onChainAccrued.enabled) {
+      if (onChainAccrued.ok && onChainAccrued.value !== null) {
+        const local = pendingYield;
+        const chain = onChainAccrued.value;
+        const divergenceBps =
+          local > 0
+            ? Math.round((Math.abs(chain - local) / local) * 10_000)
+            : 0;
+
+        logger.info(
+          {
+            wallet,
+            box_id,
+            method: onChainAccrued.method,
+            latencyMs: onChainAccrued.latencyMs,
+            localPending: local,
+            onChainPending: chain,
+            divergenceBps,
+          },
+          "Harvest read verification completed",
+        );
+
+        verification = {
+          enabled: true,
+          ok: true,
+          latencyMs: onChainAccrued.latencyMs,
+          localPending: Math.round(local * 10_000) / 10_000,
+          onChainPending: Math.round(chain * 10_000) / 10_000,
+          divergenceBps,
+        };
+      } else {
+        logger.warn(
+          {
+            wallet,
+            box_id,
+            method: onChainAccrued.method,
+            latencyMs: onChainAccrued.latencyMs,
+            fallbackReason:
+              onChainAccrued.fallbackReason || onChainAccrued.error,
+          },
+          "Harvest read verification fallback",
+        );
+
+        verification = {
+          enabled: true,
+          ok: false,
+          latencyMs: onChainAccrued.latencyMs,
+          fallbackReason: onChainAccrued.fallbackReason || onChainAccrued.error,
+        };
+      }
     }
 
     // Resolve active split config from PostgreSQL; default to 100% self when absent.
@@ -98,6 +168,7 @@ app.post("/build", async (c) => {
       box_id,
       amount: Math.round(pendingYield * 10000) / 10000,
       splits: allocatedSplits,
+      verification,
     });
   } catch (err: any) {
     logger.error({ err: err.message }, "Harvest build failed");
@@ -112,14 +183,19 @@ app.post("/build", async (c) => {
  * POST /api/harvest/submit
  * Submit a signed harvest transaction and record the harvest.
  */
-app.post("/submit", async (c) => {
+app.post("/submit", authMiddleware, async (c) => {
   try {
     const body = await c.req.json();
-    const { wallet, box_id, amount, signedXdr } = body;
+    const wallet = c.get("wallet");
+    const { box_id, amount, signedXdr } = body;
 
-    if (!wallet || !box_id || !amount || !signedXdr) {
+    if (body.wallet && body.wallet !== wallet) {
+      return c.json({ error: "Wallet mismatch with authenticated user" }, 403);
+    }
+
+    if (!box_id || !amount || !signedXdr) {
       return c.json(
-        { error: "Missing required fields: wallet, box_id, amount, signedXdr" },
+        { error: "Missing required fields: box_id, amount, signedXdr" },
         400,
       );
     }

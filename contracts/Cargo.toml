@@ -12,4 +12,4 @@ version = "0.1.0"
 publish = false
 
 [workspace.dependencies]
-soroban-sdk = { version = "*", default-features = false }
+soroban-sdk = { version = "=25.3.0", default-features = false }

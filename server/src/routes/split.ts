@@ -6,34 +6,13 @@ import {
   saveSplitConfigSchema,
   stellarAddressSchema,
 } from "../shared/types.js";
-import { verifyAccessToken } from "../shared/auth.js";
+import { authMiddleware } from "../shared/auth.js";
 import { eq } from "drizzle-orm";
 
 const app = new Hono();
 
 function defaultSplit(wallet: string) {
   return [{ destination: wallet, percentage: 100, label: "Wallet" }];
-}
-
-async function resolveWallet(
-  authHeader: string | undefined,
-  fallbackWallet?: string,
-): Promise<string | null> {
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    try {
-      const payload = await verifyAccessToken(authHeader.slice(7));
-      return payload.wallet;
-    } catch {
-      // Fall back to explicit wallet below.
-    }
-  }
-
-  if (fallbackWallet) {
-    const parsed = stellarAddressSchema.safeParse(fallbackWallet);
-    if (parsed.success) return parsed.data;
-  }
-
-  return null;
 }
 
 // GET /api/split/:wallet
@@ -63,7 +42,7 @@ app.get("/:wallet", async (c) => {
 });
 
 // POST /api/split
-app.post("/", async (c) => {
+app.post("/", authMiddleware, async (c) => {
   try {
     const body = await c.req.json();
     const parsed = saveSplitConfigSchema.safeParse(body);
@@ -72,12 +51,9 @@ app.post("/", async (c) => {
       return c.json({ error: parsed.error.issues[0].message }, 400);
     }
 
-    const wallet = await resolveWallet(
-      c.req.header("Authorization"),
-      parsed.data.wallet,
-    );
-    if (!wallet) {
-      return c.json({ error: "Missing wallet context" }, 401);
+    const wallet = c.get("wallet");
+    if (parsed.data.wallet && parsed.data.wallet !== wallet) {
+      return c.json({ error: "Wallet mismatch with authenticated user" }, 403);
     }
 
     const splits = parsed.data.splits;

@@ -30,7 +30,12 @@ export function Navbar() {
     }
   }, []);
 
-  if (['/dashboard', '/bonds', '/agent', '/race', '/nfts', '/creators'].includes(location.pathname)) {
+  const appShellRoutes = ['/dashboard', '/bonds', '/agent', '/race', '/nfts', '/creators', '/docs'];
+  const isAppShellRoute = appShellRoutes.some(
+    (route) => location.pathname === route || location.pathname.startsWith(`${route}/`),
+  );
+
+  if (isAppShellRoute) {
     return null;
   }
 

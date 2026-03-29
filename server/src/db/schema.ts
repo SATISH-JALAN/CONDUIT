@@ -111,6 +111,7 @@ export const mandates = pgTable("mandates", {
     .default(5000)
     .notNull(),
   minCreditRating: creditRatingEnum("min_credit_rating").default("A").notNull(),
+  paused: boolean("paused").default(false).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
@@ -243,6 +244,65 @@ export const raceEntries = pgTable(
     raceWalletUnique: uniqueIndex("race_entries_race_wallet_idx").on(
       table.raceId,
       table.wallet,
+    ),
+  }),
+);
+
+// ── Feature 4: Yield NFTs ──
+
+export const yieldNfts = pgTable(
+  "yield_nfts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    ownerWallet: text("owner_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    boxId: text("box_id")
+      .notNull()
+      .references(() => bondBoxes.id),
+    notional: numeric("notional", { precision: 20, scale: 7 }).notNull(),
+    yieldBps: integer("yield_bps").notNull(),
+    durationDays: integer("duration_days").notNull(),
+    status: text("status").default("active").notNull(), // active | redeemed | transferred
+    txHash: text("tx_hash"),
+    mintedAt: timestamp("minted_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+  },
+  (table) => ({
+    ownerStatusIdx: index("yield_nfts_owner_status_idx").on(
+      table.ownerWallet,
+      table.status,
+    ),
+  }),
+);
+
+// ── Feature 5: Copy Portfolios ──
+
+export const portfolioCopies = pgTable(
+  "portfolio_copies",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    followerWallet: text("follower_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    leaderWallet: text("leader_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    followerLeaderUnique: uniqueIndex(
+      "portfolio_copies_follower_leader_idx",
+    ).on(table.followerWallet, table.leaderWallet),
+    leaderActiveIdx: index("portfolio_copies_leader_active_idx").on(
+      table.leaderWallet,
+      table.active,
     ),
   }),
 );

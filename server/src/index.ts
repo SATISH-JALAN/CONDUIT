@@ -10,6 +10,9 @@ import { harvestRoutes } from "./routes/harvest.js";
 import { splitRoutes } from "./routes/split.js";
 import { leaderboardRoutes } from "./routes/leaderboard.js";
 import { raceRoutes } from "./routes/race.js";
+import { agentRoutes } from "./routes/agent.js";
+import { nftRoutes } from "./routes/nfts.js";
+import { socialRoutes } from "./routes/social.js";
 import { logger } from "./shared/logger.js";
 import { redis } from "./shared/redis.js";
 import {
@@ -46,6 +49,9 @@ app.route("/harvest", harvestRoutes);
 app.route("/split", splitRoutes);
 app.route("/leaderboard", leaderboardRoutes);
 app.route("/race", raceRoutes);
+app.route("/agent", agentRoutes);
+app.route("/nfts", nftRoutes);
+app.route("/social", socialRoutes);
 
 // ── WebSocket upgrade map (used by Bun.serve) ──
 const wsClients = new Map<string, Set<ServerWebSocket<WSData>>>();

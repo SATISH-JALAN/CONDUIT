@@ -1,9 +1,13 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, Address,
+    Env,
+};
 
 const BPS_SCALE: i128 = 10_000;
 const SECONDS_PER_YEAR: i128 = 31_536_000;
+const MAX_APY_BPS: u32 = 100_000;
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -17,6 +21,16 @@ pub struct Anchor {
 #[derive(Clone)]
 pub enum DataKey {
     Anchor(Address),
+}
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum StreamRouterError {
+    AmountMustBePositive = 1,
+    ApyOutOfRange = 2,
+    NoActivePosition = 3,
+    AmountExceedsAvailableBalance = 4,
 }
 
 #[contract]
@@ -52,17 +66,21 @@ fn accrued(anchor: &Anchor, ts: u64) -> i128 {
         / (BPS_SCALE * SECONDS_PER_YEAR)
 }
 
+fn validate_apy(env: &Env, apy_bps: u32) {
+    if apy_bps == 0 || apy_bps > MAX_APY_BPS {
+        panic_with_error!(env, StreamRouterError::ApyOutOfRange);
+    }
+}
+
 #[contractimpl]
 impl StreamRouterContract {
     pub fn deposit(env: Env, wallet: Address, amount: i128, apy_bps: u32) -> Anchor {
         wallet.require_auth();
 
         if amount <= 0 {
-            panic!("amount must be positive");
+            panic_with_error!(&env, StreamRouterError::AmountMustBePositive);
         }
-        if apy_bps == 0 {
-            panic!("apy_bps must be positive");
-        }
+        validate_apy(&env, apy_bps);
 
         let ts = now(&env);
         let key_wallet = wallet.clone();
@@ -84,8 +102,10 @@ impl StreamRouterContract {
         };
 
         save_anchor(&env, &key_wallet, &next);
-        env.events()
-            .publish((symbol_short!("deposit"), wallet), (amount, apy_bps, ts));
+        env.events().publish(
+            (symbol_short!("srt_v1"), symbol_short!("deposit"), wallet),
+            (amount, apy_bps, ts),
+        );
 
         next
     }
@@ -105,14 +125,19 @@ impl StreamRouterContract {
         wallet.require_auth();
 
         let ts = now(&env);
-        let mut current = load_anchor(&env, &wallet).unwrap_or_else(|| panic!("no active position"));
+        let mut current = match load_anchor(&env, &wallet) {
+            Some(anchor) => anchor,
+            None => panic_with_error!(&env, StreamRouterError::NoActivePosition),
+        };
         let pending = accrued(&current, ts);
 
         current.sync_ts = ts;
         save_anchor(&env, &wallet, &current);
 
-        env.events()
-            .publish((symbol_short!("harvest"), wallet), (pending, ts));
+        env.events().publish(
+            (symbol_short!("srt_v1"), symbol_short!("harvest"), wallet),
+            (pending, ts),
+        );
 
         pending
     }
@@ -121,24 +146,29 @@ impl StreamRouterContract {
         wallet.require_auth();
 
         if amount <= 0 {
-            panic!("amount must be positive");
+            panic_with_error!(&env, StreamRouterError::AmountMustBePositive);
         }
 
         let ts = now(&env);
-        let mut current = load_anchor(&env, &wallet).unwrap_or_else(|| panic!("no active position"));
+        let mut current = match load_anchor(&env, &wallet) {
+            Some(anchor) => anchor,
+            None => panic_with_error!(&env, StreamRouterError::NoActivePosition),
+        };
         let pending = accrued(&current, ts);
         let total = current.principal.saturating_add(pending);
 
         if amount > total {
-            panic!("amount exceeds available balance");
+            panic_with_error!(&env, StreamRouterError::AmountExceedsAvailableBalance);
         }
 
         current.principal = total.saturating_sub(amount);
         current.sync_ts = ts;
         save_anchor(&env, &wallet, &current);
 
-        env.events()
-            .publish((symbol_short!("withdraw"), wallet), (amount, ts));
+        env.events().publish(
+            (symbol_short!("srt_v1"), symbol_short!("withdraw"), wallet),
+            (amount, ts),
+        );
 
         current
     }
@@ -146,12 +176,13 @@ impl StreamRouterContract {
     pub fn update_apy(env: Env, wallet: Address, new_bps: u32) -> Anchor {
         wallet.require_auth();
 
-        if new_bps == 0 {
-            panic!("new_bps must be positive");
-        }
+        validate_apy(&env, new_bps);
 
         let ts = now(&env);
-        let mut current = load_anchor(&env, &wallet).unwrap_or_else(|| panic!("no active position"));
+        let mut current = match load_anchor(&env, &wallet) {
+            Some(anchor) => anchor,
+            None => panic_with_error!(&env, StreamRouterError::NoActivePosition),
+        };
         let pending = accrued(&current, ts);
 
         current.principal = current.principal.saturating_add(pending);
@@ -159,8 +190,10 @@ impl StreamRouterContract {
         current.sync_ts = ts;
         save_anchor(&env, &wallet, &current);
 
-        env.events()
-            .publish((symbol_short!("apy_upd"), wallet), (new_bps, ts));
+        env.events().publish(
+            (symbol_short!("srt_v1"), symbol_short!("apy_upd"), wallet),
+            (new_bps, ts),
+        );
 
         current
     }
@@ -219,5 +252,49 @@ mod tests {
 
         let pending_after = client.get_accrued(&wallet);
         assert_eq!(pending_after, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn deposit_rejects_zero_apy() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let contract_id = env.register(StreamRouterContract, ());
+        let client = StreamRouterContractClient::new(&env, &contract_id);
+        let wallet = Address::generate(&env);
+
+        client.deposit(&wallet, &100_000, &0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn deposit_rejects_apy_above_limit() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let contract_id = env.register(StreamRouterContract, ());
+        let client = StreamRouterContractClient::new(&env, &contract_id);
+        let wallet = Address::generate(&env);
+
+        client.deposit(&wallet, &100_000, &(MAX_APY_BPS + 1));
+    }
+
+    #[test]
+    #[should_panic]
+    fn withdraw_rejects_amount_above_total() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let contract_id = env.register(StreamRouterContract, ());
+        let client = StreamRouterContractClient::new(&env, &contract_id);
+        let wallet = Address::generate(&env);
+
+        env.ledger().with_mut(|ledger| {
+            ledger.timestamp = 100;
+        });
+        client.deposit(&wallet, &1_000_000, &500);
+
+        client.withdraw(&wallet, &9_999_999);
     }
 }

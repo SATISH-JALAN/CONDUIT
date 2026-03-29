@@ -10,8 +10,8 @@ This workspace is the smart-contract foundation for Conduit.
 ## Prerequisites
 
 - Rust stable toolchain
-- `wasm32-unknown-unknown` target
-- Soroban CLI (`soroban`)
+- `wasm32v1-none` target
+- Stellar CLI (`stellar`)
 
 ## Build
 
@@ -24,7 +24,7 @@ pnpm contracts:build
 Or directly:
 
 ```bash
-cargo build --manifest-path contracts/Cargo.toml --target wasm32-unknown-unknown --release
+cargo build --manifest-path contracts/Cargo.toml --target wasm32v1-none --release
 ```
 
 ## Test

@@ -99,6 +99,42 @@ export const mandateSchema = z.object({
   min_credit_rating: z.enum(["AAA", "AA", "A", "BBB"]).default("A"),
 });
 
+export const agentChatSchema = z.object({
+  message: z.string().min(1).max(500),
+});
+
+export const killSwitchSchema = z.object({
+  paused: z.boolean(),
+});
+
+export const updateMandateSchema = mandateSchema
+  .partial()
+  .extend({ paused: z.boolean().optional() })
+  .refine((v) => Object.keys(v).length > 0, "At least one field is required");
+
+// ── Feature 4: Yield NFTs ──
+
+export const nftMintSchema = z.object({
+  box_id: z.string().min(1),
+  notional: z.number().positive().min(1),
+  duration_days: z.number().int().min(1).max(3650).default(365),
+});
+
+export const nftRedeemSchema = z.object({
+  nft_id: z.string().uuid(),
+});
+
+export const nftTransferSchema = z.object({
+  nft_id: z.string().uuid(),
+  to_wallet: stellarAddressSchema,
+});
+
+// ── Feature 5: Social Copy ──
+
+export const copyPortfolioSchema = z.object({
+  leader_wallet: stellarAddressSchema,
+});
+
 // ── WebSocket Messages ──
 
 export const wsMessageSchema = z.discriminatedUnion("type", [
@@ -144,4 +180,11 @@ export type LeaderboardPeriod = z.infer<typeof leaderboardPeriodSchema>;
 export type LeaderboardQuery = z.infer<typeof leaderboardQuerySchema>;
 export type RaceJoin = z.infer<typeof raceJoinSchema>;
 export type Mandate = z.infer<typeof mandateSchema>;
+export type AgentChat = z.infer<typeof agentChatSchema>;
+export type KillSwitch = z.infer<typeof killSwitchSchema>;
+export type UpdateMandate = z.infer<typeof updateMandateSchema>;
+export type NftMint = z.infer<typeof nftMintSchema>;
+export type NftRedeem = z.infer<typeof nftRedeemSchema>;
+export type NftTransfer = z.infer<typeof nftTransferSchema>;
+export type CopyPortfolio = z.infer<typeof copyPortfolioSchema>;
 export type WSMessage = z.infer<typeof wsMessageSchema>;

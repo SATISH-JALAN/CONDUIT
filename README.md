@@ -1,4 +1,5 @@
 # CONDUIT
+
 ## Real-Time Yield Streaming Protocol on Stellar
 
 <div align="center">
@@ -37,6 +38,7 @@ Conduit computes continuous accrual client-side using:
 `V(t) = P × e^(r × Δt)`
 
 Where:
+
 - `P` = principal
 - `r` = annualized rate converted to continuous time
 - `Δt` = elapsed time
@@ -78,6 +80,7 @@ The interface is intentionally selection-first and familiar, like choosing playl
 COND is Conduit's AI portfolio layer, built on **LangGraph** with **Claude** as the reasoning engine.
 
 Capabilities include:
+
 - Monitoring market and credit conditions
 - Detecting deterioration signals early
 - Rebalancing and rotation logic
@@ -106,15 +109,15 @@ Beyond core streaming yield:
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Smart Contracts** | Rust → WASM on Soroban (Stellar) |
-| **Backend** | Bun + Hono + TypeScript |
-| **Database** | PostgreSQL + TimescaleDB |
-| **Cache** | Redis (anchor data for live counter) |
-| **AI Agent** | Python + LangGraph + Claude Sonnet |
-| **Frontend** | React + Vite + TailwindCSS + GSAP |
-| **Auth** | JWT (jose) — wallet-based |
+| Layer               | Technology                           |
+| ------------------- | ------------------------------------ |
+| **Smart Contracts** | Rust → WASM on Soroban (Stellar)     |
+| **Backend**         | Bun + Hono + TypeScript              |
+| **Database**        | PostgreSQL + TimescaleDB             |
+| **Cache**           | Redis (anchor data for live counter) |
+| **AI Agent**        | Python + LangGraph + Claude Sonnet   |
+| **Frontend**        | React + Vite + TailwindCSS + GSAP    |
+| **Auth**            | JWT (jose) — wallet-based            |
 
 ---
 
@@ -122,64 +125,171 @@ Beyond core streaming yield:
 
 ```
 Conduit/
-├── client/                    # Frontend (Vite + React)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── counter/       # YieldCounter
-│   │   │   ├── layout/        # Navbar, AppLayout
-│   │   │   └── ui/            # TiltCard, MagneticButton, SpotlightCard, etc.
-│   │   ├── lib/               # GSAP setup, utilities
-│   │   ├── pages/             # Home, Dashboard, Bonds, Agent, Race, NFTs, Creators, Onboarding
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── index.html
-│   ├── vite.config.ts
-│   ├── tsconfig.json
-│   └── package.json
+├── Root/
+│   ├── .env
+│   ├── .env.example
+│   ├── .git/
+│   ├── .gitignore
+│   ├── .vscode/
+│   ├── client/
+│   ├── contracts/
+│   ├── docker-compose.yml
+│   ├── docs/
+│   ├── node_modules/
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── pnpm-workspace.yaml
+│   ├── README.md
+│   └── server/
 │
-├── server/                    # Backend (Bun + Hono)
+├── client/ (Client App)
+│   ├── dist/
+│   ├── index.html
+│   ├── node_modules/
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── components/
+│   │   │   ├── counter/
+│   │   │   │   └── YieldCounter.tsx
+│   │   │   ├── layout/
+│   │   │   │   ├── AppLayout.tsx
+│   │   │   │   └── Navbar.tsx
+│   │   │   └── ui/
+│   │   │       ├── CustomCursor.tsx
+│   │   │       ├── GlassCard.tsx
+│   │   │       ├── MagneticButton.tsx
+│   │   │       ├── ScrambleText.tsx
+│   │   │       ├── Skeleton.tsx
+│   │   │       ├── SplitText.tsx
+│   │   │       ├── SpotlightCard.tsx
+│   │   │       ├── TiltCard.tsx
+│   │   │       └── Tooltip.tsx
+│   │   ├── index.css
+│   │   ├── lib/
+│   │   │   ├── api.ts
+│   │   │   ├── formula.ts
+│   │   │   ├── gsap.ts
+│   │   │   ├── utils.ts
+│   │   │   └── ws.ts
+│   │   ├── main.tsx
+│   │   ├── pages/
+│   │   │   ├── Agent.tsx
+│   │   │   ├── BondDetail.tsx
+│   │   │   ├── Bonds.tsx
+│   │   │   ├── CreatorProfile.tsx
+│   │   │   ├── Creators.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── Docs.tsx
+│   │   │   ├── Home.tsx
+│   │   │   ├── NFTs.tsx
+│   │   │   ├── Onboarding.tsx
+│   │   │   └── Race.tsx
+│   │   └── stores/
+│   │       ├── portfolioStore.ts
+│   │       ├── raceStore.ts
+│   │       ├── splitStore.ts
+│   │       └── walletStore.ts
+│   ├── tsconfig.json
+│   └── vite.config.ts
+│
+├── server/ (Server App)
+│   ├── dist/
+│   ├── drizzle/
+│   │   ├── 0000_brave_catseye.sql
+│   │   ├── 0001_split_config_wallet_json.sql
+│   │   ├── 0002_leaderboard_race.sql
+│   │   ├── 0003_agent_nft_social.sql
+│   │   └── meta/
+│   │       ├── 0000_snapshot.json
+│   │       └── _journal.json
+│   ├── drizzle.config.ts
+│   ├── node_modules/
+│   ├── package.json
 │   ├── src/
 │   │   ├── db/
-│   │   │   ├── schema.ts      # Drizzle ORM schema (9 tables)
-│   │   │   └── migrate.ts     # Migration runner
+│   │   │   ├── migrate.ts
+│   │   │   ├── schema.ts
+│   │   │   └── seed.ts
+│   │   ├── index.ts
 │   │   ├── routes/
-│   │   │   ├── health.ts      # GET /api/health
-│   │   │   └── auth.ts        # POST /api/auth/connect, /api/auth/refresh
+│   │   │   ├── agent.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── boxes.ts
+│   │   │   ├── deposit.ts
+│   │   │   ├── harvest.ts
+│   │   │   ├── health.ts
+│   │   │   ├── leaderboard.ts
+│   │   │   ├── nfts.ts
+│   │   │   ├── position.ts
+│   │   │   ├── race.test.ts
+│   │   │   ├── race.ts
+│   │   │   ├── social.ts
+│   │   │   ├── split.test.ts
+│   │   │   └── split.ts
 │   │   ├── shared/
-│   │   │   ├── auth.ts        # JWT generation + middleware
-│   │   │   ├── db.ts          # Drizzle + postgres.js client
-│   │   │   ├── logger.ts      # Pino structured logging
-│   │   │   ├── redis.ts       # ioredis client
-│   │   │   └── types.ts       # Zod schemas for all API types
-│   │   └── index.ts           # Hono app + Bun.serve() with native WebSocket
-│   ├── drizzle/               # Generated SQL migrations
-│   ├── drizzle.config.ts
-│   ├── tsconfig.json
-│   └── package.json
+│   │   │   ├── auth.ts
+│   │   │   ├── db.ts
+│   │   │   ├── leaderboard.ts
+│   │   │   ├── logger.ts
+│   │   │   ├── redis.ts
+│   │   │   ├── stellar.ts
+│   │   │   └── types.ts
+│   │   └── stream/
+│   │       ├── cache.ts
+│   │       └── formula.ts
+│   └── tsconfig.json
 │
-├── docs/                      # Architecture documentation
-│   ├── systemarch.md
-│   └── backendarch.md
+├── contracts/ (Smart Contracts)
+│   ├── .cargo/
+│   │   └── config.toml
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── README.md
+│   ├── rust-toolchain.toml
+│   ├── compliance/
+│   │   ├── Cargo.toml
+│   │   ├── src/
+│   │   │   └── lib.rs
+│   │   └── test_snapshots/
+│   │       └── tests/
+│   │           ├── get_admin_returns_initialized_admin.1.json
+│   │           ├── sanctions_default_false.1.json
+│   │           ├── set_admin_is_one_time_initializer.1.json
+│   │           ├── verify_kyc_persists_hash.1.json
+│   │           ├── verify_kyc_persists_hash_with_admin.1.json
+│   │           └── verify_kyc_requires_admin_setup.1.json
+│   ├── stream_router/
+│   │   ├── Cargo.toml
+│   │   ├── src/
+│   │   │   └── lib.rs
+│   │   └── test_snapshots/
+│   │       └── tests/
+│   │           ├── accrual_increases_over_time.1.json
+│   │           ├── deposit_rejects_apy_above_limit.1.json
+│   │           ├── deposit_rejects_zero_apy.1.json
+│   │           ├── harvest_resets_pending_yield.1.json
+│   │           └── withdraw_rejects_amount_above_total.1.json
+│   └── target/
 │
-├── docker-compose.yml         # Postgres + Redis + Stellar Quickstart
-├── .env / .env.example        # Environment variables
-├── package.json               # pnpm workspace orchestrator
-├── pnpm-workspace.yaml
-└── README.md
+└── docs/ (Docs)
+	├── backendarch.md
+	└── systemarch.md
 ```
 
 ---
 
 ## Prerequisites
 
-| Tool | Version | Purpose |
-|---|---|---|
-| **Node.js** | 18+ | Client dev server |
-| **pnpm** | 9+ | Package manager |
-| **Bun** | 1.0+ | Server runtime |
-| **Docker Desktop** | Latest | Postgres, Redis, Stellar |
-| **Rust** | 1.70+ | Soroban smart contracts |
-| **Stellar CLI** | 23+ | Contract deployment |
+| Tool               | Version | Purpose                  |
+| ------------------ | ------- | ------------------------ |
+| **Node.js**        | 18+     | Client dev server        |
+| **pnpm**           | 9+      | Package manager          |
+| **Bun**            | 1.0+    | Server runtime           |
+| **Docker Desktop** | Latest  | Postgres, Redis, Stellar |
+| **Rust**           | 1.70+   | Soroban smart contracts  |
+| **Stellar CLI**    | 23+     | Contract deployment      |
 
 ---
 
@@ -216,6 +326,7 @@ docker compose up -d
 ```
 
 This starts:
+
 - **PostgreSQL 16 + TimescaleDB** on port `5432`
 - **Redis 7** on port `6379`
 - **Stellar Quickstart** (local blockchain) on port `8000`
@@ -254,33 +365,35 @@ curl http://localhost:5000/api/health
 ## API Endpoints
 
 ### Public
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Server health + DB/Redis status |
+
+| Method | Endpoint      | Description                     |
+| ------ | ------------- | ------------------------------- |
+| `GET`  | `/api/health` | Server health + DB/Redis status |
 
 ### Auth
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/auth/connect` | Connect wallet → returns JWT |
-| `POST` | `/api/auth/refresh` | Refresh access token |
 
-*More endpoints added as features are built.*
+| Method | Endpoint            | Description                  |
+| ------ | ------------------- | ---------------------------- |
+| `POST` | `/api/auth/connect` | Connect wallet → returns JWT |
+| `POST` | `/api/auth/refresh` | Refresh access token         |
+
+_More endpoints added as features are built._
 
 ---
 
 ## Frontend Routes
 
-| Route | Page | Description |
-|---|---|---|
-| `/` | Home | Landing page with live demo counter |
-| `/dashboard` | Dashboard | Yield counter, split config, holdings |
-| `/bonds` | Bond Market | Browse and filter bond boxes |
-| `/agent` | COND Agent | AI chat interface + strategy settings |
-| `/race` | Yield Race | Leaderboard + competitions |
-| `/nfts` | Yield NFTs | Tokenized future yield marketplace |
-| `/creators` | Creator Pools | Fan deposits + creator yield share |
-| `/creators/:id` | Creator Profile | Individual creator pool details |
-| `/onboarding` | Onboarding | Wallet connection (Freighter/Albedo) |
+| Route           | Page            | Description                           |
+| --------------- | --------------- | ------------------------------------- |
+| `/`             | Home            | Landing page with live demo counter   |
+| `/dashboard`    | Dashboard       | Yield counter, split config, holdings |
+| `/bonds`        | Bond Market     | Browse and filter bond boxes          |
+| `/agent`        | COND Agent      | AI chat interface + strategy settings |
+| `/race`         | Yield Race      | Leaderboard + competitions            |
+| `/nfts`         | Yield NFTs      | Tokenized future yield marketplace    |
+| `/creators`     | Creator Pools   | Fan deposits + creator yield share    |
+| `/creators/:id` | Creator Profile | Individual creator pool details       |
+| `/onboarding`   | Onboarding      | Wallet connection (Freighter/Albedo)  |
 
 ---
 
@@ -288,17 +401,17 @@ curl http://localhost:5000/api/health
 
 9 tables managed via Drizzle ORM:
 
-| Table | Purpose |
-|---|---|
-| `users` | Wallet addresses + KYC status |
-| `bond_boxes` | Curated yield strategies |
-| `positions` | User holdings (principal, APY, sync timestamp) |
-| `split_configs` | Yield routing to multiple destinations |
-| `mandates` | COND agent preferences per user |
-| `harvests` | Harvest history (TimescaleDB hypertable) |
-| `apy_history` | APY tracking over time |
-| `compliance_logs` | KYC/sanctions audit trail |
-| `cond_decisions` | AI agent decision log |
+| Table             | Purpose                                        |
+| ----------------- | ---------------------------------------------- |
+| `users`           | Wallet addresses + KYC status                  |
+| `bond_boxes`      | Curated yield strategies                       |
+| `positions`       | User holdings (principal, APY, sync timestamp) |
+| `split_configs`   | Yield routing to multiple destinations         |
+| `mandates`        | COND agent preferences per user                |
+| `harvests`        | Harvest history (TimescaleDB hypertable)       |
+| `apy_history`     | APY tracking over time                         |
+| `compliance_logs` | KYC/sanctions audit trail                      |
+| `cond_decisions`  | AI agent decision log                          |
 
 ---
 
@@ -327,19 +440,19 @@ pnpm --filter server build         # Production server build
 
 ## Feature Roadmap
 
-| Feature | Status | Description |
-|---|---|---|
-| Bond Box Catalog | 🔜 Next | Browse tokenized bond strategies |
+| Feature            | Status     | Description                       |
+| ------------------ | ---------- | --------------------------------- |
+| Bond Box Catalog   | 🔜 Next    | Browse tokenized bond strategies  |
 | Live Yield Counter | 📋 Planned | Real-time streaming via WebSocket |
-| Deposit & Harvest | 📋 Planned | On-chain transactions via Soroban |
-| Yield Split | 📋 Planned | Route yield to multiple wallets |
-| Yield Race | 📋 Planned | Social leaderboard competitions |
-| COND Agent v1 | 📋 Planned | Rule-based AI portfolio manager |
-| KYC & Compliance | 📋 Planned | Persona + Chainalysis integration |
-| Creator Pools | 📋 Planned | Fan deposits, creator yield share |
-| Yield NFTs | 📋 Planned | Tokenized future yield |
-| COND Agent v2 | 📋 Planned | LangGraph + Claude reasoning |
-| Stableswap AMM | 📋 Planned | Curve-style in-box bond swaps |
+| Deposit & Harvest  | 📋 Planned | On-chain transactions via Soroban |
+| Yield Split        | 📋 Planned | Route yield to multiple wallets   |
+| Yield Race         | 📋 Planned | Social leaderboard competitions   |
+| COND Agent v1      | 📋 Planned | Rule-based AI portfolio manager   |
+| KYC & Compliance   | 📋 Planned | Persona + Chainalysis integration |
+| Creator Pools      | 📋 Planned | Fan deposits, creator yield share |
+| Yield NFTs         | 📋 Planned | Tokenized future yield            |
+| COND Agent v2      | 📋 Planned | LangGraph + Claude reasoning      |
+| Stableswap AMM     | 📋 Planned | Curve-style in-box bond swaps     |
 
 ---
 

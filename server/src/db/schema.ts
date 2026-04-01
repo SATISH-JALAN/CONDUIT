@@ -115,7 +115,8 @@ export const mandates = pgTable("mandates", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ── Harvest History (TimescaleDB hypertable) ──
+// -- TIMESCALE_GUARDED
+// ── Harvest History (PostgreSQL-compatible table) ──
 
 export const harvests = pgTable("harvests", {
   id: text("id")
@@ -132,7 +133,8 @@ export const harvests = pgTable("harvests", {
   harvestedAt: timestamp("harvested_at").defaultNow().notNull(),
 });
 
-// ── APY History (TimescaleDB hypertable) ──
+// -- TIMESCALE_GUARDED
+// ── APY History (PostgreSQL-compatible table) ──
 
 export const apyHistory = pgTable("apy_history", {
   id: text("id")

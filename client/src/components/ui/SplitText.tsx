@@ -14,6 +14,10 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
   useEffect(() => {
     if (!containerRef.current) return;
 
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      return;
+    }
+
     const chars = containerRef.current.querySelectorAll('.split-char');
     
     gsap.fromTo(chars, 
@@ -58,7 +62,7 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
   };
 
   return (
-    <div ref={containerRef} className={`overflow-hidden ${className}`} style={{ perspective: '1000px' }}>
+    <div ref={containerRef} className={`overflow-visible md:overflow-hidden ${className}`} style={{ perspective: '1000px' }}>
       {renderSplitText()}
     </div>
   );

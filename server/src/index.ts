@@ -32,7 +32,9 @@ function normalizeOrigin(value: string): string {
 
 const DEFAULT_CLIENT_ORIGIN = "http://localhost:3000";
 const configuredClientOrigins = (
-  process.env.CLIENT_URLS || process.env.CLIENT_URL || DEFAULT_CLIENT_ORIGIN
+  process.env.CLIENT_URLS ||
+  process.env.CLIENT_URL ||
+  DEFAULT_CLIENT_ORIGIN
 )
   .split(",")
   .map((origin) => normalizeOrigin(origin))

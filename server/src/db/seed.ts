@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../shared/env.js';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { bondBoxes } from './schema.js';

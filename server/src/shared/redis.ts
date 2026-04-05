@@ -1,3 +1,4 @@
+import './env.js';
 import Redis from 'ioredis';
 import { logger } from './logger.js';
 

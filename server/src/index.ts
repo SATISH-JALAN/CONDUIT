@@ -57,10 +57,10 @@ app.route("/social", socialRoutes);
 const wsClients = new Map<string, Set<ServerWebSocket<WSData>>>();
 
 // ── Start ──
-const PORT = parseInt(process.env.PORT || "5000");
+const port = Number(process.env.PORT) || 5000;
 
 const server = Bun.serve<WSData>({
-  port: PORT,
+  port,
   fetch: app.fetch,
   websocket: {
     open(ws: ServerWebSocket<WSData>) {
@@ -83,7 +83,7 @@ const server = Bun.serve<WSData>({
   },
 });
 
-logger.info({ port: PORT }, "🚀 Conduit server running");
+logger.info({ port }, "🚀 Conduit server running");
 startLeaderboardJob();
 
 // ── Graceful shutdown ──

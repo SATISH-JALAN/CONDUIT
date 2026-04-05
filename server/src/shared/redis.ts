@@ -1,8 +1,8 @@
-import './env.js';
-import Redis from 'ioredis';
-import { logger } from './logger.js';
+import "./env.js";
+import Redis from "ioredis";
+import { logger } from "./logger.js";
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 export const redis = new Redis(REDIS_URL, {
   maxRetriesPerRequest: 3,
@@ -13,10 +13,10 @@ export const redis = new Redis(REDIS_URL, {
   lazyConnect: true,
 });
 
-redis.on('connect', () => logger.info('Redis connected'));
-redis.on('error', (err) => logger.error({ err }, 'Redis error'));
+redis.on("connect", () => logger.info("Redis connected"));
+redis.on("error", (err) => logger.error({ err }, "Redis error"));
 
 // Connect on import
 redis.connect().catch(() => {
-  logger.warn('Redis not available — will retry on next request');
+  logger.warn("Redis not available — will retry on next request");
 });

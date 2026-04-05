@@ -1,10 +1,12 @@
-import './env.js';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from '../db/schema.js';
-import { logger } from './logger.js';
+import "./env.js";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "../db/schema.js";
+import { logger } from "./logger.js";
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://conduit:conduit_dev@localhost:5432/conduit';
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  "postgresql://conduit:conduit_dev@localhost:5432/conduit";
 
 // Connection pool for queries
 const queryClient = postgres(DATABASE_URL, {
@@ -16,4 +18,4 @@ const queryClient = postgres(DATABASE_URL, {
 
 export const db = drizzle(queryClient, { schema });
 
-logger.info('Database client initialized');
+logger.info("Database client initialized");

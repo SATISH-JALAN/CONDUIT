@@ -26,6 +26,38 @@ interface WSData {
   wallet: string;
 }
 
+function normalizeOrigin(value: string): string {
+  return value.trim().replace(/\/+$/, "");
+}
+
+const DEFAULT_CLIENT_ORIGIN = "http://localhost:3000";
+const configuredClientOrigins = (
+  process.env.CLIENT_URLS || process.env.CLIENT_URL || DEFAULT_CLIENT_ORIGIN
+)
+  .split(",")
+  .map((origin) => normalizeOrigin(origin))
+  .filter(Boolean);
+
+const allowVercelPreviews =
+  process.env.CLIENT_URL_ALLOW_VERCEL_PREVIEWS !== "false";
+
+function isAllowedOrigin(origin: string): boolean {
+  const normalized = normalizeOrigin(origin);
+
+  if (configuredClientOrigins.includes(normalized)) {
+    return true;
+  }
+
+  if (
+    allowVercelPreviews &&
+    /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalized)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 // ── App ──
 const app = new Hono().basePath("/api"); // switch to testnet
 
@@ -33,7 +65,17 @@ const app = new Hono().basePath("/api"); // switch to testnet
 app.use(
   "*",
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: (origin) => {
+      if (!origin) {
+        return configuredClientOrigins[0] || DEFAULT_CLIENT_ORIGIN;
+      }
+
+      return isAllowedOrigin(origin) ? origin : "";
+    },
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    exposeHeaders: ["Content-Length"],
+    maxAge: 600,
     credentials: true,
   }),
 );

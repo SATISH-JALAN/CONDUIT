@@ -55,8 +55,11 @@ export function Bonds() {
 
   useEffect(() => {
     if (!loading && containerRef.current) {
+      const cards = containerRef.current.querySelectorAll('.bond-card');
+      if (cards.length === 0) return;
+
       gsap.fromTo(
-        '.bond-card',
+        cards,
         { y: 30, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: 'power3.out', clearProps: 'opacity,transform,visibility' }
       );

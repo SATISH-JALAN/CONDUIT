@@ -33,19 +33,15 @@ Conduit has been built and validated as a real-world Stellar Testnet MVP with us
 - Live demo: _Add deployed app URL (Vercel/Netlify)_
 - Demo video: _Add full MVP walkthrough video URL_
 - User feedback export (Google Sheet): [Blue Belt User Responses](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
-- Architecture docs:
-  - [System Architecture](docs/systemarch.md)
-  - [Backend Architecture](docs/backendarch.md)
-
 ### Verified Testnet Users (5+)
 
 Add at least 5 real tester wallet addresses below and keep them verifiable on Stellar Explorer:
 
-1. _Add wallet address_
-2. _Add wallet address_
-3. _Add wallet address_
-4. _Add wallet address_
-5. _Add wallet address_
+1. GCUOCLOPD3I7ECINEXFOJVGFQFNJILYW26BERBCCQBQ7WHJMICHR2WPM
+2. GB2CC6D3E3SXRJUPNJ43WGMFFYEN5CNP6NRY5L2S7NUDLEAZW5IMRVLK
+3. GBMQJ3G5LDWODZKUUQWGGT6NIKMM7KL5NLHVIG53WLNLWB27Z4AKH3F4
+4. GDZWLHG6WBRYIGWE2JXJRI4LTXLWQSTBCSXK3XB6HLB2QOTS4DNXDSKP
+5.GA5RKOAUAVEA5POB4HKI2HCIZ3K67SZYLUW5SOACOAKCNDSM4XLC5BPR
 
 ### Blue Belt Requirements Status
 

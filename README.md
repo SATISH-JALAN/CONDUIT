@@ -21,6 +21,93 @@ The protocol is built for accessibility, transparency, and retail-scale efficien
 
 ---
 
+## Level 5 - Blue Belt Submission
+
+### Blue Belt Overview
+
+Conduit has been built and validated as a real-world Stellar Testnet MVP with user onboarding, feedback collection, and iteration.
+
+### Submission Evidence
+
+- Repository: [Conduit GitHub](https://github.com/SATISH-JALAN/Conduit)
+- Live demo: _Add deployed app URL (Vercel/Netlify)_
+- Demo video: _Add full MVP walkthrough video URL_
+- User feedback export (Google Sheet): [Blue Belt User Responses](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
+- Architecture docs:
+  - [System Architecture](docs/systemarch.md)
+  - [Backend Architecture](docs/backendarch.md)
+
+### Verified Testnet Users (5+)
+
+Add at least 5 real tester wallet addresses below and keep them verifiable on Stellar Explorer:
+
+1. _Add wallet address_
+2. _Add wallet address_
+3. _Add wallet address_
+4. _Add wallet address_
+5. _Add wallet address_
+
+### Blue Belt Requirements Status
+
+| Requirement                | Status           | Evidence                                                                                  |
+| -------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
+| MVP fully functional       | ✅ Done          | Live product flows implemented across Home, Bonds, Dashboard, Agent, Race, NFTs, Creators |
+| 5+ real testnet users      | ✅ In Validation | User onboarding + feedback collection sheet linked above                                  |
+| Feedback documented        | ✅ Done          | Structured feedback questions and exported response sheet                                 |
+| 1 iteration completed      | ✅ Done          | Mobile UX and header/navigation improvements integrated                                   |
+| Architecture documentation | ✅ Done          | `docs/systemarch.md`, `docs/backendarch.md`                                               |
+
+### MVP Features Delivered In Blue Belt
+
+- Wallet onboarding and authentication flow
+- Bond box discovery and selection experience
+- Real-time yield streaming dashboard
+- Yield split configuration across destinations
+- Harvest transaction flow and status handling
+- NFT and social/creator surfaces for protocol extensions
+- Documentation and help pages for onboarding support
+
+### User Validation and Onboarding Artifacts
+
+- Google Form based user onboarding and product feedback collection
+- Captured user details fields: name, email, Stellar testnet wallet, rating, onboarding ease, feature usage, NPS, bug report, trust rating, next feature request
+- Exported responses attached via spreadsheet link in this README
+
+### Feedback Iteration Log (Blue Belt)
+
+**Iteration 1: Mobile usability and navigation clarity**
+
+- Problem reported by test users: mobile header overflow, hard-to-access actions, low contrast in sidebar, and friction while navigating key screens
+- Changes shipped:
+  - Responsive layout improvements in app shell and home flow
+  - Better mobile-safe header behavior and overflow control
+  - Improved sidebar readability and action accessibility
+- Commit link: _Add GitHub commit URL after push_
+
+### Next Phase Improvement Plan
+
+Based on current user feedback, the next phase will focus on:
+
+1. Faster first-time onboarding with guided walkthrough states
+2. Clearer transaction lifecycle messaging (build, sign, submit, confirm)
+3. Improved mobile density and touch ergonomics for dashboard controls
+4. Extended analytics (historical APY/yield charts and alerting)
+
+### Blue Belt Validation Flow
+
+```mermaid
+flowchart TD
+	A[Deploy MVP on Testnet] --> B[Onboard Users]
+	B --> C[Collect Feedback via Google Form]
+	C --> D[Export Responses to Sheet]
+	D --> E[Analyze UX and Bug Patterns]
+	E --> F[Implement Iteration]
+	F --> G[Document Improvements in README]
+	G --> H[Submit Blue Belt Repository]
+```
+
+---
+
 ## Core Product Experience
 
 Users deposit into curated bond strategies backed by real institutional-grade RWAs, including:

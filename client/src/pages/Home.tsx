@@ -100,10 +100,10 @@ export function Home() {
   return (
     <div className="min-h-screen" ref={containerRef}>
       {/* HERO SECTION */}
-      <section className="min-h-[calc(100vh-4rem)] md:min-h-screen py-18 md:py-0 max-w-7xl mx-auto px-4 sm:px-5 md:px-14 flex items-start md:items-center">
+      <section className="min-h-screen py-0 max-w-7xl mx-auto px-5 md:px-14 flex items-center">
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 items-center w-full">
           {/* Left Column */}
-          <div className="space-y-4 md:space-y-6">
+          <div className="space-y-5 md:space-y-6">
             <div className="inline-block px-4 py-1.5 rounded-full bg-(--paper-3) border border-(--paper-edge)">
               <ScrambleText 
                 text="REAL-TIME YIELD STREAMING" 
@@ -111,15 +111,15 @@ export function Home() {
               />
             </div>
 
-            <h1 className="text-[clamp(34px,11vw,72px)] font-display font-bold leading-[0.95] md:leading-[0.92] tracking-[-0.04em] animate-weight">
+            <h1 className="text-[clamp(42px,5vw,72px)] font-display font-bold leading-[0.92] tracking-[-0.04em] animate-weight">
               <SplitText className="block text-(--ink-1)">Your money.</SplitText>
               <SplitText className="block text-(--surge)" delay={0.1}>Streaming.</SplitText>
-              <SplitText className="block text-[44%] md:text-[40%] font-secondary italic font-light text-(--ink-3) leading-[1.16] mt-2 pb-[0.16em]" delay={0.2}>
+              <SplitText className="block text-[40%] font-secondary italic font-light text-(--ink-3) leading-[1.16] mt-2 pb-[0.16em]" delay={0.2}>
                 every second.
               </SplitText>
             </h1>
 
-            <p className="font-body text-[14px] md:text-[15px] font-light text-(--ink-2) leading-[1.75] max-w-110">
+            <p className="font-body text-[15px] font-light text-(--ink-2) leading-[1.7] max-w-110">
               Deposit into tokenized government bonds. Watch a live counter tick upward every second. Split your yield stream. COND manages it all. Built on Stellar - $0.00001 per transaction.
             </p>
 
@@ -137,33 +137,33 @@ export function Home() {
             </div>
 
             {/* Trust Strip */}
-            <div className="grid grid-cols-3 gap-3 md:gap-8 pt-4 border-t border-(--paper-edge) mt-4">
+            <div className="grid grid-cols-3 gap-4 md:gap-8 pt-4 border-t border-(--paper-edge) mt-4">
               <div>
                 <div className="font-display text-[22px] text-(--surge) font-medium">
                   <NumberFlow value={140} format={{ style: 'currency', currency: 'USD', notation: 'compact' }} />T
                 </div>
-                <div className="font-secondary text-[9px] md:text-[10px] text-(--ink-4) uppercase tracking-wider">Global Bond Market</div>
+                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider">Global Bond Market</div>
               </div>
               <div>
                 <div className="font-display text-[22px] text-(--surge) font-medium">
                   <NumberFlow value={1} format={{ style: 'currency', currency: 'USD', notation: 'compact' }} />B+
                 </div>
-                <div className="font-secondary text-[9px] md:text-[10px] text-(--ink-4) uppercase tracking-wider">Stellar RWA</div>
+                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider">Stellar RWA</div>
               </div>
                 <div>
                   <div className="font-display text-[22px] text-(--surge) font-medium">
                     <NumberFlow value={0.0521} format={{ style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
                   </div>
-                  <div className="font-secondary text-[9px] md:text-[10px] text-(--ink-4) uppercase tracking-wider">APY</div>
+                  <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider">APY</div>
                 </div>
             </div>
           </div>
 
           {/* Right Column - Counter Card */}
-          <div className="relative hero-counter-card w-full max-w-lg mx-auto lg:mx-0">
+          <div className="relative hero-counter-card">
             <div className="counter-glow absolute inset-0 bg-(--surge-pale) rounded-full filter blur-[100px] opacity-50" />
             
-            <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-5 sm:p-7 relative z-10 overflow-hidden">
+            <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-7 relative z-10 overflow-hidden">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-6 md:mb-8">
                 <div className="text-mono text-[9px] md:text-[10px] text-(--ink-4)">DEMO - $10,000 AT 5.21% APY</div>
                 <div className="flex items-center gap-2 text-mono text-[9px] text-(--surge)">

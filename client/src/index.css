@@ -110,14 +110,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-html,
-body,
-#root {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: clip;
-}
-
 /* ORGANIC GRAIN OVERLAY */
 body::after {
   content: '';

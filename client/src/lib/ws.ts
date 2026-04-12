@@ -8,6 +8,7 @@ export interface WSMessage {
 }
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:5000';
+const TOKEN_PARAM = 'token';
 
 let socket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -25,7 +26,10 @@ function getReconnectDelay(): number {
 export function connect(wallet?: string): void {
   if (socket?.readyState === WebSocket.OPEN) return;
 
-  const url = wallet ? `${WS_URL}?wallet=${wallet}` : WS_URL;
+  // Production-ready: server authenticates WS via JWT token, not by trusting wallet query params.
+  void wallet; // wallet identity is derived from JWT on the server side.
+  const token = window.sessionStorage.getItem('conduit:access-token');
+  const url = token ? `${WS_URL}/ws?${TOKEN_PARAM}=${encodeURIComponent(token)}` : `${WS_URL}/ws`;
   socket = new WebSocket(url);
 
   socket.onopen = () => {

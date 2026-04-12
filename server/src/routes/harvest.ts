@@ -13,6 +13,7 @@ import { harvestSchema } from "../shared/types.js";
 import { authMiddleware } from "../shared/auth.js";
 import { logger } from "../shared/logger.js";
 import type { Anchor } from "../stream/formula.js";
+import { publishWalletEvent } from "../shared/redis.js";
 
 const app = new Hono();
 
@@ -232,9 +233,20 @@ app.post("/submit", authMiddleware, async (c) => {
         sync_ts: Date.now() / 1000,
       };
       await setAnchor(wallet, updatedAnchor);
+
+      // Fanout updated anchor to all connected clients for this wallet.
+      await publishWalletEvent(wallet, {
+        type: "ANCHOR_UPDATE",
+        data: updatedAnchor,
+      });
     }
 
     logger.info({ wallet, box_id, amount, txHash }, "Harvest recorded");
+
+    await publishWalletEvent(wallet, {
+      type: "HARVEST_COMPLETE",
+      data: { box_id, amount, tx_hash: txHash },
+    });
 
     return c.json({
       ok: true,

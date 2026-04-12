@@ -13,6 +13,7 @@ import { raceRoutes } from "./routes/race.js";
 import { agentRoutes } from "./routes/agent.js";
 import { nftRoutes } from "./routes/nfts.js";
 import { socialRoutes } from "./routes/social.js";
+import { internalRoutes } from "./routes/internalTx.js";
 import { logger } from "./shared/logger.js";
 import { redis } from "./shared/redis.js";
 import {
@@ -20,6 +21,8 @@ import {
   stopLeaderboardJob,
 } from "./shared/leaderboard.js";
 import type { ServerWebSocket } from "bun";
+import { subscribeWalletEvents } from "./shared/redis.js";
+import { verifyAccessToken } from "./shared/auth.js";
 
 // ── Types ──
 interface WSData {
@@ -96,9 +99,46 @@ app.route("/race", raceRoutes);
 app.route("/agent", agentRoutes);
 app.route("/nfts", nftRoutes);
 app.route("/social", socialRoutes);
+app.route("/internal", internalRoutes);
 
 // ── WebSocket upgrade map (used by Bun.serve) ──
 const wsClients = new Map<string, Set<ServerWebSocket<WSData>>>();
+const wsUnsubscribers = new Map<string, Promise<() => Promise<void>>>();
+
+async function ensureWalletSubscription(wallet: string) {
+  if (wsUnsubscribers.has(wallet)) return;
+
+  const unsubPromise = subscribeWalletEvents(wallet, (message) => {
+    const clients = wsClients.get(wallet);
+    if (!clients || clients.size === 0) return;
+    const payload = JSON.stringify(message);
+    for (const client of clients) {
+      try {
+        client.send(payload);
+      } catch {
+        // ignore per-socket send failures
+      }
+    }
+  });
+
+  wsUnsubscribers.set(wallet, unsubPromise);
+}
+
+async function maybeCleanupWalletSubscription(wallet: string) {
+  const clients = wsClients.get(wallet);
+  if (clients && clients.size > 0) return;
+
+  const unsubPromise = wsUnsubscribers.get(wallet);
+  if (!unsubPromise) return;
+
+  wsUnsubscribers.delete(wallet);
+  try {
+    const unsub = await unsubPromise;
+    await unsub();
+  } catch {
+    // best-effort cleanup
+  }
+}
 
 // ── Start ──
 const port = Number(process.env.PORT) || 5000;
@@ -106,12 +146,41 @@ const port = Number(process.env.PORT) || 5000;
 const server = Bun.serve<WSData>({
   port,
   hostname: "0.0.0.0",
-  fetch: app.fetch,
+  fetch: async (req, server) => {
+    const url = new URL(req.url);
+
+    // Production-ready WS endpoint: /ws?token=...
+    if (url.pathname === "/ws") {
+      const token = url.searchParams.get("token") || "";
+      try {
+        const payload = await verifyAccessToken(token);
+        const wallet = payload.wallet;
+
+        const ok = server.upgrade(req, {
+          data: { wallet },
+        });
+
+        return ok
+          ? new Response(null)
+          : new Response("WebSocket upgrade failed", { status: 400 });
+      } catch {
+        return new Response("Unauthorized", { status: 401 });
+      }
+    }
+
+    return app.fetch(req);
+  },
   websocket: {
-    open(ws: ServerWebSocket<WSData>) {
-      const wallet = ws.data?.wallet || "anonymous";
+    async open(ws: ServerWebSocket<WSData>) {
+      const wallet = ws.data?.wallet;
+      if (!wallet) {
+        ws.close(1008, "Unauthorized");
+        return;
+      }
+
       if (!wsClients.has(wallet)) wsClients.set(wallet, new Set());
       wsClients.get(wallet)!.add(ws);
+      await ensureWalletSubscription(wallet);
       logger.info({ wallet }, "WS connected");
     },
     message(ws: ServerWebSocket<WSData>, message: string | Buffer) {
@@ -119,10 +188,13 @@ const server = Bun.serve<WSData>({
         ws.send("PONG");
       }
     },
-    close(ws: ServerWebSocket<WSData>) {
-      const wallet = ws.data?.wallet || "anonymous";
+    async close(ws: ServerWebSocket<WSData>) {
+      const wallet = ws.data?.wallet;
+      if (!wallet) return;
+
       wsClients.get(wallet)?.delete(ws);
       if (wsClients.get(wallet)?.size === 0) wsClients.delete(wallet);
+      await maybeCleanupWalletSubscription(wallet);
       logger.info({ wallet }, "WS disconnected");
     },
   },

@@ -12,6 +12,7 @@ import { depositSchema } from "../shared/types.js";
 import { authMiddleware } from "../shared/auth.js";
 import { logger } from "../shared/logger.js";
 import type { Anchor } from "../stream/formula.js";
+import { publishWalletEvent } from "../shared/redis.js";
 
 const app = new Hono();
 
@@ -159,6 +160,11 @@ app.post("/submit", authMiddleware, async (c) => {
       box_id,
     };
     await setAnchor(wallet, anchor);
+
+    await publishWalletEvent(wallet, {
+      type: "ANCHOR_UPDATE",
+      data: anchor,
+    });
 
     logger.info({ wallet, box_id, amount, txHash }, "Deposit recorded");
 

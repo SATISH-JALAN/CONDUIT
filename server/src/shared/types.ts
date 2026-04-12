@@ -166,6 +166,25 @@ export const wsMessageSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+// ── Feature 6: Internal execution boundary ──
+export const internalTxActionSchema = z.enum([
+  "harvest",
+  "rebalance",
+  "rotate",
+  "notify",
+]);
+
+export const internalTxRequestSchema = z.object({
+  wallet: stellarAddressSchema,
+  action: internalTxActionSchema,
+  dry_run: z.boolean().default(true),
+  // Rule-engine / agent-specific params; kept as JSON for forward compatibility.
+  params: z.record(z.unknown()).default({}),
+  // Request metadata for replay protection + audit
+  request_nonce: z.string().min(16).max(128),
+  request_ts: z.string().datetime(),
+});
+
 // ── Export types ──
 
 export type StellarAddress = z.infer<typeof stellarAddressSchema>;

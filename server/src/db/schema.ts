@@ -178,6 +178,35 @@ export const condDecisions = pgTable("cond_decisions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── Internal Tx Audit (Feature 6 execution boundary) ──
+export const internalTxAudits = pgTable(
+  "internal_tx_audits",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    wallet: text("wallet").notNull(),
+    action: text("action").notNull(),
+    requestNonce: text("request_nonce").notNull(),
+    requestTs: timestamp("request_ts").notNull(),
+    requestBody: jsonb("request_body").notNull(),
+    signature: text("signature").notNull(),
+    dryRun: boolean("dry_run").default(true).notNull(),
+    result: text("result").notNull(), // 'accepted' | 'rejected' | 'error'
+    error: text("error"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    nonceUnique: uniqueIndex("internal_tx_audits_request_nonce_idx").on(
+      table.requestNonce,
+    ),
+    walletCreatedIdx: index("internal_tx_audits_wallet_created_idx").on(
+      table.wallet,
+      table.createdAt,
+    ),
+  }),
+);
+
 // ── Leaderboard Snapshots (Feature 5) ──
 
 export const leaderboardCache = pgTable(

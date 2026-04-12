@@ -34,3 +34,8 @@ export function yieldPerSecond(anchor: Anchor): number {
   const r = (anchor.apy_bps / 10000) / (365 * 86400);
   return anchor.principal * r;
 }
+
+/** Daily yield in dollars (streaming model). */
+export function yieldPerDay(anchor: Anchor): number {
+  return yieldPerSecond(anchor) * 86400;
+}

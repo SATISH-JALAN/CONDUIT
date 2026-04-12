@@ -2,6 +2,27 @@ import type { Anchor } from './formula';
 
 type WSMessageHandler = (msg: WSMessage) => void;
 
+function num(v: unknown): number {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') return Number.parseFloat(v);
+  return NaN;
+}
+
+/** Server `publishWalletEvent` sends snake_case anchor fields. */
+export function parseAnchorUpdatePayload(data: unknown): Anchor | null {
+  if (!data || typeof data !== 'object') return null;
+  const o = data as Record<string, unknown>;
+  const box_id = typeof o.box_id === 'string' ? o.box_id : null;
+  if (!box_id) return null;
+  const principal = num(o.principal);
+  const apy_bps = num(o.apy_bps);
+  const sync_ts = num(o.sync_ts);
+  if (!Number.isFinite(principal) || !Number.isFinite(apy_bps) || !Number.isFinite(sync_ts)) {
+    return null;
+  }
+  return { box_id, principal, apy_bps, sync_ts };
+}
+
 /** Payload for server `publishWalletEvent(..., { type: 'COND_ACTION', data })` (internal tx dry-run / notify). */
 export type CondActionEventData = {
   action: string;

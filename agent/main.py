@@ -1,8 +1,7 @@
 """
 COND v1 sidecar: HMAC-signed calls to Bun /api/internal/cond-snapshot and /cond-evaluate-all.
 
-Run locally:
-  set COND_HMAC_SECRET=... && set SERVER_PUBLIC_URL=http://127.0.0.1:5000 && uvicorn main:app --reload --port 8088
+Setup and cron: see **COND agent sidecar** in the repository root README.md.
 """
 
 from __future__ import annotations

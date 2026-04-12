@@ -214,6 +214,7 @@ Conduit/
 │   ├── .git/
 │   ├── .gitignore
 │   ├── .vscode/
+│   ├── agent/
 │   ├── client/
 │   ├── contracts/
 │   ├── docker-compose.yml
@@ -517,6 +518,94 @@ pnpm --filter server db:studio     # Open Drizzle Studio (DB browser)
 # Build
 pnpm --filter client build         # Production frontend build
 pnpm --filter server build         # Production server build
+
+# COND v1 batch (HMAC → API, no Python needed)
+pnpm --filter server cron:cond-evaluate-all
+```
+
+---
+
+## COND agent sidecar (`agent/`, optional)
+
+Optional **Python + FastAPI** service for scheduled or manual calls to internal COND endpoints (same **HMAC** contract as the Bun server). Not required for the web app: the UI uses JWT + `/api/agent/evaluate`; the API can also run batch evaluation via **`pnpm --filter server cron:cond-evaluate-all`** (see below).
+
+| HTTP (sidecar) | Proxies to (Bun) |
+| --- | --- |
+| `POST /snapshot` | `POST /api/internal/cond-snapshot` |
+| `POST /run-all` | `POST /api/internal/cond-evaluate-all` |
+
+### Environment (`agent/`)
+
+| Variable | Description |
+| --- | --- |
+| `COND_HMAC_SECRET` | Same value as the Bun server (≥32 characters). |
+| `SERVER_PUBLIC_URL` | API origin, e.g. `http://127.0.0.1:5000` (no trailing slash). |
+| `COND_CRON_SECRET` | Optional. If set, `POST /run-all` and `POST /snapshot` require header `X-Cond-Cron-Secret`. Use when the sidecar is on the public internet. |
+
+### Local Python setup
+
+Create a venv under `agent/` so Pylance/basedpyright resolve imports (`agent/pyrightconfig.json` uses `.venv`):
+
+```bash
+cd agent
+python -m venv .venv
+# Windows: .venv\Scripts\activate  |  macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Select interpreter `agent/.venv`, then:
+
+```bash
+export COND_HMAC_SECRET='your-32-plus-char-secret'
+export SERVER_PUBLIC_URL=http://127.0.0.1:5000
+uvicorn main:app --reload --port 8088
+```
+
+- `GET http://localhost:8088/health`
+- `POST http://localhost:8088/run-all`
+
+### Docker
+
+From repo root (set `COND_HMAC_SECRET` in your shell):
+
+```bash
+export COND_HMAC_SECRET='...'
+docker compose up --build cond-agent
+```
+
+The `cond-agent` service calls the API on the host via `host.docker.internal` (see `docker-compose.yml`).
+
+### Cron: Python sidecar (`/run-all`)
+
+1. Deploy the agent with `COND_HMAC_SECRET`, `SERVER_PUBLIC_URL`, and optionally `COND_CRON_SECRET`.
+2. Cron job env: `COND_AGENT_URL=https://your-cond-agent.example.com`, and `COND_CRON_SECRET` if the agent uses it.
+
+From repo root:
+
+```bash
+bash scripts/cond-agent-cron-hit.sh
+```
+
+One-liner:
+
+```bash
+curl -fsS -X POST "$COND_AGENT_URL/run-all" -H "X-Cond-Cron-Secret: $COND_CRON_SECRET"
+```
+
+### Cron: Bun only (no Python)
+
+Same batch job from the **server** package (signs `POST /api/internal/cond-evaluate-all`):
+
+**Render:** Cron Job with the same env as the API (`COND_HMAC_SECRET`, `SERVER_PUBLIC_URL`), root directory **`server`**, command:
+
+```bash
+bun run cron:cond-evaluate-all
+```
+
+**Repo root (e.g. crontab):**
+
+```bash
+bash scripts/render-cron-cond-bun.sh
 ```
 
 ---

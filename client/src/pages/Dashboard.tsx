@@ -11,7 +11,8 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 import { useWalletStore } from '@/stores/walletStore';
 import { useSplitStore } from '@/stores/splitStore';
-import { api } from '@/lib/api';
+import { api, getAccessToken, readAccessTokenFromSession } from '@/lib/api';
+import { parseAnchorUpdatePayload, ws } from '@/lib/ws';
 
 type HarvestState = 'idle' | 'building' | 'signing' | 'submitting' | 'success' | 'error';
 
@@ -38,6 +39,7 @@ export function Dashboard() {
     positions,
     setWallet,
     fetchPositions,
+    applyStreamAnchor,
     tick,
   } = usePortfolioStore();
 
@@ -69,6 +71,27 @@ export function Dashboard() {
 
     Promise.all([fetchPositions(), fetchSplitConfig(publicKey)]).finally(() => setLoading(false));
   }, [isConnected, publicKey, navigate, setWallet, setSplitWallet, fetchPositions, fetchSplitConfig]);
+
+  // Live anchor stream (deposit / harvest) via authenticated WS — same socket as Agent COND_ACTION.
+  useEffect(() => {
+    if (!isConnected || !publicKey) return;
+    if (!getAccessToken() && !readAccessTokenFromSession()) return;
+
+    ws.connect(publicKey);
+    const unsub = ws.onMessage((msg) => {
+      if (msg.type === 'ANCHOR_UPDATE') {
+        const anchor = parseAnchorUpdatePayload(msg.data);
+        if (anchor) applyStreamAnchor(anchor);
+        return;
+      }
+      if (msg.type === 'HARVEST_COMPLETE') {
+        void fetchPositions({ quiet: true });
+      }
+    });
+    return () => {
+      unsub();
+    };
+  }, [isConnected, publicKey, applyStreamAnchor, fetchPositions]);
 
   // Live counter tick loop
   useEffect(() => {

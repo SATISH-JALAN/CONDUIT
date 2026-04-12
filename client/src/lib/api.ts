@@ -245,6 +245,10 @@ export const api = {
       body: JSON.stringify({ message }),
     }),
 
+  /** COND v1: run rule engine + dry-run internal tx for the signed-in wallet. */
+  runAgentEvaluate: () =>
+    request<AgentEvaluateResponse>("/agent/evaluate", { method: "POST" }),
+
   // Feature 4: Yield NFTs
   getNftMarket: (limit = 20) =>
     request<{ items: NftItem[] }>(`/nfts/market?limit=${limit}`),
@@ -458,6 +462,18 @@ export interface AgentChatResponse {
   reply: string;
   action: string | null;
   mandateRisk?: "Conservative" | "Moderate" | "Aggressive";
+}
+
+export interface AgentEvaluateResponse {
+  ok: boolean;
+  wallet: string;
+  submitted: number;
+  results: Array<{
+    action: string;
+    status: number;
+    ok: boolean;
+    body: unknown;
+  }>;
 }
 
 export interface NftItem {

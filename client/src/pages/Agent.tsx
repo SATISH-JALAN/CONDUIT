@@ -59,6 +59,7 @@ export function Agent() {
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [sending, setSending] = useState(false);
   const [updatingMandate, setUpdatingMandate] = useState(false);
+  const [evaluating, setEvaluating] = useState(false);
 
   const quickPrompts = [
     'Rebalance for lower risk',
@@ -214,6 +215,43 @@ export function Agent() {
     }
   };
 
+  const runRuleEvaluation = async () => {
+    if (!isConnected || evaluating) return;
+    setEvaluating(true);
+    try {
+      const res = await api.runAgentEvaluate();
+      const lines = res.results
+        .map(
+          (r) =>
+            `${r.action}: HTTP ${r.status} ${r.ok ? 'ok' : 'failed'} — ${typeof (r.body as { error?: string })?.error === 'string' ? (r.body as { error: string }).error : JSON.stringify(r.body)}`,
+        )
+        .join('\n');
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          content:
+            res.results.length === 0
+              ? 'No COND v1 actions matched your mandate and positions (or you are outside the snapshot).'
+              : `COND v1 evaluation finished. Submitted ${res.submitted}/${res.results.length} dry-run actions.\n${lines}`,
+        },
+      ]);
+      await refreshStatus();
+    } catch (err: any) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          content:
+            err.message ||
+            'Evaluation failed. If the server is missing COND_HMAC_SECRET, this feature is disabled.',
+        },
+      ]);
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
   const toggleKillSwitch = async () => {
     if (!isConnected || !status || updatingMandate) return;
     setUpdatingMandate(true);
@@ -351,6 +389,17 @@ export function Agent() {
                     {status?.mandate.autoCompound ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void runRuleEvaluation()}
+                  disabled={!isConnected || evaluating || updatingMandate}
+                  className="w-full mt-2 px-3 py-2 rounded-(--r-md) border border-(--violet-pale-2) bg-(--violet-pale) text-[12px] text-(--violet) hover:bg-(--violet-pale-2) transition-colors disabled:opacity-50"
+                >
+                  {evaluating ? 'Running evaluation…' : 'Run COND v1 evaluation'}
+                </button>
+                <p className="text-[11px] text-(--ink-4) font-secondary mt-1">
+                  Applies server rules and records dry-run decisions (no on-chain execution).
+                </p>
               </div>
             </div>
           </div>

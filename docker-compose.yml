@@ -35,6 +35,17 @@ services:
     volumes:
       - stellar_data:/opt/stellar
 
+  # Optional COND v1 scheduler sidecar (HMAC → Bun /api/internal/*)
+  cond-agent:
+    build: ./agent
+    ports:
+      - "8088:8088"
+    environment:
+      COND_HMAC_SECRET: ${COND_HMAC_SECRET:-}
+      SERVER_PUBLIC_URL: http://host.docker.internal:5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 volumes:
   pg_data:
   redis_data:

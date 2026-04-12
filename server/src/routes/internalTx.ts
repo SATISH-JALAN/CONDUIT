@@ -2,8 +2,13 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { db } from "../shared/db.js";
 import { condDecisions, internalTxAudits, mandates, users } from "../db/schema.js";
-import { internalTxRequestSchema } from "../shared/types.js";
+import {
+  internalCondSnapshotRequestSchema,
+  internalTxRequestSchema,
+} from "../shared/types.js";
 import { verifyHmacHex } from "../shared/hmac.js";
+import { buildCondSnapshot } from "../shared/condSnapshot.js";
+import { runCondEvaluateAll } from "../shared/condEvaluate.js";
 import { eq } from "drizzle-orm";
 import { logger } from "../shared/logger.js";
 import { publishWalletEvent } from "../shared/redis.js";
@@ -238,6 +243,90 @@ app.post("/tx", zValidator("json", internalTxRequestSchema), async (c) => {
     dry_run: true,
   });
 });
+
+// POST /api/internal/cond-snapshot — HMAC body: { request_nonce, request_ts } (JSON.stringify order).
+app.post(
+  "/cond-snapshot",
+  zValidator("json", internalCondSnapshotRequestSchema),
+  async (c) => {
+    const signatureHeader = c.req.header("x-cond-signature") || "";
+    const signature = normalizeHex(signatureHeader);
+    const body = c.req.valid("json");
+    const requestTs = parseIso(body.request_ts);
+
+    const MAX_SKEW_MS = 2 * 60 * 1000;
+    if (!requestTs) {
+      return c.json({ error: "Invalid request_ts" }, 400);
+    }
+    if (Math.abs(Date.now() - requestTs.getTime()) > MAX_SKEW_MS) {
+      return c.json({ error: "Request timestamp outside allowed window" }, 401);
+    }
+
+    let secret: string;
+    try {
+      secret = requireCondSecret();
+    } catch (err: any) {
+      logger.error({ err: err.message }, "Internal tx secret misconfigured");
+      return c.json({ error: "Internal execution misconfigured" }, 500);
+    }
+
+    const payload = JSON.stringify(body);
+    const sigOk =
+      signature.length > 0 && verifyHmacHex(secret, payload, signature);
+    if (!sigOk) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const snap = await buildCondSnapshot();
+    return c.json({ ok: true, ...snap });
+  },
+);
+
+// POST /api/internal/cond-evaluate-all — same HMAC contract as cond-snapshot.
+app.post(
+  "/cond-evaluate-all",
+  zValidator("json", internalCondSnapshotRequestSchema),
+  async (c) => {
+    const signatureHeader = c.req.header("x-cond-signature") || "";
+    const signature = normalizeHex(signatureHeader);
+    const body = c.req.valid("json");
+    const requestTs = parseIso(body.request_ts);
+
+    const MAX_SKEW_MS = 2 * 60 * 1000;
+    if (!requestTs) {
+      return c.json({ error: "Invalid request_ts" }, 400);
+    }
+    if (Math.abs(Date.now() - requestTs.getTime()) > MAX_SKEW_MS) {
+      return c.json({ error: "Request timestamp outside allowed window" }, 401);
+    }
+
+    let secret: string;
+    try {
+      secret = requireCondSecret();
+    } catch (err: any) {
+      logger.error({ err: err.message }, "Internal tx secret misconfigured");
+      return c.json({ error: "Internal execution misconfigured" }, 500);
+    }
+
+    const payload = JSON.stringify(body);
+    const sigOk =
+      signature.length > 0 && verifyHmacHex(secret, payload, signature);
+    if (!sigOk) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    try {
+      const out = await runCondEvaluateAll();
+      return c.json(out);
+    } catch (err: any) {
+      logger.error({ err: err?.message }, "cond-evaluate-all failed");
+      return c.json(
+        { error: err?.message || "cond-evaluate-all failed" },
+        500,
+      );
+    }
+  },
+);
 
 export { app as internalRoutes };
 

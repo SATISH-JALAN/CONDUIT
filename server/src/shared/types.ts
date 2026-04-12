@@ -185,6 +185,12 @@ export const internalTxRequestSchema = z.object({
   request_ts: z.string().datetime(),
 });
 
+/** Signed body for Python / COND service to pull eligible wallets + mandates + positions. */
+export const internalCondSnapshotRequestSchema = z.object({
+  request_nonce: z.string().min(16).max(128),
+  request_ts: z.string().datetime(),
+});
+
 // ── Export types ──
 
 export type StellarAddress = z.infer<typeof stellarAddressSchema>;

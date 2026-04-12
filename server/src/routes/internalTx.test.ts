@@ -103,5 +103,51 @@ describe("internal tx routes", () => {
     const json = (await second.json()) as { error: string };
     expect(json.error).toMatch(/Replay/i);
   });
+
+  test("cond-snapshot rejects invalid signature", async () => {
+    process.env.COND_HMAC_SECRET = TEST_SECRET;
+
+    const body = {
+      request_nonce: `snap-${crypto.randomUUID()}`,
+      request_ts: new Date().toISOString(),
+    };
+
+    const res = await internalRoutes.request("/cond-snapshot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(401);
+  });
+
+  test("cond-snapshot accepts valid HMAC", async () => {
+    process.env.COND_HMAC_SECRET = TEST_SECRET;
+
+    const body = {
+      request_nonce: `snap-${crypto.randomUUID()}`,
+      request_ts: new Date().toISOString(),
+    };
+
+    const payload = JSON.stringify(body);
+    const sig = computeHmacHex(TEST_SECRET, payload);
+
+    const res = await internalRoutes.request("/cond-snapshot", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-cond-signature": sig,
+      },
+      body: payload,
+    });
+
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      ok: boolean;
+      candidates: unknown[];
+    };
+    expect(json.ok).toBe(true);
+    expect(Array.isArray(json.candidates)).toBe(true);
+  });
 });
 

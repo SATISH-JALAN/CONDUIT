@@ -10,6 +10,7 @@ import {
 } from "../shared/types.js";
 import { condDecisions, mandates, positions, users } from "../db/schema.js";
 import { logger } from "../shared/logger.js";
+import { runCondEvaluateForWallet } from "../shared/condEvaluate.js";
 
 const app = new Hono();
 
@@ -201,6 +202,28 @@ app.post("/kill-switch", zValidator("json", killSwitchSchema), async (c) => {
     );
     return c.json(
       { error: err.message || "Failed to toggle kill-switch" },
+      500,
+    );
+  }
+});
+
+app.post("/evaluate", async (c) => {
+  const wallet = c.get("wallet");
+
+  try {
+    const out = await runCondEvaluateForWallet(wallet);
+    return c.json(out);
+  } catch (err: any) {
+    const msg = typeof err?.message === "string" ? err.message : "";
+    if (msg.includes("COND_HMAC_SECRET")) {
+      return c.json(
+        { error: "COND evaluation is not configured on this server" },
+        503,
+      );
+    }
+    logger.error({ err: err?.message, wallet }, "Agent evaluate failed");
+    return c.json(
+      { error: err?.message || "Failed to run COND evaluation" },
       500,
     );
   }

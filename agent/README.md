@@ -68,3 +68,19 @@ Equivalent one-liner:
 ```bash
 curl -fsS -X POST "$COND_AGENT_URL/run-all" -H "X-Cond-Cron-Secret: $COND_CRON_SECRET"
 ```
+
+## Alternative: cron without Python (Bun on Render)
+
+If you do not deploy the Python sidecar, run the same batch job from the **server** package: it signs `POST /api/internal/cond-evaluate-all` with `COND_HMAC_SECRET`.
+
+On Render, add a **Cron Job** with the same env as the API (`COND_HMAC_SECRET`, `SERVER_PUBLIC_URL`), root directory **`server`**, command:
+
+```bash
+bun run cron:cond-evaluate-all
+```
+
+From the **repo root** (e.g. local crontab), use:
+
+```bash
+bash scripts/render-cron-cond-bun.sh
+```

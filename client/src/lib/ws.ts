@@ -28,10 +28,38 @@ function getReconnectDelay(): number {
 }
 
 /**
+ * Close the current socket (if any) and open a new one using the latest session token.
+ * Call after access token refresh so `/ws?token=` stays valid.
+ */
+export function reconnectWebSocket(): void {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  reconnectAttempts = 0;
+  if (socket) {
+    const s = socket;
+    s.onclose = null;
+    try {
+      s.close();
+    } catch {
+      // ignore
+    }
+    socket = null;
+  }
+  connect();
+}
+
+/**
  * Connect to WebSocket server
  */
 export function connect(wallet?: string): void {
-  if (socket?.readyState === WebSocket.OPEN) return;
+  if (
+    socket?.readyState === WebSocket.OPEN ||
+    socket?.readyState === WebSocket.CONNECTING
+  ) {
+    return;
+  }
 
   // Production-ready: server authenticates WS via JWT token, not by trusting wallet query params.
   void wallet; // wallet identity is derived from JWT on the server side.
@@ -106,4 +134,4 @@ export function send(msg: any): void {
   }
 }
 
-export const ws = { connect, disconnect, onMessage, send };
+export const ws = { connect, disconnect, reconnectWebSocket, onMessage, send };

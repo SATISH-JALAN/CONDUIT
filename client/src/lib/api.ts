@@ -31,8 +31,16 @@ let accessToken: string | null = readSessionStorage(ACCESS_TOKEN_STORAGE_KEY);
 let refreshToken: string | null = readSessionStorage(REFRESH_TOKEN_STORAGE_KEY);
 
 export function setAccessToken(token: string | null) {
+  const prev = accessToken;
   accessToken = token;
   writeSessionStorage(ACCESS_TOKEN_STORAGE_KEY, token);
+  if (prev !== token && typeof window !== "undefined") {
+    import("./ws")
+      .then((m) => m.reconnectWebSocket())
+      .catch(() => {
+        // ws module optional if tree-shaken in odd builds
+      });
+  }
 }
 
 export function getAccessToken(): string | null {

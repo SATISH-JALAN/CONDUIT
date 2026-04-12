@@ -3,8 +3,27 @@ import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Send, Bot, User, History, Settings2, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { api, type AgentStatusResponse } from '@/lib/api';
+import {
+  api,
+  getAccessToken,
+  readAccessTokenFromSession,
+  type AgentStatusResponse,
+} from '@/lib/api';
+import { ws, type CondActionEventData } from '@/lib/ws';
 import { useWalletStore } from '@/stores/walletStore';
+
+function parseCondActionData(raw: unknown): CondActionEventData | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const action = typeof o.action === 'string' ? o.action : null;
+  const reasoning = typeof o.reasoning === 'string' ? o.reasoning : null;
+  if (!action || !reasoning) return null;
+  const confidence =
+    typeof o.confidence === 'number' && Number.isFinite(o.confidence)
+      ? o.confidence
+      : 0.5;
+  return { action, reasoning, confidence };
+}
 
 type ChatMessage = { role: 'agent' | 'user'; content: string };
 
@@ -151,6 +170,33 @@ export function Agent() {
     };
 
     void load();
+  }, [isConnected, publicKey]);
+
+  // COND v1: show internal dry-run / notify decisions in chat when the server publishes COND_ACTION for this wallet.
+  useEffect(() => {
+    if (!isConnected || !publicKey) return;
+    const token = getAccessToken() ?? readAccessTokenFromSession();
+    if (!token) return;
+
+    ws.connect(publicKey);
+
+    const unsub = ws.onMessage((msg) => {
+      if (msg.type !== 'COND_ACTION') return;
+      const d = parseCondActionData(msg.data);
+      if (!d) return;
+      const pct = Math.round(Math.min(1, Math.max(0, d.confidence)) * 100);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          content: `[Live] COND ${d.action}: ${d.reasoning} (${pct}% confidence)`,
+        },
+      ]);
+    });
+
+    return () => {
+      unsub();
+    };
   }, [isConnected, publicKey]);
 
   const refreshStatus = async () => {

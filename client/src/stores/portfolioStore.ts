@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type { Anchor } from '@/lib/formula';
 import { calculateValue, calculatePendingYield, yieldPerSecond } from '@/lib/formula';
 import { api } from '@/lib/api';
-import { ws } from '@/lib/ws';
 
 interface Position {
   box_id: string;

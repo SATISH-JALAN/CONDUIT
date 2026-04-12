@@ -15,9 +15,20 @@ import uuid
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Header, HTTPException
 
 app = FastAPI(title="COND Agent Sidecar", version="0.1.0")
+
+
+def _verify_cron_secret(
+    x_cond_cron_secret: str | None = Header(default=None, alias="X-Cond-Cron-Secret"),
+) -> None:
+    """If COND_CRON_SECRET is set, POST /snapshot and /run-all require the same header (for public cron URLs)."""
+    expected = os.environ.get("COND_CRON_SECRET", "").strip()
+    if not expected:
+        return
+    if not x_cond_cron_secret or x_cond_cron_secret != expected:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-Cond-Cron-Secret")
 
 
 def _require_secret() -> str:
@@ -63,7 +74,7 @@ def health():
 
 
 @app.post("/snapshot")
-def snapshot():
+def snapshot(_: None = Depends(_verify_cron_secret)):
     body = {
         "request_nonce": f"py-{uuid.uuid4()}",
         "request_ts": datetime.now(timezone.utc)
@@ -77,7 +88,7 @@ def snapshot():
 
 
 @app.post("/run-all")
-def run_all():
+def run_all(_: None = Depends(_verify_cron_secret)):
     body = {
         "request_nonce": f"py-{uuid.uuid4()}",
         "request_ts": datetime.now(timezone.utc)

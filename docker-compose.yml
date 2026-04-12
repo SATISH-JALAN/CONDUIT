@@ -42,6 +42,8 @@ services:
       - "8088:8088"
     environment:
       COND_HMAC_SECRET: ${COND_HMAC_SECRET:-}
+      # Optional: require X-Cond-Cron-Secret on POST /run-all and /snapshot
+      COND_CRON_SECRET: ${COND_CRON_SECRET:-}
       SERVER_PUBLIC_URL: http://host.docker.internal:5000
     extra_hosts:
       - "host.docker.internal:host-gateway"

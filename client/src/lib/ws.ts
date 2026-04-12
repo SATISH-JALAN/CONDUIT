@@ -2,9 +2,16 @@ import type { Anchor } from './formula';
 
 type WSMessageHandler = (msg: WSMessage) => void;
 
+/** Payload for server `publishWalletEvent(..., { type: 'COND_ACTION', data })` (internal tx dry-run / notify). */
+export type CondActionEventData = {
+  action: string;
+  reasoning: string;
+  confidence: number;
+};
+
 export interface WSMessage {
   type: 'ANCHOR_UPDATE' | 'HARVEST_COMPLETE' | 'COND_ACTION' | 'APY_UPDATE';
-  data: any;
+  data: unknown;
 }
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:5000';

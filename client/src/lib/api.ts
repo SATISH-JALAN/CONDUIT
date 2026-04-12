@@ -39,6 +39,11 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
+/** Re-read token from session (e.g. after hydration) without relying on in-memory cache only. */
+export function readAccessTokenFromSession(): string | null {
+  return readSessionStorage(ACCESS_TOKEN_STORAGE_KEY);
+}
+
 export function setRefreshToken(token: string | null) {
   refreshToken = token;
   writeSessionStorage(REFRESH_TOKEN_STORAGE_KEY, token);

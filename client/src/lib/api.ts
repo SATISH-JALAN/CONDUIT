@@ -317,6 +317,21 @@ export const api = {
         method: "DELETE",
       },
     ),
+
+  // Feature 7: Creator Pools
+  getCreatorPools: () => request<{ pools: CreatorPoolSummary[] }>("/creators/pools"),
+
+  getCreatorPool: (id: string) =>
+    request<{ pool: CreatorPoolSummary }>(`/creators/pools/${encodeURIComponent(id)}`),
+
+  joinCreatorPool: (id: string, deposit_amount: number) =>
+    request<{ ok: boolean; poolId: string }>(
+      `/creators/pools/${encodeURIComponent(id)}/join`,
+      {
+        method: "POST",
+        body: JSON.stringify({ deposit_amount }),
+      },
+    ),
 };
 
 // ── Types ──
@@ -509,4 +524,23 @@ export interface CopyingResponse {
     active: boolean;
     updatedAt: string;
   }>;
+}
+
+export interface CreatorPoolSummary {
+  id: string;
+  name: string;
+  handle: string;
+  creatorWallet: string;
+  creatorShareBps: number;
+  tone: string | null;
+  blurb: string | null;
+  box: {
+    id: string;
+    name: string;
+    risk: "Low" | "Medium" | "High";
+    apyBps: number;
+  };
+  followers: number;
+  tvl: number;
+  fanApyHintBps: number | null;
 }

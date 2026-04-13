@@ -13,6 +13,7 @@ import { raceRoutes } from "./routes/race.js";
 import { agentRoutes } from "./routes/agent.js";
 import { nftRoutes } from "./routes/nfts.js";
 import { socialRoutes } from "./routes/social.js";
+import { creatorRoutes } from "./routes/creators.js";
 import { internalRoutes } from "./routes/internalTx.js";
 import { logger } from "./shared/logger.js";
 import { redis } from "./shared/redis.js";
@@ -99,6 +100,7 @@ app.route("/race", raceRoutes);
 app.route("/agent", agentRoutes);
 app.route("/nfts", nftRoutes);
 app.route("/social", socialRoutes);
+app.route("/creators", creatorRoutes);
 app.route("/internal", internalRoutes);
 
 // ── WebSocket upgrade map (used by Bun.serve) ──

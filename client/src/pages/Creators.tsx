@@ -1,66 +1,24 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Users, Heart, ArrowUpRight, Sparkles, ShieldCheck } from 'lucide-react';
+import { api, type CreatorPoolSummary } from '@/lib/api';
 
-export const CREATOR_POOLS = [
-  {
-    id: '1',
-    name: 'MacroWithMina',
-    handle: '@mina_macro',
-    followers: '128K',
-    tvl: '$420K',
-    share: '15%',
-    fanApy: '5.6%',
-    box: 'All Weather',
-    payout: '$12.4K',
-    tone: 'var(--surge)',
-    blurb: 'Macro commentary with low-volatility treasury rotation.',
-  },
-  {
-    id: '2',
-    name: 'BondNerd Daily',
-    handle: '@bondnerd',
-    followers: '92K',
-    tvl: '$310K',
-    share: '12%',
-    fanApy: '4.9%',
-    box: 'Safe Harbor',
-    payout: '$8.1K',
-    tone: 'var(--sky)',
-    blurb: 'Conservative bond ladder for steady fan savings.',
-  },
-  {
-    id: '3',
-    name: 'YieldCanvas',
-    handle: '@yieldcanvas',
-    followers: '76K',
-    tvl: '$188K',
-    share: '18%',
-    fanApy: '6.8%',
-    box: 'Yield Max',
-    payout: '$6.9K',
-    tone: 'var(--amber)',
-    blurb: 'Higher carry profile with active duration tilts.',
-  },
-  {
-    id: '4',
-    name: 'Satish Streams',
-    handle: '@satish_conduit',
-    followers: '54K',
-    tvl: '$142K',
-    share: '10%',
-    fanApy: 'Variable',
-    box: 'COND Custom',
-    payout: '$5.2K',
-    tone: 'var(--violet)',
-    blurb: 'AI-managed basket with transparent agent logs.',
-  },
-];
+function formatUsdCompact(value: number): string {
+  if (!Number.isFinite(value)) return '$0';
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
 
 export function Creators() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [pools, setPools] = useState<CreatorPoolSummary[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -72,6 +30,22 @@ export function Creators() {
     }, containerRef);
     return () => ctx.revert();
   }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await api.getCreatorPools();
+        setPools(res.pools);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
+  }, []);
+
+  const featured = pools[0] ?? null;
+  const rest = useMemo(() => pools.slice(1), [pools]);
 
   return (
     <AppLayout>
@@ -136,11 +110,11 @@ export function Creators() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr] lg:grid-rows-3">
-          {CREATOR_POOLS.slice(0, 1).map((pool) => (
+          {featured ? (
             <article
-              key={pool.id}
+              key={featured.id}
               className="creator-item paper-card spotlight-card p-6 md:p-7 border-t-[2px] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(0,0,0,0.09)] lg:row-span-2"
-              style={{ borderTopColor: pool.tone }}
+              style={{ borderTopColor: featured.tone ?? 'var(--surge)' }}
             >
               <div className="relative z-[1]">
                 <div className="flex items-start justify-between mb-5">
@@ -149,37 +123,37 @@ export function Creators() {
                       <span className="dot-live" />
                       <span className="text-mono text-[9px] uppercase tracking-[0.1em] text-[var(--surge)]">Featured Pool</span>
                     </div>
-                    <h3 className="font-display text-[28px] tracking-[-0.02em] text-[var(--ink-1)]">{pool.name}</h3>
-                    <div className="text-mono text-[11px] text-[var(--ink-2)] mt-1">{pool.handle}</div>
+                    <h3 className="font-display text-[28px] tracking-[-0.02em] text-[var(--ink-1)]">{featured.name}</h3>
+                    <div className="text-mono text-[11px] text-[var(--ink-2)] mt-1">{featured.handle}</div>
                   </div>
                   <Heart size={16} className="text-[var(--surge)]" />
                 </div>
 
-                <p className="font-secondary text-[15px] text-[var(--ink-1)]/80 mb-5 leading-[1.65]">{pool.blurb}</p>
+                <p className="font-secondary text-[15px] text-[var(--ink-1)]/80 mb-5 leading-[1.65]">{featured.blurb ?? 'Creator pool with transparent yield sharing.'}</p>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                   <div className="rounded-[var(--r-md)] bg-[var(--paper-1)] border border-[var(--paper-edge)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                     <div className="text-mono text-[9px] uppercase text-[var(--ink-2)] mb-1">Followers</div>
-                    <div className="font-display text-[22px] leading-none text-[var(--ink-1)]">{pool.followers}</div>
+                    <div className="font-display text-[22px] leading-none text-[var(--ink-1)]">{featured.followers.toLocaleString()}</div>
                   </div>
                   <div className="rounded-[var(--r-md)] bg-[var(--paper-1)] border border-[var(--paper-edge)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                     <div className="text-mono text-[9px] uppercase text-[var(--ink-2)] mb-1">TVL</div>
-                    <div className="font-display text-[22px] leading-none text-[var(--ink-1)]">{pool.tvl}</div>
+                    <div className="font-display text-[22px] leading-none text-[var(--ink-1)]">{formatUsdCompact(featured.tvl)}</div>
                   </div>
                   <div className="rounded-[var(--r-md)] bg-[var(--paper-1)] border border-[var(--paper-edge)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                     <div className="text-mono text-[9px] uppercase text-[var(--ink-2)] mb-1">Fan APY</div>
-                    <div className="font-display text-[22px] leading-none text-[var(--surge)]">{pool.fanApy}</div>
+                    <div className="font-display text-[22px] leading-none text-[var(--surge)]">{((featured.fanApyHintBps ?? featured.box.apyBps) / 100).toFixed(1)}%</div>
                   </div>
                   <div className="rounded-[var(--r-md)] bg-[var(--paper-1)] border border-[var(--paper-edge)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                     <div className="text-mono text-[9px] uppercase text-[var(--ink-2)] mb-1">Share</div>
-                    <div className="font-display text-[22px] leading-none" style={{ color: pool.tone }}>{pool.share}</div>
+                    <div className="font-display text-[22px] leading-none" style={{ color: featured.tone ?? 'var(--violet)' }}>{(featured.creatorShareBps / 100).toFixed(1)}%</div>
                   </div>
                 </div>
 
                 <div className="rounded-[var(--r-md)] bg-[var(--paper-1)] border border-[var(--paper-edge)] p-4 mb-5">
                   <div className="text-mono text-[10px] uppercase text-[var(--ink-2)] mb-2">Strategy Allocation</div>
                   <div className="flex items-center justify-between text-[13px] font-secondary text-[var(--ink-1)]/80 mb-2">
-                    <span>{pool.box}</span>
+                    <span>{featured.box.name}</span>
                     <span>Low-volatility core</span>
                   </div>
                   <div className="h-2 rounded-full bg-[var(--paper-3)] overflow-hidden">
@@ -188,7 +162,7 @@ export function Creators() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link to={`/creators/${pool.id}`} className="flex-1 px-3 py-2.5 rounded-[var(--r-md)] bg-[var(--surge)] hover:bg-[var(--surge-mid)] text-[12px] font-display text-white transition-colors inline-flex items-center justify-center gap-1.5">
+                  <Link to={`/creators/${featured.id}`} className="flex-1 px-3 py-2.5 rounded-[var(--r-md)] bg-[var(--surge)] hover:bg-[var(--surge-mid)] text-[12px] font-display text-white transition-colors inline-flex items-center justify-center gap-1.5">
                     View Pool <ArrowUpRight size={13} />
                   </Link>
                   <button className="px-3 py-2.5 rounded-[var(--r-md)] border border-[var(--surge-pale-2)] bg-[var(--surge-pale)] text-[12px] font-display text-[var(--surge)]">
@@ -197,13 +171,22 @@ export function Creators() {
                 </div>
               </div>
             </article>
-          ))}
+          ) : (
+            <div className="creator-item paper-card p-6 md:p-7 lg:row-span-2">
+              <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-[var(--ink-4)] mb-2">
+                Creator Pools
+              </div>
+              <div className="font-secondary text-[14px] text-[var(--ink-2)]">
+                {loading ? 'Loading pools…' : 'No pools available.'}
+              </div>
+            </div>
+          )}
 
-          {CREATOR_POOLS.slice(1).map((pool, idx) => (
+          {rest.map((pool, idx) => (
             <article
               key={pool.id}
               className="creator-item paper-card spotlight-card p-5 border-t-[2px] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.08)] lg:col-start-2"
-              style={{ borderTopColor: pool.tone, gridRowStart: idx + 1 }}
+              style={{ borderTopColor: pool.tone ?? 'var(--surge)', gridRowStart: idx + 1 }}
             >
               <div className="relative z-[1]">
                 <div className="flex items-start justify-between mb-3">
@@ -213,12 +196,12 @@ export function Creators() {
                   </div>
                   <Sparkles size={15} className="text-[var(--ink-2)]" />
                 </div>
-                <p className="font-secondary text-[14px] text-[var(--ink-1)]/80 mb-4 leading-[1.6]">{pool.blurb}</p>
+                <p className="font-secondary text-[14px] text-[var(--ink-1)]/80 mb-4 leading-[1.6]">{pool.blurb ?? 'Creator pool with transparent yield sharing.'}</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
-                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Followers</div><div className="font-secondary text-[14px] text-[var(--ink-1)]">{pool.followers}</div></div>
-                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Pool TVL</div><div className="font-secondary text-[14px] text-[var(--ink-1)]">{pool.tvl}</div></div>
-                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Fan APY</div><div className="font-secondary text-[14px] text-[var(--ink-1)]">{pool.fanApy}</div></div>
-                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Share</div><div className="font-display text-[22px] leading-none" style={{ color: pool.tone }}>{pool.share}</div></div>
+                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Followers</div><div className="font-secondary text-[14px] text-[var(--ink-1)]">{pool.followers.toLocaleString()}</div></div>
+                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Pool TVL</div><div className="font-secondary text-[14px] text-[var(--ink-1)]">{formatUsdCompact(pool.tvl)}</div></div>
+                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Fan APY</div><div className="font-secondary text-[14px] text-[var(--ink-1)]">{((pool.fanApyHintBps ?? pool.box.apyBps) / 100).toFixed(1)}%</div></div>
+                  <div><div className="text-mono text-[9px] uppercase text-[var(--ink-2)]">Share</div><div className="font-display text-[22px] leading-none" style={{ color: pool.tone ?? 'var(--surge)' }}>{(pool.creatorShareBps / 100).toFixed(1)}%</div></div>
                 </div>
                 <Link to={`/creators/${pool.id}`} className="w-full px-3 py-2 rounded-[var(--r-md)] bg-[var(--surge)] hover:bg-[var(--surge-mid)] text-[12px] font-display text-white transition-colors inline-flex items-center justify-center gap-1.5">
                   View Pool <ArrowUpRight size={13} />

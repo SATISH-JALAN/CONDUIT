@@ -135,6 +135,12 @@ export const copyPortfolioSchema = z.object({
   leader_wallet: stellarAddressSchema,
 });
 
+// ── Feature 7: Creator Pools ──
+
+export const creatorPoolJoinSchema = z.object({
+  deposit_amount: z.number().nonnegative().default(0),
+});
+
 // ── WebSocket Messages ──
 
 export const wsMessageSchema = z.discriminatedUnion("type", [

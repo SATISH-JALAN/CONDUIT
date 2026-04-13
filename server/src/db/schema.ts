@@ -337,3 +337,58 @@ export const portfolioCopies = pgTable(
     ),
   }),
 );
+
+// ── Feature 7: Creator Pools (off-chain demo layer) ──
+
+export const creatorPools = pgTable(
+  "creator_pools",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    handle: text("handle").notNull(),
+    creatorWallet: text("creator_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    boxId: text("box_id")
+      .notNull()
+      .references(() => bondBoxes.id),
+    creatorShareBps: integer("creator_share_bps").default(1000).notNull(), // 1000 = 10%
+    fanApyHintBps: integer("fan_apy_hint_bps"),
+    tone: text("tone"),
+    blurb: text("blurb"),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    activeIdx: index("creator_pools_active_idx").on(table.active, table.createdAt),
+  }),
+);
+
+export const creatorPoolMemberships = pgTable(
+  "creator_pool_memberships",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    poolId: text("pool_id")
+      .notNull()
+      .references(() => creatorPools.id, { onDelete: "cascade" }),
+    fanWallet: text("fan_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    depositAmount: numeric("deposit_amount", { precision: 20, scale: 7 })
+      .default("0")
+      .notNull(),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    poolFanUnique: uniqueIndex("creator_pool_memberships_pool_fan_idx").on(
+      table.poolId,
+      table.fanWallet,
+    ),
+    poolJoinedIdx: index("creator_pool_memberships_pool_idx").on(
+      table.poolId,
+      table.joinedAt,
+    ),
+  }),
+);

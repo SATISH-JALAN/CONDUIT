@@ -271,6 +271,9 @@ export const api = {
       status ? `/nfts?status=${encodeURIComponent(status)}` : "/nfts",
     ),
 
+  getNftAccreditation: () =>
+    request<NftAccreditationResponse>("/nfts/accreditation"),
+
   mintNft: (payload: {
     box_id: string;
     notional: number;
@@ -515,6 +518,22 @@ export interface NftItem {
   txHash: string | null;
   mintedAt: string;
   expiresAt: string;
+}
+
+export interface NftAccreditationResponse {
+  ok: boolean;
+  enforceAccreditation: boolean;
+  eligible: boolean;
+  verification: {
+    enabled: boolean;
+    ok: boolean;
+    method: string;
+    contractId: string | null;
+    latencyMs: number;
+    value: boolean | null;
+    error?: string;
+    fallbackReason?: string;
+  };
 }
 
 export interface CopyingResponse {

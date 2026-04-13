@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Sparkles, ShieldCheck, ArrowUpRight, Ticket } from 'lucide-react';
-import { api, type BondBox, type NftItem } from '@/lib/api';
+import { api, type BondBox, type NftAccreditationResponse, type NftItem } from '@/lib/api';
 import { useWalletStore } from '@/stores/walletStore';
 
 function formatMoney(value: number) {
@@ -25,9 +25,13 @@ export function NFTs() {
   const { isConnected } = useWalletStore();
   const [marketItems, setMarketItems] = React.useState<NftItem[]>([]);
   const [myItems, setMyItems] = React.useState<NftItem[]>([]);
+  const [view, setView] = React.useState<'market' | 'mine'>('market');
   const [boxes, setBoxes] = React.useState<BondBox[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [minting, setMinting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [accreditation, setAccreditation] =
+    React.useState<NftAccreditationResponse | null>(null);
   const [mintForm, setMintForm] = React.useState({
     boxId: '',
     notional: 100,
@@ -36,6 +40,7 @@ export function NFTs() {
 
   const refreshData = React.useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [market, bondBoxes] = await Promise.all([
         api.getNftMarket(30),
@@ -49,13 +54,18 @@ export function NFTs() {
       }
 
       if (isConnected) {
-        const mine = await api.getMyNfts();
+        const [mine, acc] = await Promise.all([
+          api.getMyNfts(),
+          api.getNftAccreditation().catch(() => null),
+        ]);
         setMyItems(mine.items);
+        setAccreditation(acc);
       } else {
         setMyItems([]);
+        setAccreditation(null);
       }
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load NFTs.');
     } finally {
       setLoading(false);
     }
@@ -77,7 +87,14 @@ export function NFTs() {
     void refreshData();
   }, [refreshData]);
 
-  const visibleItems = isConnected ? myItems : marketItems;
+  useEffect(() => {
+    setView(isConnected ? 'mine' : 'market');
+  }, [isConnected]);
+
+  const visibleItems = useMemo(() => {
+    if (view === 'mine') return myItems;
+    return marketItems;
+  }, [marketItems, myItems, view]);
   const avgYield =
     visibleItems.length > 0
       ? visibleItems.reduce((sum, item) => sum + item.yieldBps, 0) /
@@ -89,6 +106,7 @@ export function NFTs() {
   const mint = async () => {
     if (!isConnected || !mintForm.boxId || minting) return;
     setMinting(true);
+    setError(null);
 
     try {
       await api.mintNft({
@@ -97,8 +115,8 @@ export function NFTs() {
         duration_days: mintForm.durationDays,
       });
       await refreshData();
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Mint failed.');
     } finally {
       setMinting(false);
     }
@@ -108,8 +126,8 @@ export function NFTs() {
     try {
       await api.redeemNft(id);
       await refreshData();
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Redeem failed.');
     }
   };
 
@@ -120,8 +138,8 @@ export function NFTs() {
     try {
       await api.transferNft(id, toWallet.trim());
       await refreshData();
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Transfer failed.');
     }
   };
 
@@ -176,6 +194,28 @@ export function NFTs() {
               <li>Real-time stream preview before purchase confirmation.</li>
             </ul>
 
+            {error && (
+              <div className="mt-4 p-3 rounded-(--r-md) border border-(--rose) bg-(--rose)/10 text-[13px] text-(--ink-1)">
+                {error}
+              </div>
+            )}
+
+            {isConnected && accreditation && (
+              <div className="mt-4 p-3 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] text-(--ink-2)">
+                <div className="text-mono text-[10px] uppercase tracking-wider text-(--ink-4) mb-1">
+                  Accreditation check
+                </div>
+                <div>
+                  {accreditation.eligible
+                    ? 'Eligible for mint/transfer.'
+                    : 'Not eligible for mint/transfer on this deployment.'}
+                  {accreditation.verification?.fallbackReason
+                    ? ` (${accreditation.verification.fallbackReason})`
+                    : ''}
+                </div>
+              </div>
+            )}
+
             {isConnected && (
               <div className="mt-5 pt-4 border-t border-(--paper-edge) space-y-3">
                 <h3 className="font-display text-[16px] text-(--ink-1)">Mint Yield NFT</h3>
@@ -222,7 +262,7 @@ export function NFTs() {
                 <button
                   type="button"
                   onClick={mint}
-                  disabled={minting || loading}
+                  disabled={minting || loading || (accreditation ? !accreditation.eligible : false)}
                   className="w-full px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
                 >
                   {minting ? 'Minting...' : 'Mint NFT'}
@@ -231,6 +271,42 @@ export function NFTs() {
             )}
           </div>
         </section>
+
+        <div className="nft-item mb-6 flex items-center justify-between gap-3">
+          <div className="inline-flex rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) p-1">
+            <button
+              type="button"
+              onClick={() => setView('market')}
+              className={`px-3 py-1.5 rounded-(--r-sm) text-[12px] font-display ${
+                view === 'market'
+                  ? 'bg-(--paper-1) text-(--ink-1)'
+                  : 'text-(--ink-3)'
+              }`}
+            >
+              Market
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('mine')}
+              disabled={!isConnected}
+              className={`px-3 py-1.5 rounded-(--r-sm) text-[12px] font-display disabled:opacity-50 ${
+                view === 'mine'
+                  ? 'bg-(--paper-1) text-(--ink-1)'
+                  : 'text-(--ink-3)'
+              }`}
+            >
+              My NFTs
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => void refreshData()}
+            disabled={loading}
+            className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2) disabled:opacity-50"
+          >
+            Refresh
+          </button>
+        </div>
 
         <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {visibleItems.map((item) => (

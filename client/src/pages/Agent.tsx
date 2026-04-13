@@ -7,6 +7,7 @@ import {
   api,
   getAccessToken,
   readAccessTokenFromSession,
+  type AgentProposalItem,
   type AgentStatusResponse,
 } from '@/lib/api';
 import { ws, type CondActionEventData } from '@/lib/ws';
@@ -79,6 +80,11 @@ export function Agent() {
   const [sending, setSending] = useState(false);
   const [updatingMandate, setUpdatingMandate] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
+  const [proposals, setProposals] = useState<AgentProposalItem[]>([]);
+  const [loadingProposals, setLoadingProposals] = useState(false);
+  const [decidingProposalId, setDecidingProposalId] = useState<string | null>(
+    null,
+  );
 
   const quickPrompts = [
     'Rebalance for lower risk',
@@ -206,6 +212,71 @@ export function Agent() {
       setStatus(next);
     } catch {
       // no-op
+    }
+  };
+
+  const refreshProposals = async () => {
+    if (!isConnected) return;
+    setLoadingProposals(true);
+    try {
+      const next = await api.getAgentProposals();
+      setProposals(next.proposals);
+    } catch {
+      setProposals([]);
+    } finally {
+      setLoadingProposals(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isConnected) {
+      setProposals([]);
+      return;
+    }
+    void refreshProposals();
+  }, [isConnected, publicKey]);
+
+  const approveProposal = async (id: string) => {
+    if (!isConnected || decidingProposalId) return;
+    setDecidingProposalId(id);
+    try {
+      const res = await api.approveAgentProposal(id);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'agent', content: `Approved proposal. Status: ${res.status}` },
+      ]);
+      await refreshProposals();
+      await refreshStatus();
+    } catch (err: any) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          content: err?.message || 'Failed to approve proposal.',
+        },
+      ]);
+    } finally {
+      setDecidingProposalId(null);
+    }
+  };
+
+  const denyProposal = async (id: string) => {
+    if (!isConnected || decidingProposalId) return;
+    setDecidingProposalId(id);
+    try {
+      const res = await api.denyAgentProposal(id);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'agent', content: `Denied proposal. Status: ${res.status}` },
+      ]);
+      await refreshProposals();
+    } catch (err: any) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'agent', content: err?.message || 'Failed to deny proposal.' },
+      ]);
+    } finally {
+      setDecidingProposalId(null);
     }
   };
 
@@ -389,6 +460,77 @@ export function Agent() {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-medium text-[16px] text-(--ink-1)">
+                  Pending approvals
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => void refreshProposals()}
+                  disabled={!isConnected || loadingProposals}
+                  className="px-2 py-1 rounded-(--r-sm) border border-(--paper-edge) bg-(--paper-2) text-[11px] text-(--ink-2) disabled:opacity-50"
+                >
+                  {loadingProposals ? 'Loading…' : 'Refresh'}
+                </button>
+              </div>
+
+              {proposals.filter((p) => p.status === 'pending').length === 0 ? (
+                <p className="font-secondary text-[13px] text-(--ink-3)">
+                  No pending proposals right now.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {proposals
+                    .filter((p) => p.status === 'pending')
+                    .slice(0, 5)
+                    .map((p) => {
+                      const pct =
+                        p.confidence === null
+                          ? null
+                          : Math.round(
+                              Math.min(1, Math.max(0, p.confidence)) * 100,
+                            );
+                      return (
+                        <div
+                          key={p.id}
+                          className="p-3 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2)"
+                        >
+                          <div className="text-mono text-[10px] uppercase tracking-wider text-(--ink-4)">
+                            {p.action}
+                            {pct !== null ? ` • ${pct}%` : ''}
+                          </div>
+                          <div className="font-secondary text-[13px] text-(--ink-1) mt-1">
+                            {p.reasoning}
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void approveProposal(p.id)}
+                              disabled={decidingProposalId === p.id}
+                              className="flex-1 px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void denyProposal(p.id)}
+                              disabled={decidingProposalId === p.id}
+                              className="flex-1 px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-1) text-[12px] font-display text-(--ink-2) disabled:opacity-50"
+                            >
+                              Deny
+                            </button>
+                          </div>
+                          <p className="mt-2 text-[11px] text-(--ink-4) font-secondary">
+                            Approve records a dry-run internal action (no on-chain execution).
+                          </p>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
 
             <div className="bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6">

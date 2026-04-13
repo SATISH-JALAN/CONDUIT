@@ -10,7 +10,8 @@ import {
 } from "../shared/types.js";
 import { condDecisions, mandates, positions, users } from "../db/schema.js";
 import { logger } from "../shared/logger.js";
-import { runCondEvaluateForWallet } from "../shared/condEvaluate.js";
+import { submitCondAction, runCondEvaluateForWallet } from "../shared/condEvaluate.js";
+import { condProposals } from "../db/schema.js";
 
 const app = new Hono();
 
@@ -226,6 +227,150 @@ app.post("/evaluate", async (c) => {
       { error: err?.message || "Failed to run COND evaluation" },
       500,
     );
+  }
+});
+
+app.get("/proposals", async (c) => {
+  const wallet = c.get("wallet");
+
+  try {
+    const rows = await db
+      .select({
+        id: condProposals.id,
+        action: condProposals.action,
+        reasoning: condProposals.reasoning,
+        confidence: condProposals.confidence,
+        status: condProposals.status,
+        createdAt: condProposals.createdAt,
+      })
+      .from(condProposals)
+      .where(eq(condProposals.wallet, wallet))
+      .orderBy(desc(condProposals.createdAt))
+      .limit(20);
+
+    return c.json({
+      wallet,
+      proposals: rows.map((r) => ({
+        id: r.id,
+        action: r.action,
+        reasoning: r.reasoning,
+        confidence: r.confidence ? Number(r.confidence) : null,
+        status: r.status,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    });
+  } catch (err: any) {
+    const isMissingTable =
+      typeof err?.code === "string"
+        ? err.code === "42P01"
+        : typeof err?.message === "string" &&
+          err.message.includes('relation "cond_proposals" does not exist');
+    if (isMissingTable) {
+      return c.json({ wallet, proposals: [], warning: "cond_proposals_not_migrated" });
+    }
+    logger.error({ err: err.message, wallet }, "Agent proposals fetch failed");
+    return c.json(
+      { error: err.message || "Failed to load proposals" },
+      500,
+    );
+  }
+});
+
+app.post("/proposals/:id/approve", async (c) => {
+  const wallet = c.get("wallet");
+  const id = c.req.param("id");
+
+  try {
+    const [row] = await db
+      .select()
+      .from(condProposals)
+      .where(and(eq(condProposals.id, id), eq(condProposals.wallet, wallet)))
+      .limit(1);
+
+    if (!row) return c.json({ error: "Proposal not found" }, 404);
+    if (row.status !== "pending") {
+      return c.json({ error: "Only pending proposals can be approved" }, 400);
+    }
+
+    await db
+      .update(condProposals)
+      .set({ status: "approved", decidedAt: new Date() })
+      .where(eq(condProposals.id, id));
+
+    const confidence =
+      typeof row.confidence === "string" ? Number(row.confidence) : 0.5;
+    const action = row.action;
+    if (
+      action !== "harvest" &&
+      action !== "rebalance" &&
+      action !== "rotate" &&
+      action !== "notify"
+    ) {
+      return c.json({ error: "Unsupported proposal action" }, 400);
+    }
+    const result = await submitCondAction({
+      wallet,
+      action,
+      params: (row.params ?? {}) as Record<string, unknown>,
+      reasoning: row.reasoning,
+      confidence: Number.isFinite(confidence) ? confidence : 0.5,
+    });
+
+    if (result.ok) {
+      await db
+        .update(condProposals)
+        .set({ status: "submitted" })
+        .where(eq(condProposals.id, id));
+    }
+
+    return c.json({ ok: true, id, status: result.ok ? "submitted" : "approved", submit: result });
+  } catch (err: any) {
+    const isMissingTable =
+      typeof err?.code === "string"
+        ? err.code === "42P01"
+        : typeof err?.message === "string" &&
+          err.message.includes('relation "cond_proposals" does not exist');
+    if (isMissingTable) {
+      return c.json({ error: "COND proposals are not migrated on this server yet" }, 503);
+    }
+    logger.error({ err: err.message, wallet, id }, "Approve proposal failed");
+    return c.json({ error: err.message || "Failed to approve proposal" }, 500);
+  }
+});
+
+app.post("/proposals/:id/deny", async (c) => {
+  const wallet = c.get("wallet");
+  const id = c.req.param("id");
+
+  try {
+    const [row] = await db
+      .select()
+      .from(condProposals)
+      .where(and(eq(condProposals.id, id), eq(condProposals.wallet, wallet)))
+      .limit(1);
+
+    if (!row) return c.json({ error: "Proposal not found" }, 404);
+    if (row.status !== "pending") {
+      return c.json({ error: "Only pending proposals can be denied" }, 400);
+    }
+
+    await db
+      .update(condProposals)
+      .set({ status: "denied", decidedAt: new Date() })
+      .where(eq(condProposals.id, id));
+
+    return c.json({ ok: true, id, status: "denied" });
+  } catch (err: any) {
+    const isMissingTable =
+      typeof err?.code === "string"
+        ? err.code === "42P01"
+        : typeof err?.message === "string" &&
+          err.message.includes('relation "cond_proposals" does not exist');
+    if (isMissingTable) {
+      return c.json({ error: "COND proposals are not migrated on this server yet" }, 503);
+    }
+    logger.error({ err: err.message, wallet, id }, "Deny proposal failed");
+    return c.json({ error: err.message || "Failed to deny proposal" }, 500);
   }
 });
 

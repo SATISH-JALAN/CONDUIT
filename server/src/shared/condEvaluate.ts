@@ -25,6 +25,46 @@ export type CondEvaluateResultItem = {
   body: unknown;
 };
 
+export async function submitCondAction(opts: {
+  wallet: string;
+  action: InternalTxBody["action"];
+  params: Record<string, unknown>;
+  reasoning: string;
+  confidence: number;
+}): Promise<CondEvaluateResultItem> {
+  const secret = requireCondSecret();
+  const baseUrl = getServerBaseUrlForInternalCalls();
+
+  const body: InternalTxBody = {
+    wallet: opts.wallet,
+    action: opts.action,
+    dry_run: true,
+    params: {
+      ...opts.params,
+      reasoning: opts.reasoning,
+      confidence: opts.confidence,
+    },
+    request_nonce: `cond-${crypto.randomUUID()}`,
+    request_ts: new Date().toISOString(),
+  };
+
+  try {
+    const r = await postInternalTx({ baseUrl, secret, body });
+    return { action: opts.action, status: r.status, ok: r.ok, body: r.json };
+  } catch (err: any) {
+    logger.error(
+      { err: err?.message, wallet: opts.wallet, action: opts.action },
+      "COND submit action failed",
+    );
+    return {
+      action: opts.action,
+      status: 0,
+      ok: false,
+      body: { error: err?.message || "fetch_failed" },
+    };
+  }
+}
+
 /**
  * Submit rule proposals as dry-run internal tx calls (HMAC to /api/internal/tx).
  */

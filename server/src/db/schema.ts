@@ -392,3 +392,43 @@ export const creatorPoolMemberships = pgTable(
     ),
   }),
 );
+
+// ── Feature 9: COND v2 proposals (Gemini/LangGraph) ──
+
+export const condProposalStatusEnum = pgEnum("cond_proposal_status", [
+  "pending",
+  "approved",
+  "denied",
+  "submitted",
+]);
+
+export const condProposals = pgTable(
+  "cond_proposals",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    wallet: text("wallet")
+      .notNull()
+      .references(() => users.wallet, { onDelete: "cascade" }),
+    source: text("source").default("gemini").notNull(),
+    action: text("action").notNull(),
+    params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+    reasoning: text("reasoning").notNull(),
+    confidence: numeric("confidence", { precision: 4, scale: 3 }),
+    status: condProposalStatusEnum("status").default("pending").notNull(),
+    requestNonce: text("request_nonce").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    decidedAt: timestamp("decided_at"),
+  },
+  (table) => ({
+    nonceUnique: uniqueIndex("cond_proposals_request_nonce_idx").on(
+      table.requestNonce,
+    ),
+    walletStatusCreatedIdx: index("cond_proposals_wallet_status_created_idx").on(
+      table.wallet,
+      table.status,
+      table.createdAt,
+    ),
+  }),
+);

@@ -149,5 +149,57 @@ describe("internal tx routes", () => {
     expect(json.ok).toBe(true);
     expect(Array.isArray(json.candidates)).toBe(true);
   });
+
+  test("cond-proposal rejects invalid signature", async () => {
+    process.env.COND_HMAC_SECRET = TEST_SECRET;
+
+    const body = {
+      wallet: TEST_WALLET,
+      action: "notify",
+      params: { message: "hi" },
+      reasoning: "proposal test",
+      confidence: 0.55,
+      request_nonce: `prop-${crypto.randomUUID()}`,
+      request_ts: new Date().toISOString(),
+    };
+
+    const res = await internalRoutes.request("/cond-proposal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    expect(res.status).toBe(401);
+  });
+
+  test("cond-proposal accepts valid HMAC", async () => {
+    process.env.COND_HMAC_SECRET = TEST_SECRET;
+
+    const body = {
+      wallet: TEST_WALLET,
+      action: "notify",
+      params: { message: "hi" },
+      reasoning: "proposal test",
+      confidence: 0.55,
+      request_nonce: `prop-${crypto.randomUUID()}`,
+      request_ts: new Date().toISOString(),
+    };
+
+    const payload = JSON.stringify(body);
+    const sig = computeHmacHex(TEST_SECRET, payload);
+
+    const res = await internalRoutes.request("/cond-proposal", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-cond-signature": sig,
+      },
+      body: payload,
+    });
+
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { ok: boolean; proposalId: string | null };
+    expect(json.ok).toBe(true);
+  });
 });
 

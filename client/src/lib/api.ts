@@ -262,6 +262,22 @@ export const api = {
   runAgentEvaluate: () =>
     request<AgentEvaluateResponse>("/agent/evaluate", { method: "POST" }),
 
+  // Feature 9: COND v2 proposals (review + approve)
+  getAgentProposals: () =>
+    request<AgentProposalsResponse>("/agent/proposals"),
+
+  approveAgentProposal: (id: string) =>
+    request<{ ok: boolean; id: string; status: string; submit?: unknown }>(
+      `/agent/proposals/${encodeURIComponent(id)}/approve`,
+      { method: "POST" },
+    ),
+
+  denyAgentProposal: (id: string) =>
+    request<{ ok: boolean; id: string; status: string }>(
+      `/agent/proposals/${encodeURIComponent(id)}/deny`,
+      { method: "POST" },
+    ),
+
   // Feature 4: Yield NFTs
   getNftMarket: (limit = 20) =>
     request<{ items: NftItem[] }>(`/nfts/market?limit=${limit}`),
@@ -505,6 +521,20 @@ export interface AgentEvaluateResponse {
     ok: boolean;
     body: unknown;
   }>;
+}
+
+export interface AgentProposalItem {
+  id: string;
+  action: string;
+  reasoning: string;
+  confidence: number | null;
+  status: "pending" | "approved" | "denied" | "submitted";
+  createdAt: string;
+}
+
+export interface AgentProposalsResponse {
+  wallet: string;
+  proposals: AgentProposalItem[];
 }
 
 export interface NftItem {

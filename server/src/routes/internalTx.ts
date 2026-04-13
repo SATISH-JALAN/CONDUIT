@@ -4,14 +4,16 @@ import { db } from "../shared/db.js";
 import { condDecisions, internalTxAudits, mandates, users } from "../db/schema.js";
 import {
   internalCondSnapshotRequestSchema,
+  condProposalSchema,
   internalTxRequestSchema,
 } from "../shared/types.js";
 import { verifyHmacHex } from "../shared/hmac.js";
 import { buildCondSnapshot } from "../shared/condSnapshot.js";
 import { runCondEvaluateAll } from "../shared/condEvaluate.js";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { logger } from "../shared/logger.js";
 import { publishWalletEvent } from "../shared/redis.js";
+import { condProposals } from "../db/schema.js";
 
 const app = new Hono();
 
@@ -324,6 +326,110 @@ app.post(
         { error: err?.message || "cond-evaluate-all failed" },
         500,
       );
+    }
+  },
+);
+
+// POST /api/internal/cond-proposal — HMAC ingest for Gemini/LangGraph proposals.
+app.post(
+  "/cond-proposal",
+  zValidator("json", condProposalSchema),
+  async (c) => {
+    const signatureHeader = c.req.header("x-cond-signature") || "";
+    const signature = normalizeHex(signatureHeader);
+    const body = c.req.valid("json");
+    const requestTs = parseIso(body.request_ts);
+
+    const MAX_SKEW_MS = 2 * 60 * 1000;
+    if (!requestTs) return c.json({ error: "Invalid request_ts" }, 400);
+    if (Math.abs(Date.now() - requestTs.getTime()) > MAX_SKEW_MS) {
+      return c.json({ error: "Request timestamp outside allowed window" }, 401);
+    }
+
+    let secret: string;
+    try {
+      secret = requireCondSecret();
+    } catch (err: any) {
+      logger.error({ err: err.message }, "Internal tx secret misconfigured");
+      return c.json({ error: "Internal execution misconfigured" }, 500);
+    }
+
+    const payload = JSON.stringify(body);
+    const sigOk =
+      signature.length > 0 && verifyHmacHex(secret, payload, signature);
+    if (!sigOk) return c.json({ error: "Unauthorized" }, 401);
+
+    // ensure user row for FK
+    await db.insert(users).values({ wallet: body.wallet }).onConflictDoNothing();
+
+    // store proposal (nonce unique prevents replay)
+    try {
+      const [created] = await db
+        .insert(condProposals)
+        .values({
+          wallet: body.wallet,
+          source: "gemini",
+          action: body.action,
+          params: body.params ?? {},
+          reasoning: body.reasoning,
+          confidence: body.confidence.toFixed(3),
+          status: "pending",
+          requestNonce: body.request_nonce,
+          createdAt: new Date(),
+        })
+        .returning();
+
+      await publishWalletEvent(body.wallet, {
+        type: "COND_ACTION",
+        data: {
+          action: `proposal:${created.action}`,
+          reasoning: created.reasoning,
+          confidence: Number(created.confidence ?? "0.5"),
+        },
+      });
+
+      return c.json({ ok: true, proposalId: created.id });
+    } catch (err: any) {
+      const isMissingTable =
+        typeof err?.code === "string"
+          ? err.code === "42P01"
+          : typeof err?.message === "string" &&
+            err.message.includes('relation "cond_proposals" does not exist');
+      if (isMissingTable) {
+        // Backwards-compatible: don't break deployments/tests that haven't migrated yet.
+        // Proposal persistence will be enabled once 0007_cond_v2_proposals is migrated.
+        await publishWalletEvent(body.wallet, {
+          type: "COND_ACTION",
+          data: {
+            action: `proposal:${body.action}`,
+            reasoning: body.reasoning,
+            confidence: body.confidence,
+          },
+        });
+        return c.json({
+          ok: true,
+          proposalId: null,
+          warning: "cond_proposals_not_migrated",
+        });
+      }
+      const message = typeof err?.message === "string" ? err.message : "";
+      const isUniqueViolation =
+        typeof err?.code === "string"
+          ? err.code === "23505"
+          : message.includes("duplicate key") ||
+            message.includes("cond_proposals_request_nonce_idx");
+      if (isUniqueViolation) {
+        // idempotent: return latest pending proposal for this nonce if any
+        const existing = await db
+          .select({ id: condProposals.id })
+          .from(condProposals)
+          .where(eq(condProposals.requestNonce, body.request_nonce))
+          .orderBy(desc(condProposals.createdAt))
+          .limit(1);
+        return c.json({ ok: true, proposalId: existing[0]?.id ?? null });
+      }
+      logger.error({ err }, "cond-proposal insert failed");
+      return c.json({ error: "Failed to record proposal" }, 500);
     }
   },
 );

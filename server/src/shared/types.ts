@@ -197,6 +197,18 @@ export const internalCondSnapshotRequestSchema = z.object({
   request_ts: z.string().datetime(),
 });
 
+// ── Feature 9: COND v2 proposals ──
+
+export const condProposalSchema = z.object({
+  wallet: stellarAddressSchema,
+  action: internalTxActionSchema,
+  params: z.record(z.unknown()).default({}),
+  reasoning: z.string().min(1).max(2000),
+  confidence: z.number().min(0).max(1),
+  request_nonce: z.string().min(16).max(128),
+  request_ts: z.string().datetime(),
+});
+
 // ── Export types ──
 
 export type StellarAddress = z.infer<typeof stellarAddressSchema>;

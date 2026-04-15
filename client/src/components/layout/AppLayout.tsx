@@ -35,7 +35,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Creators', path: '/creators', icon: Users },
   ];
 
-  const mobileBottomItems = navItems.slice(0, 5);
+  const MOBILE_NAV_ITEM_LIMIT = 5;
+  const mobileBottomItems = navItems.slice(0, MOBILE_NAV_ITEM_LIMIT);
+  // Keeps content visible above the fixed mobile bottom nav.
   const mobileContentPaddingClass = 'pb-24';
   const isNavItemActive = (itemPath: string, itemName: string) =>
     location.pathname === itemPath || (location.pathname === '/dashboard' && itemName === 'Stream');
@@ -133,7 +135,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className={cn('flex-1 p-4 md:p-8 lg:pb-8 overflow-x-hidden', mobileContentPaddingClass)}>
-          {/* mobileContentPaddingClass keeps content visible above the fixed mobile bottom nav. */}
           {children}
         </div>
       </main>

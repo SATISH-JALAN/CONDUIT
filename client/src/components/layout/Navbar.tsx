@@ -95,6 +95,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-4">
           <button
+            type="button"
             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-(--ink-2)"
             onClick={() => setIsMobileMenuOpen((open) => !open)}

@@ -9,7 +9,6 @@ import {
   Image as ImageIcon, 
   Users, 
   BookOpen,
-  Settings,
   Bell,
   Menu,
   X
@@ -20,10 +19,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { publicKey } = useWalletStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => {
-    const path = location.pathname.split('/')[1];
-    return path ? path.charAt(0).toUpperCase() + path.slice(1) : 'Stream';
-  });
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -38,8 +33,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Docs', path: '/docs', icon: BookOpen },
     { name: 'NFTs', path: '/nfts', icon: ImageIcon },
     { name: 'Creators', path: '/creators', icon: Users },
-    { name: 'Settings', path: '#', icon: Settings },
   ];
+
+  const MOBILE_NAV_ITEM_LIMIT = 5;
+  const mobileBottomItems = navItems.slice(0, MOBILE_NAV_ITEM_LIMIT);
+  // Keeps content visible above the fixed mobile bottom nav.
+  const mobileContentPaddingClass = 'pb-24';
+  const isNavItemActive = (itemPath: string, itemName: string) =>
+    location.pathname === itemPath || (location.pathname === '/dashboard' && itemName === 'Stream');
 
   return (
     <div className="min-h-screen bg-(--paper-1) flex">
@@ -74,12 +75,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || (location.pathname === '/dashboard' && item.name === 'Stream');
+            const isActive = isNavItemActive(item.path, item.name);
             return (
               <Link
                 key={item.name}
                 to={item.path}
-                onClick={() => setActiveTab(item.name)}
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-3 rounded-(--r-md) font-display text-[12px] transition-all duration-200 group',
                   isActive 
@@ -134,10 +134,37 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
+        <div className={cn('flex-1 p-4 md:p-8 lg:pb-8 overflow-x-hidden', mobileContentPaddingClass)}>
           {children}
         </div>
       </main>
+
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 frosted-heavy border-t border-(--paper-edge) px-2 py-2">
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: `repeat(${mobileBottomItems.length}, minmax(0, 1fr))` }}
+        >
+          {mobileBottomItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isNavItemActive(item.path, item.name);
+            return (
+              <Link
+                key={`mobile-${item.name}`}
+                to={item.path}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-1 py-2 rounded-(--r-md)',
+                  isActive ? 'bg-(--surge-pale)' : 'hover:bg-(--paper-2)'
+                )}
+              >
+                <Icon size={16} className={cn(isActive ? 'text-(--surge)' : 'text-(--ink-3)')} />
+                <span className={cn('font-display text-[10px]', isActive ? 'text-(--surge)' : 'text-(--ink-3)')}>
+                  {item.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

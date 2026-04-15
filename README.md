@@ -30,9 +30,12 @@ Conduit has been built and validated as a real-world Stellar Testnet MVP with us
 ### Submission Evidence
 
 - Repository: [Conduit GitHub](https://github.com/SATISH-JALAN/Conduit)
-- Live demo: _Add deployed app URL (Vercel/Netlify)_
-- Demo video: _Add full MVP walkthrough video URL_
+- Live demo: [Conduit on GitHub Pages](https://satish-jalan.github.io/CONDUIT/)
+- Demo video: _Pending (intentionally not added yet)_
 - User feedback export (Google Sheet): [Blue Belt User Responses](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
+- CI pipeline (PR + push quality checks): [CI Workflow](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci.yml)
+- CD pipeline (auto frontend deploy on `main`): [CD Workflow](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/cd.yml)
+- Workflow run history: [GitHub Actions Runs](https://github.com/SATISH-JALAN/CONDUIT/actions)
 ### Verified Testnet Users (5+)
 
 Add at least 5 real tester wallet addresses below and keep them verifiable on Stellar Explorer:
@@ -50,8 +53,9 @@ Add at least 5 real tester wallet addresses below and keep them verifiable on St
 | MVP fully functional       | ✅ Done          | Live product flows implemented across Home, Bonds, Dashboard, Agent, Race, NFTs, Creators |
 | 5+ real testnet users      | ✅ In Validation | User onboarding + feedback collection sheet linked above                                  |
 | Feedback documented        | ✅ Done          | Structured feedback questions and exported response sheet                                 |
-| 1 iteration completed      | ✅ Done          | Mobile UX and header/navigation improvements integrated                                   |
+| 1 iteration completed      | ✅ Done          | Mobile UX improvements: responsive navbar, app-shell bottom nav, and clearer quick actions |
 | Architecture documentation | ✅ Done          | `docs/systemarch.md`, `docs/backendarch.md`                                               |
+| CI/CD pipelines            | ✅ Done          | PR/push checks in `ci.yml` and frontend deploy in `cd.yml` (GitHub Actions)               |
 
 ### MVP Features Delivered In Blue Belt
 
@@ -75,10 +79,10 @@ Add at least 5 real tester wallet addresses below and keep them verifiable on St
 
 - Problem reported by test users: mobile header overflow, hard-to-access actions, low contrast in sidebar, and friction while navigating key screens
 - Changes shipped:
-  - Responsive layout improvements in app shell and home flow
-  - Better mobile-safe header behavior and overflow control
-  - Improved sidebar readability and action accessibility
-- Commit link: _Add GitHub commit URL after push_
+  - Responsive landing-page navbar with mobile menu and wallet action
+  - App-shell quick-access mobile bottom navigation for core routes
+  - Better small-screen spacing and navigation clarity for frequent actions
+- Commit link: https://github.com/SATISH-JALAN/CONDUIT/commit/225cc4727c7ef8341f744c1e8e2a17f6f1d21b56
 
 ### Next Phase Improvement Plan
 

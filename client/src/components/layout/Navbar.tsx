@@ -98,6 +98,12 @@ export function Navbar() {
             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-(--ink-2)"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setIsMobileMenuOpen((open) => !open);
+              }
+            }}
           >
             {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>

@@ -130,6 +130,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <div className="flex-1 p-4 md:p-8 pb-24 lg:pb-8 overflow-x-hidden">
+          {/* pb-24 preserves content visibility above the fixed mobile bottom nav. */}
           {children}
         </div>
       </main>

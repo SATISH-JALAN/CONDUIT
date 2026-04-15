@@ -81,7 +81,7 @@ Add at least 5 real tester wallet addresses below and keep them verifiable on St
   - Responsive landing-page navbar with mobile menu and wallet action
   - App-shell quick-access mobile bottom navigation for core routes
   - Better small-screen spacing and navigation clarity for frequent actions
-- Commit link: _Will be updated with this iteration commit URL after push_
+- Commit link: https://github.com/SATISH-JALAN/CONDUIT/commit/225cc4727c7ef8341f744c1e8e2a17f6f1d21b56
 
 ### Next Phase Improvement Plan
 

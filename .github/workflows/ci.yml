@@ -37,6 +37,33 @@ jobs:
   server-quality:
     name: Server test + build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: conduit
+          POSTGRES_PASSWORD: conduit_dev
+          POSTGRES_DB: conduit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U conduit"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://conduit:conduit_dev@localhost:5432/conduit
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,6 +85,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Sync database schema
+        run: pnpm --filter server exec drizzle-kit push --force --config=drizzle.config.ts
 
       - name: Run server tests
         run: pnpm --filter server test

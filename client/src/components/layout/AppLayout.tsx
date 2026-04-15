@@ -140,7 +140,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 frosted-heavy border-t border-(--paper-edge) px-2 py-2">
-        <div className="grid grid-cols-5 gap-1">
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: `repeat(${mobileBottomItems.length}, minmax(0, 1fr))` }}
+        >
           {mobileBottomItems.map((item) => {
             const Icon = item.icon;
             const isActive = isNavItemActive(item.path, item.name);

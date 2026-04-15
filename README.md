@@ -31,10 +31,11 @@ Conduit has been built and validated as a real-world Stellar Testnet MVP with us
 
 - Repository: [Conduit GitHub](https://github.com/SATISH-JALAN/Conduit)
 - Live demo: [Conduit on GitHub Pages](https://satish-jalan.github.io/CONDUIT/)
-- Demo video: _Add full MVP walkthrough video URL_
+- Demo video: _Pending (intentionally not added yet)_
 - User feedback export (Google Sheet): [Blue Belt User Responses](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
-- CI pipeline: [CI Workflow](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci.yml)
-- CD pipeline: [CD Workflow](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/cd.yml)
+- CI pipeline (PR + push quality checks): [CI Workflow](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci.yml)
+- CD pipeline (auto frontend deploy on `main`): [CD Workflow](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/cd.yml)
+- Workflow run history: [GitHub Actions Runs](https://github.com/SATISH-JALAN/CONDUIT/actions)
 ### Verified Testnet Users (5+)
 
 Add at least 5 real tester wallet addresses below and keep them verifiable on Stellar Explorer:
@@ -54,7 +55,7 @@ Add at least 5 real tester wallet addresses below and keep them verifiable on St
 | Feedback documented        | ✅ Done          | Structured feedback questions and exported response sheet                                 |
 | 1 iteration completed      | ✅ Done          | Mobile UX improvements: responsive navbar, app-shell bottom nav, and clearer quick actions |
 | Architecture documentation | ✅ Done          | `docs/systemarch.md`, `docs/backendarch.md`                                               |
-| CI/CD pipelines            | ✅ Done          | `.github/workflows/ci.yml`, `.github/workflows/cd.yml`                                    |
+| CI/CD pipelines            | ✅ Done          | PR/push checks in `ci.yml` and frontend deploy in `cd.yml` (GitHub Actions)               |
 
 ### MVP Features Delivered In Blue Belt
 

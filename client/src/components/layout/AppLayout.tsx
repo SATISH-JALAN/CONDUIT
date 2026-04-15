@@ -36,6 +36,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const mobileBottomItems = navItems.slice(0, 5);
+  const mobileContentPaddingClass = 'pb-24';
+  const isNavItemActive = (itemPath: string, itemName: string) =>
+    location.pathname === itemPath || (location.pathname === '/dashboard' && itemName === 'Stream');
 
   return (
     <div className="min-h-screen bg-(--paper-1) flex">
@@ -70,7 +73,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || (location.pathname === '/dashboard' && item.name === 'Stream');
+            const isActive = isNavItemActive(item.path, item.name);
             return (
               <Link
                 key={item.name}
@@ -129,8 +132,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 p-4 md:p-8 pb-24 lg:pb-8 overflow-x-hidden">
-          {/* pb-24 preserves content visibility above the fixed mobile bottom nav. */}
+        <div className={cn('flex-1 p-4 md:p-8 lg:pb-8 overflow-x-hidden', mobileContentPaddingClass)}>
+          {/* mobileContentPaddingClass keeps content visible above the fixed mobile bottom nav. */}
           {children}
         </div>
       </main>
@@ -139,7 +142,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="grid grid-cols-5 gap-1">
           {mobileBottomItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || (location.pathname === '/dashboard' && item.name === 'Stream');
+            const isActive = isNavItemActive(item.path, item.name);
             return (
               <Link
                 key={`mobile-${item.name}`}

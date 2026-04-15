@@ -4,9 +4,11 @@ import { gsap } from '@/lib/gsap';
 import { cn } from '@/lib/utils';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { useWalletStore } from '@/stores/walletStore';
+import { Menu, X } from 'lucide-react';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const { isConnected, publicKey } = useWalletStore();
@@ -19,6 +21,10 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (navRef.current) {
@@ -88,6 +94,14 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
+          <button
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-(--ink-2)"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+          >
+            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--paper-3) border border-(--surge-pale-2)">
             <span className="dot-live"></span>
             <span className="font-display text-[11px] font-medium text-(--surge) uppercase tracking-wider">Testnet Live</span>
@@ -109,6 +123,32 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 right-0 frosted-heavy border-t border-(--paper-edge) shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+          <nav className="px-6 py-5 flex flex-col gap-3">
+            {links.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                className={cn(
+                  'px-3 py-2.5 rounded-(--r-md) font-display text-[13px]',
+                  isLinkActive(link.path)
+                    ? 'bg-(--surge-pale) text-(--surge)'
+                    : 'text-(--ink-2) hover:bg-(--paper-2)'
+                )}
+              >
+                {link.name}
+              </Link>
+            ))}
+            <Link to={isConnected ? '/dashboard' : '/onboarding'} className="pt-2">
+              <MagneticButton variant="primary" className="w-full justify-center font-display text-[14px] px-5 py-2.5 rounded-(--r-md)">
+                {isConnected ? 'Open Dashboard' : 'Connect Wallet'}
+              </MagneticButton>
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

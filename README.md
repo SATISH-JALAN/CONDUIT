@@ -525,6 +525,33 @@ pnpm --filter server cron:cond-evaluate-all
 
 ---
 
+## CI/CD Pipeline
+
+This repo now includes GitHub Actions workflow: `.github/workflows/ci-cd.yml`.
+
+### CI (runs on PRs to `main` and pushes to `main`)
+
+- Installs dependencies with `pnpm`
+- Runs client type-check (`pnpm --filter client lint`)
+- Builds client (`pnpm --filter client build`)
+- Runs server tests (`pnpm --filter server test`)
+- Builds server (`pnpm --filter server build`)
+- Runs Rust contract tests (`cargo test --manifest-path contracts/Cargo.toml`)
+
+### CD (runs on pushes to `main`, only if secrets exist)
+
+- `deploy-client` triggers `CLIENT_DEPLOY_HOOK_URL`
+- `deploy-server` triggers `SERVER_DEPLOY_HOOK_URL`
+
+Add these repository secrets in GitHub settings to enable deployments:
+
+- `CLIENT_DEPLOY_HOOK_URL` (for Vercel/Netlify/etc. webhook)
+- `SERVER_DEPLOY_HOOK_URL` (for Render/Railway/etc. webhook)
+
+If deploy secrets are not configured, CI still runs and deployment jobs are skipped.
+
+---
+
 ## COND agent sidecar (`agent/`, optional)
 
 Optional **Python + FastAPI** service for scheduled or manual calls to internal COND endpoints (same **HMAC** contract as the Bun server). Not required for the web app: the UI uses JWT + `/api/agent/evaluate`; the API can also run batch evaluation via **`pnpm --filter server cron:cond-evaluate-all`** (see below).

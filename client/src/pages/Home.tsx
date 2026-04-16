@@ -10,6 +10,7 @@ import NumberFlow from '@number-flow/react';
 import { ArrowRight, Zap, ShieldCheck, Activity } from 'lucide-react';
 import { calculateValue } from '@/lib/formula';
 import { useRaceStore } from '@/stores/raceStore';
+import { useWalletStore } from '@/stores/walletStore';
 
 export function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,6 +18,7 @@ export function Home() {
   const counterDecRef = useRef<HTMLSpanElement>(null);
   const pendingRef = useRef<HTMLSpanElement>(null);
   const { leaderboard, fetchLeaderboard, loading } = useRaceStore();
+  const { isConnected } = useWalletStore();
 
   useEffect(() => {
     // Yield Counter Math using shared formula
@@ -98,9 +100,9 @@ export function Home() {
   }, [fetchLeaderboard]);
 
   return (
-    <div className="min-h-screen" ref={containerRef}>
+    <div className="min-h-screen overflow-x-hidden" ref={containerRef}>
       {/* HERO SECTION */}
-      <section className="min-h-screen py-0 max-w-7xl mx-auto px-5 md:px-14 flex items-center">
+      <section className="min-h-screen pt-22 pb-8 md:pt-24 md:pb-0 max-w-7xl mx-auto px-4 md:px-14 flex items-center">
         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 items-center w-full">
           {/* Left Column */}
           <div className="space-y-5 md:space-y-6">
@@ -124,6 +126,13 @@ export function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 pt-0">
+              {!isConnected && (
+                <Link to="/onboarding" className="w-full sm:hidden">
+                  <MagneticButton variant="primary" className="w-full justify-center font-display text-[16px] px-9 py-3.5 rounded-(--r-lg)">
+                    Connect Wallet
+                  </MagneticButton>
+                </Link>
+              )}
               <Link to="/bonds" className="w-full sm:w-auto">
                 <MagneticButton variant="primary" className="w-full sm:w-auto justify-center font-display text-[16px] px-9 py-3.5 rounded-(--r-lg) hover:shadow-[0_0_20px_rgba(0,122,94,0.4)] transition-all">
                   Start Earning <ArrowRight className="inline-block ml-2" size={16} />
@@ -348,7 +357,7 @@ export function Home() {
       </section>
 
       {/* COND SECTION */}
-      <section className="py-10 md:py-22.5 max-w-7xl mx-auto px-5 md:px-14">
+      <section className="py-10 md:py-22.5 max-w-7xl mx-auto px-4 md:px-14">
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           <div className="paper-card-elevated bg-(--paper-0) p-6 md:p-8">
             <div className="flex items-center gap-2 mb-6">
@@ -395,10 +404,10 @@ export function Home() {
 
       {/* LEADERBOARD */}
       <section className="py-10 md:py-22.5 max-w-7xl mx-auto px-5 md:px-14">
-        <div className="grid lg:grid-cols-[1.35fr_1fr] gap-8 items-start">
-          <div className="paper-card-elevated p-6 md:p-8">
+        <div className="grid lg:grid-cols-[1.35fr_1fr] gap-8 items-start min-w-0">
+          <div className="paper-card-elevated p-6 md:p-8 min-w-0">
             <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mb-6">Yield Race Leaderboard</div>
-            <div className="overflow-x-auto rounded-(--r-md) border border-(--paper-edge)">
+            <div className="overflow-x-auto max-w-full rounded-(--r-md) border border-(--paper-edge)">
               <table className="w-full min-w-140 text-left">
                 <thead className="bg-(--paper-2)">
                   <tr className="text-mono text-[10px] uppercase tracking-[0.08em] text-(--ink-4)">
@@ -438,11 +447,11 @@ export function Home() {
             </div>
           </div>
 
-          <div className="paper-card-elevated p-6 md:p-8 border-t-2 border-t-(--rose)">
+          <div className="paper-card-elevated p-6 md:p-8 border-t-2 border-t-(--rose) min-w-0 overflow-hidden">
             <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mb-4">Weekend Race</div>
             <div className="font-display text-[46px] md:text-[56px] leading-[0.9] tracking-[-0.03em] text-(--ink-1) mb-2">$4,200</div>
             <div className="font-secondary text-[14px] text-(--ink-3) mb-8">Prize pool for highest streamed yield this round.</div>
-            <div className="grid grid-cols-4 gap-3 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 min-w-0">
               <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">02</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Days</div></div>
               <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">18</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Hrs</div></div>
               <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">42</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Min</div></div>
@@ -460,7 +469,7 @@ export function Home() {
         <div className="absolute inset-0 bg-(--paper-2) -z-20" />
         <div className="absolute left-1/2 top-[32%] -translate-x-1/2 w-90 h-60 md:w-150 md:h-100 bg-[radial-gradient(ellipse,rgba(0,122,94,0.04),transparent_70%)] pointer-events-none -z-10" />
         
-        <div className="max-w-190 mx-auto px-6 text-center">
+        <div className="max-w-190 mx-auto px-4 md:px-6 text-center">
           <h2 className="heading text-[clamp(30px,4.4vw,64px)] font-display font-bold tracking-[-0.04em] leading-none text-center mb-8 md:mb-10">
             <SplitText className="block text-(--ink-1)">The bond market has</SplitText>
             <SplitText className="block text-(--ink-4)">been</SplitText>
@@ -474,7 +483,7 @@ export function Home() {
             </MagneticButton>
           </Link>
           
-          <div className="mt-8 md:mt-10 text-mono-caps text-[10px] text-(--ink-4) tracking-[0.14em]">
+          <div className="mt-8 md:mt-10 text-mono-caps text-[10px] text-(--ink-4) tracking-[0.12em] leading-relaxed px-2">
             Built on Stellar | Soroban Contracts | BENJI + USDY Live | Non-custodial
           </div>
         </div>

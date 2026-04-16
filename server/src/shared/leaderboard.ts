@@ -9,7 +9,7 @@ import {
 } from "../db/schema.js";
 import { logger } from "./logger.js";
 
-export type LeaderboardPeriod = "7d" | "30d";
+export type LeaderboardPeriod = "4d" | "7d" | "30d";
 
 const SNAPSHOT_STALE_MS = 15 * 60 * 1000;
 const RECOMPUTE_INTERVAL_MS = 15 * 60 * 1000;
@@ -350,6 +350,7 @@ export async function joinRace(wallet: string, raceId?: string) {
 
 export async function warmLeaderboardSnapshots() {
   await Promise.all([
+    recomputeLeaderboardSnapshot("4d"),
     recomputeLeaderboardSnapshot("7d"),
     recomputeLeaderboardSnapshot("30d"),
   ]);
@@ -364,6 +365,7 @@ export function startLeaderboardJob() {
 
   leaderboardTimer = setInterval(() => {
     void Promise.all([
+      recomputeLeaderboardSnapshot("4d"),
       recomputeLeaderboardSnapshot("7d"),
       recomputeLeaderboardSnapshot("30d"),
     ]).catch((err) => {

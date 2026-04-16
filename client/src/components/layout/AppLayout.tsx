@@ -15,10 +15,12 @@ import {
   X
 } from 'lucide-react';
 import { useWalletStore } from '@/stores/walletStore';
+import { usePortfolioStore } from '@/stores/portfolioStore';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { publicKey } = useWalletStore();
+  const { totalValue, totalYieldPerSecond, setWallet: setPortfolioWallet, fetchPositions } = usePortfolioStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const path = location.pathname.split('/')[1];
@@ -29,6 +31,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!publicKey) return;
+    setPortfolioWallet(publicKey);
+    void fetchPositions({ quiet: true });
+  }, [publicKey, setPortfolioWallet, fetchPositions]);
 
   const navItems = [
     { name: 'Stream', path: '/dashboard', icon: Zap },
@@ -98,10 +106,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="bg-(--paper-3) rounded-(--r-lg) p-4 border border-(--paper-edge)">
             <div className="text-mono text-[9px] text-(--ink-4) uppercase tracking-wider mb-2">Portfolio</div>
             <div className="font-display text-[22px] font-medium text-(--ink-1) mb-1">
-              $50,000.00
+              ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className="font-secondary text-[13px] text-(--surge)">
-              +$1.43 today
+              +${(totalYieldPerSecond * 86400).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} today
             </div>
           </div>
         </div>

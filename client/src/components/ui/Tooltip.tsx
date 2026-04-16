@@ -24,7 +24,7 @@ export function Tooltip({ children, content, className }: TooltipProps) {
 
   return (
     <div 
-      className="relative inline-flex items-center justify-center"
+      className="relative inline-flex items-center justify-center z-20"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
       onClick={() => setIsVisible(!isVisible)}
@@ -34,7 +34,7 @@ export function Tooltip({ children, content, className }: TooltipProps) {
         <div 
           ref={tooltipRef}
           className={cn(
-            "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs font-secondary text-[var(--ink-1)] z-50 frosted-heavy shadow-lg w-max max-w-[200px] md:max-w-[280px] text-center leading-relaxed",
+            "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs font-secondary text-(--ink-1) z-70 frosted-heavy shadow-lg w-max max-w-[200px] md:max-w-[280px] text-center leading-relaxed",
             className
           )}
         >

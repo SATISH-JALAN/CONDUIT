@@ -420,7 +420,7 @@ export interface SaveSplitResponse {
   splits: SplitConfigItem[];
 }
 
-export type LeaderboardPeriod = "7d" | "30d";
+export type LeaderboardPeriod = "4d" | "7d" | "30d";
 
 export interface LeaderboardEntry {
   rank: number;

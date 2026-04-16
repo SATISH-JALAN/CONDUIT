@@ -79,7 +79,7 @@ export const saveSplitConfigSchema = splitConfigSchema.extend({
 
 // ── Feature 5: Leaderboard / Race ──
 
-export const leaderboardPeriodSchema = z.enum(["7d", "30d"]);
+export const leaderboardPeriodSchema = z.enum(["4d", "7d", "30d"]);
 
 export const leaderboardQuerySchema = z.object({
   period: leaderboardPeriodSchema.default("7d"),

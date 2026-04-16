@@ -108,11 +108,14 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Trigger client deploy hook
-        if: ${{ secrets.CLIENT_DEPLOY_HOOK_URL != '' }}
-        run: curl -fsS -X POST "${{ secrets.CLIENT_DEPLOY_HOOK_URL }}"
-      - name: Skip client deploy (missing secret)
-        if: ${{ secrets.CLIENT_DEPLOY_HOOK_URL == '' }}
-        run: echo "CLIENT_DEPLOY_HOOK_URL is not configured. Skipping deploy."
+        env:
+          CLIENT_DEPLOY_HOOK_URL: ${{ secrets.CLIENT_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "${CLIENT_DEPLOY_HOOK_URL}" ]; then
+            echo "CLIENT_DEPLOY_HOOK_URL is not configured. Skipping deploy."
+            exit 0
+          fi
+          curl -fsS -X POST "${CLIENT_DEPLOY_HOOK_URL}"
 
   deploy-server:
     name: Deploy Server
@@ -121,8 +124,11 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Trigger server deploy hook
-        if: ${{ secrets.SERVER_DEPLOY_HOOK_URL != '' }}
-        run: curl -fsS -X POST "${{ secrets.SERVER_DEPLOY_HOOK_URL }}"
-      - name: Skip server deploy (missing secret)
-        if: ${{ secrets.SERVER_DEPLOY_HOOK_URL == '' }}
-        run: echo "SERVER_DEPLOY_HOOK_URL is not configured. Skipping deploy."
+        env:
+          SERVER_DEPLOY_HOOK_URL: ${{ secrets.SERVER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "${SERVER_DEPLOY_HOOK_URL}" ]; then
+            echo "SERVER_DEPLOY_HOOK_URL is not configured. Skipping deploy."
+            exit 0
+          fi
+          curl -fsS -X POST "${SERVER_DEPLOY_HOOK_URL}"

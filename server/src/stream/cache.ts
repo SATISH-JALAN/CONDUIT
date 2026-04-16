@@ -3,6 +3,7 @@ import type { Anchor } from './formula.js';
 import { logger } from '../shared/logger.js';
 
 const ANCHOR_PREFIX = 'conduit:anchor:';
+const ANCHOR_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 /**
  * Get anchor for a wallet from Redis
@@ -25,7 +26,7 @@ export async function getAnchor(wallet: string, boxId?: string): Promise<Anchor 
  */
 export async function setAnchor(wallet: string, anchor: Anchor): Promise<void> {
   const key = `${ANCHOR_PREFIX}${wallet}:${anchor.box_id}`;
-  await redis.set(key, JSON.stringify(anchor));
+  await redis.set(key, JSON.stringify(anchor), 'EX', ANCHOR_TTL_SECONDS);
   logger.debug({ wallet, box_id: anchor.box_id }, 'Anchor updated');
 }
 
@@ -34,7 +35,15 @@ export async function setAnchor(wallet: string, anchor: Anchor): Promise<void> {
  */
 export async function getAllAnchors(wallet: string): Promise<Anchor[]> {
   const pattern = `${ANCHOR_PREFIX}${wallet}:*`;
-  const keys = await redis.keys(pattern);
+  // Production-safe: avoid KEYS (blocks Redis). Use incremental SCAN.
+  const keys: string[] = [];
+  let cursor = '0';
+  do {
+    const [nextCursor, batch] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 200);
+    cursor = nextCursor;
+    keys.push(...batch);
+  } while (cursor !== '0');
+
   if (keys.length === 0) return [];
 
   const pipeline = redis.pipeline();

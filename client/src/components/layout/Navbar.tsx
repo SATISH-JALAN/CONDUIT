@@ -62,7 +62,7 @@ export function Navbar() {
         scrolled ? 'frosted-heavy shadow-[0_4px_20px_var(--paper-shadow)]' : 'bg-transparent'
       )}
     >
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-14 flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-14 flex items-center justify-between gap-2">
         <Link to="/" className="flex items-center group relative">
           <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1)">
             CONDUIT
@@ -87,23 +87,32 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--paper-3) border border-(--surge-pale-2)">
             <span className="dot-live"></span>
             <span className="font-display text-[11px] font-medium text-(--surge) uppercase tracking-wider">Testnet Live</span>
           </div>
           
           {isConnected && publicKey ? (
-            <Link to="/dashboard">
-              <div className="flex flex-col items-end mr-2">
-                <span className="text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">Connected</span>
-                <span className="font-mono text-[13px] text-(--surge)">{publicKey.slice(0, 4)}...{publicKey.slice(-4)}</span>
-              </div>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/dashboard">
+                <div className="flex flex-col items-end px-2.5 py-1.5 rounded-(--r-md) bg-(--paper-3) border border-(--surge-pale-2) max-w-36 sm:max-w-none">
+                  <span className="text-mono text-[9px] sm:text-[10px] text-(--ink-4) uppercase tracking-wider leading-none">Connected</span>
+                  <span className="font-mono text-[11px] sm:text-[13px] text-(--surge) leading-tight truncate max-w-30 sm:max-w-none">
+                    {publicKey.slice(0, 4)}...{publicKey.slice(-4)}
+                  </span>
+                </div>
+              </Link>
+              <Link to="/dashboard" className="hidden sm:block">
+                <MagneticButton variant="primary" className="font-display text-[12px] sm:text-[14px] px-3 sm:px-5 py-2 rounded-(--r-md) transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
+                  Dashboard
+                </MagneticButton>
+              </Link>
+            </div>
           ) : (
             <Link to="/onboarding">
-              <MagneticButton variant="primary" className="font-display text-[14px] px-5 py-2 rounded-(--r-md) transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
-                Connect Wallet
+              <MagneticButton variant="primary" className="font-display text-[12px] sm:text-[14px] px-3 sm:px-5 py-2 rounded-(--r-md) transition-all shadow-[0_2px_8px_rgba(0,122,94,0.25)]">
+                Connect
               </MagneticButton>
             </Link>
           )}

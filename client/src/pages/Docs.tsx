@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -453,6 +453,7 @@ const TOPIC_MAP = Object.fromEntries(TOPICS.map((topic) => [topic.slug, topic]))
 
 export function Docs() {
   const { topic } = useParams<{ topic?: string }>();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
 
   const filteredTopics = useMemo(() => {
@@ -485,6 +486,17 @@ export function Docs() {
   return (
     <div className="min-h-screen bg-(--paper-1) overflow-x-hidden">
       <div className="w-full max-w-350 mx-auto px-4 md:px-8 lg:px-12 pt-24 pb-16">
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-(--r-md) bg-(--paper-3) border border-(--paper-edge) text-(--ink-2) text-[13px] font-secondary hover:bg-(--paper-4) transition-colors"
+          >
+            <ArrowLeft size={14} />
+            Back
+          </button>
+        </div>
+
         <div className="paper-card-elevated rounded-(--r-xl) p-6 md:p-8 mb-6">
           <div className="flex flex-wrap items-center gap-2 text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">
             <BookOpen size={14} className="text-(--surge)" />
@@ -630,6 +642,15 @@ export function Docs() {
 
             {activeTopic && (
               <section className="paper-card-elevated rounded-(--r-xl) p-6 md:p-8 min-w-0 overflow-hidden">
+                <div className="mb-4">
+                  <Link
+                    to="/docs"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-(--r-md) bg-(--paper-3) border border-(--paper-edge) text-(--ink-2) text-[13px] font-secondary hover:bg-(--paper-4) transition-colors"
+                  >
+                    <ArrowLeft size={14} />
+                    Back to Docs Home
+                  </Link>
+                </div>
                 <div className="flex flex-wrap items-center gap-2 text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">
                   <span>{activeTopic.category}</span>
                   <span>•</span>

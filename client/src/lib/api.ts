@@ -31,12 +31,25 @@ let accessToken: string | null = readSessionStorage(ACCESS_TOKEN_STORAGE_KEY);
 let refreshToken: string | null = readSessionStorage(REFRESH_TOKEN_STORAGE_KEY);
 
 export function setAccessToken(token: string | null) {
+  const prev = accessToken;
   accessToken = token;
   writeSessionStorage(ACCESS_TOKEN_STORAGE_KEY, token);
+  if (prev !== token && typeof window !== "undefined") {
+    import("./ws")
+      .then((m) => m.reconnectWebSocket())
+      .catch(() => {
+        // ws module optional if tree-shaken in odd builds
+      });
+  }
 }
 
 export function getAccessToken(): string | null {
   return accessToken;
+}
+
+/** Re-read token from session (e.g. after hydration) without relying on in-memory cache only. */
+export function readAccessTokenFromSession(): string | null {
+  return readSessionStorage(ACCESS_TOKEN_STORAGE_KEY);
 }
 
 export function setRefreshToken(token: string | null) {
@@ -245,6 +258,26 @@ export const api = {
       body: JSON.stringify({ message }),
     }),
 
+  /** COND v1: run rule engine + dry-run internal tx for the signed-in wallet. */
+  runAgentEvaluate: () =>
+    request<AgentEvaluateResponse>("/agent/evaluate", { method: "POST" }),
+
+  // Feature 9: COND v2 proposals (review + approve)
+  getAgentProposals: () =>
+    request<AgentProposalsResponse>("/agent/proposals"),
+
+  approveAgentProposal: (id: string) =>
+    request<{ ok: boolean; id: string; status: string; submit?: unknown }>(
+      `/agent/proposals/${encodeURIComponent(id)}/approve`,
+      { method: "POST" },
+    ),
+
+  denyAgentProposal: (id: string) =>
+    request<{ ok: boolean; id: string; status: string }>(
+      `/agent/proposals/${encodeURIComponent(id)}/deny`,
+      { method: "POST" },
+    ),
+
   // Feature 4: Yield NFTs
   getNftMarket: (limit = 20) =>
     request<{ items: NftItem[] }>(`/nfts/market?limit=${limit}`),
@@ -253,6 +286,9 @@ export const api = {
     request<{ wallet: string; items: NftItem[] }>(
       status ? `/nfts?status=${encodeURIComponent(status)}` : "/nfts",
     ),
+
+  getNftAccreditation: () =>
+    request<NftAccreditationResponse>("/nfts/accreditation"),
 
   mintNft: (payload: {
     box_id: string;
@@ -298,6 +334,21 @@ export const api = {
       `/social/copy/${leaderWallet}`,
       {
         method: "DELETE",
+      },
+    ),
+
+  // Feature 7: Creator Pools
+  getCreatorPools: () => request<{ pools: CreatorPoolSummary[] }>("/creators/pools"),
+
+  getCreatorPool: (id: string) =>
+    request<{ pool: CreatorPoolSummary }>(`/creators/pools/${encodeURIComponent(id)}`),
+
+  joinCreatorPool: (id: string, deposit_amount: number) =>
+    request<{ ok: boolean; poolId: string }>(
+      `/creators/pools/${encodeURIComponent(id)}/join`,
+      {
+        method: "POST",
+        body: JSON.stringify({ deposit_amount }),
       },
     ),
 };
@@ -369,7 +420,7 @@ export interface SaveSplitResponse {
   splits: SplitConfigItem[];
 }
 
-export type LeaderboardPeriod = "7d" | "30d";
+export type LeaderboardPeriod = "4d" | "7d" | "30d";
 
 export interface LeaderboardEntry {
   rank: number;
@@ -460,6 +511,32 @@ export interface AgentChatResponse {
   mandateRisk?: "Conservative" | "Moderate" | "Aggressive";
 }
 
+export interface AgentEvaluateResponse {
+  ok: boolean;
+  wallet: string;
+  submitted: number;
+  results: Array<{
+    action: string;
+    status: number;
+    ok: boolean;
+    body: unknown;
+  }>;
+}
+
+export interface AgentProposalItem {
+  id: string;
+  action: string;
+  reasoning: string;
+  confidence: number | null;
+  status: "pending" | "approved" | "denied" | "submitted";
+  createdAt: string;
+}
+
+export interface AgentProposalsResponse {
+  wallet: string;
+  proposals: AgentProposalItem[];
+}
+
 export interface NftItem {
   id: string;
   ownerWallet: string;
@@ -473,6 +550,22 @@ export interface NftItem {
   expiresAt: string;
 }
 
+export interface NftAccreditationResponse {
+  ok: boolean;
+  enforceAccreditation: boolean;
+  eligible: boolean;
+  verification: {
+    enabled: boolean;
+    ok: boolean;
+    method: string;
+    contractId: string | null;
+    latencyMs: number;
+    value: boolean | null;
+    error?: string;
+    fallbackReason?: string;
+  };
+}
+
 export interface CopyingResponse {
   wallet: string;
   leaders: Array<{
@@ -480,4 +573,23 @@ export interface CopyingResponse {
     active: boolean;
     updatedAt: string;
   }>;
+}
+
+export interface CreatorPoolSummary {
+  id: string;
+  name: string;
+  handle: string;
+  creatorWallet: string;
+  creatorShareBps: number;
+  tone: string | null;
+  blurb: string | null;
+  box: {
+    id: string;
+    name: string;
+    risk: "Low" | "Medium" | "High";
+    apyBps: number;
+  };
+  followers: number;
+  tvl: number;
+  fanApyHintBps: number | null;
 }

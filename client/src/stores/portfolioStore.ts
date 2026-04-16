@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import type { Anchor } from '@/lib/formula';
-import { calculateValue, calculatePendingYield, yieldPerSecond } from '@/lib/formula';
+import {
+  calculateValue,
+  calculatePendingYield,
+  yieldPerSecond,
+  yieldPerDay,
+} from '@/lib/formula';
 import { api } from '@/lib/api';
-import { ws } from '@/lib/ws';
 
 interface Position {
   box_id: string;
@@ -31,8 +35,10 @@ interface PortfolioState {
 
   // Actions
   setWallet: (wallet: string) => void;
-  fetchPositions: () => Promise<void>;
+  fetchPositions: (opts?: { quiet?: boolean }) => Promise<void>;
   updateAnchor: (anchor: Anchor) => void;
+  /** Merge a live anchor from WS `ANCHOR_UPDATE` into anchors + positions (no API round-trip). */
+  applyStreamAnchor: (anchor: Anchor) => void;
   tick: () => void;
 }
 
@@ -53,11 +59,12 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ wallet });
   },
 
-  fetchPositions: async () => {
+  fetchPositions: async (opts?: { quiet?: boolean }) => {
     const { wallet } = get();
     if (!wallet) return;
 
-    set({ loading: true, error: null });
+    const quiet = opts?.quiet === true;
+    if (!quiet) set({ loading: true, error: null });
 
     try {
       const data = await api.getPosition(wallet);
@@ -76,10 +83,10 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
         totalYieldPerSecond: data.yieldPerSecond,
         avgApy: data.avgApy,
         positions: data.positions,
-        loading: false,
+        ...(quiet ? {} : { loading: false }),
       });
     } catch (err: any) {
-      set({ error: err.message, loading: false });
+      set({ error: err.message, ...(quiet ? {} : { loading: false }) });
     }
   },
 
@@ -93,6 +100,68 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       updated.push(newAnchor);
     }
     set({ anchors: updated });
+  },
+
+  applyStreamAnchor: (anchor: Anchor) => {
+    const { anchors, positions } = get();
+    if (!positions.some((p) => p.box_id === anchor.box_id)) {
+      void get().fetchPositions({ quiet: true });
+      return;
+    }
+
+    const now = Date.now();
+    const nextAnchors = anchors.some((a) => a.box_id === anchor.box_id)
+      ? anchors.map((a) => (a.box_id === anchor.box_id ? anchor : a))
+      : [...anchors, anchor];
+
+    const nextPositions = positions.map((p) => {
+      if (p.box_id !== anchor.box_id) return p;
+      const pendingYield = calculatePendingYield(anchor, now);
+      const currentValue = calculateValue(anchor, now);
+      const yps = yieldPerSecond(anchor);
+      const ypd = yieldPerDay(anchor);
+      const apy = anchor.apy_bps / 100;
+      return {
+        ...p,
+        principal: anchor.principal,
+        apy_bps: anchor.apy_bps,
+        sync_ts: anchor.sync_ts,
+        apy,
+        currentValue,
+        pendingYield,
+        yieldPerSecond: yps,
+        yieldPerDay: ypd,
+      };
+    });
+
+    const totalPrincipal = nextPositions.reduce((s, p) => s + p.principal, 0);
+    let weightedApyBps = 0;
+    for (const p of nextPositions) {
+      weightedApyBps += p.principal * p.apy_bps;
+    }
+    const avgApyBps =
+      totalPrincipal > 0 ? Math.round(weightedApyBps / totalPrincipal) : 0;
+    const avgApy = avgApyBps / 100;
+
+    let totalYieldPerSecond = 0;
+    for (const a of nextAnchors) {
+      totalYieldPerSecond += yieldPerSecond(a);
+    }
+
+    let totalValue = 0;
+    for (const a of nextAnchors) {
+      totalValue += calculateValue(a, now);
+    }
+
+    set({
+      anchors: nextAnchors,
+      positions: nextPositions,
+      totalPrincipal,
+      totalYieldPerSecond,
+      avgApy,
+      totalValue: Math.round(totalValue * 10000) / 10000,
+      pendingYield: Math.round((totalValue - totalPrincipal) * 10000) / 10000,
+    });
   },
 
   // Called every frame by requestAnimationFrame

@@ -178,6 +178,35 @@ export const condDecisions = pgTable("cond_decisions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ── Internal Tx Audit (Feature 6 execution boundary) ──
+export const internalTxAudits = pgTable(
+  "internal_tx_audits",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    wallet: text("wallet").notNull(),
+    action: text("action").notNull(),
+    requestNonce: text("request_nonce").notNull(),
+    requestTs: timestamp("request_ts").notNull(),
+    requestBody: jsonb("request_body").notNull(),
+    signature: text("signature").notNull(),
+    dryRun: boolean("dry_run").default(true).notNull(),
+    result: text("result").notNull(), // 'accepted' | 'rejected' | 'error'
+    error: text("error"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    nonceUnique: uniqueIndex("internal_tx_audits_request_nonce_idx").on(
+      table.requestNonce,
+    ),
+    walletCreatedIdx: index("internal_tx_audits_wallet_created_idx").on(
+      table.wallet,
+      table.createdAt,
+    ),
+  }),
+);
+
 // ── Leaderboard Snapshots (Feature 5) ──
 
 export const leaderboardCache = pgTable(
@@ -305,6 +334,101 @@ export const portfolioCopies = pgTable(
     leaderActiveIdx: index("portfolio_copies_leader_active_idx").on(
       table.leaderWallet,
       table.active,
+    ),
+  }),
+);
+
+// ── Feature 7: Creator Pools (off-chain demo layer) ──
+
+export const creatorPools = pgTable(
+  "creator_pools",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    handle: text("handle").notNull(),
+    creatorWallet: text("creator_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    boxId: text("box_id")
+      .notNull()
+      .references(() => bondBoxes.id),
+    creatorShareBps: integer("creator_share_bps").default(1000).notNull(), // 1000 = 10%
+    fanApyHintBps: integer("fan_apy_hint_bps"),
+    tone: text("tone"),
+    blurb: text("blurb"),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    activeIdx: index("creator_pools_active_idx").on(table.active, table.createdAt),
+  }),
+);
+
+export const creatorPoolMemberships = pgTable(
+  "creator_pool_memberships",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    poolId: text("pool_id")
+      .notNull()
+      .references(() => creatorPools.id, { onDelete: "cascade" }),
+    fanWallet: text("fan_wallet")
+      .notNull()
+      .references(() => users.wallet),
+    depositAmount: numeric("deposit_amount", { precision: 20, scale: 7 })
+      .default("0")
+      .notNull(),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    poolFanUnique: uniqueIndex("creator_pool_memberships_pool_fan_idx").on(
+      table.poolId,
+      table.fanWallet,
+    ),
+    poolJoinedIdx: index("creator_pool_memberships_pool_idx").on(
+      table.poolId,
+      table.joinedAt,
+    ),
+  }),
+);
+
+// ── Feature 9: COND v2 proposals (Gemini/LangGraph) ──
+
+export const condProposalStatusEnum = pgEnum("cond_proposal_status", [
+  "pending",
+  "approved",
+  "denied",
+  "submitted",
+]);
+
+export const condProposals = pgTable(
+  "cond_proposals",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    wallet: text("wallet")
+      .notNull()
+      .references(() => users.wallet, { onDelete: "cascade" }),
+    source: text("source").default("gemini").notNull(),
+    action: text("action").notNull(),
+    params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+    reasoning: text("reasoning").notNull(),
+    confidence: numeric("confidence", { precision: 4, scale: 3 }),
+    status: condProposalStatusEnum("status").default("pending").notNull(),
+    requestNonce: text("request_nonce").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    decidedAt: timestamp("decided_at"),
+  },
+  (table) => ({
+    nonceUnique: uniqueIndex("cond_proposals_request_nonce_idx").on(
+      table.requestNonce,
+    ),
+    walletStatusCreatedIdx: index("cond_proposals_wallet_status_created_idx").on(
+      table.wallet,
+      table.status,
+      table.createdAt,
     ),
   }),
 );

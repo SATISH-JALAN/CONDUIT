@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Sparkles, ShieldCheck, ArrowUpRight, Ticket } from 'lucide-react';
-import { api, type BondBox, type NftItem } from '@/lib/api';
+import { api, type BondBox, type NftAccreditationResponse, type NftItem } from '@/lib/api';
 import { useWalletStore } from '@/stores/walletStore';
 
 function formatMoney(value: number) {
@@ -25,9 +25,20 @@ export function NFTs() {
   const { isConnected } = useWalletStore();
   const [marketItems, setMarketItems] = React.useState<NftItem[]>([]);
   const [myItems, setMyItems] = React.useState<NftItem[]>([]);
+  const [view, setView] = React.useState<'market' | 'mine'>('market');
+  const [myStatus, setMyStatus] = React.useState<
+    'all' | 'active' | 'redeemed' | 'transferred'
+  >('active');
   const [boxes, setBoxes] = React.useState<BondBox[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [minting, setMinting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [accreditation, setAccreditation] =
+    React.useState<NftAccreditationResponse | null>(null);
+  const [transferOpen, setTransferOpen] = React.useState(false);
+  const [transferNftId, setTransferNftId] = React.useState<string | null>(null);
+  const [transferToWallet, setTransferToWallet] = React.useState('');
+  const [transferring, setTransferring] = React.useState(false);
   const [mintForm, setMintForm] = React.useState({
     boxId: '',
     notional: 100,
@@ -36,6 +47,7 @@ export function NFTs() {
 
   const refreshData = React.useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const [market, bondBoxes] = await Promise.all([
         api.getNftMarket(30),
@@ -49,17 +61,23 @@ export function NFTs() {
       }
 
       if (isConnected) {
-        const mine = await api.getMyNfts();
+        const statusParam = myStatus === 'all' ? undefined : myStatus;
+        const [mine, acc] = await Promise.all([
+          api.getMyNfts(statusParam),
+          api.getNftAccreditation().catch(() => null),
+        ]);
         setMyItems(mine.items);
+        setAccreditation(acc);
       } else {
         setMyItems([]);
+        setAccreditation(null);
       }
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load NFTs.');
     } finally {
       setLoading(false);
     }
-  }, [isConnected, mintForm.boxId]);
+  }, [isConnected, mintForm.boxId, myStatus]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -77,7 +95,20 @@ export function NFTs() {
     void refreshData();
   }, [refreshData]);
 
-  const visibleItems = isConnected ? myItems : marketItems;
+  useEffect(() => {
+    setView(isConnected ? 'mine' : 'market');
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    // Default to active when wallet connects.
+    setMyStatus('active');
+  }, [isConnected]);
+
+  const visibleItems = useMemo(() => {
+    if (view === 'mine') return myItems;
+    return marketItems;
+  }, [marketItems, myItems, view]);
   const avgYield =
     visibleItems.length > 0
       ? visibleItems.reduce((sum, item) => sum + item.yieldBps, 0) /
@@ -89,6 +120,7 @@ export function NFTs() {
   const mint = async () => {
     if (!isConnected || !mintForm.boxId || minting) return;
     setMinting(true);
+    setError(null);
 
     try {
       await api.mintNft({
@@ -97,8 +129,8 @@ export function NFTs() {
         duration_days: mintForm.durationDays,
       });
       await refreshData();
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Mint failed.');
     } finally {
       setMinting(false);
     }
@@ -108,26 +140,106 @@ export function NFTs() {
     try {
       await api.redeemNft(id);
       await refreshData();
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Redeem failed.');
     }
   };
 
-  const transfer = async (id: string) => {
-    const toWallet = window.prompt('Enter recipient Stellar wallet address');
-    if (!toWallet) return;
+  const openTransfer = (id: string) => {
+    setTransferNftId(id);
+    setTransferToWallet('');
+    setTransferOpen(true);
+    setError(null);
+  };
 
+  const closeTransfer = () => {
+    setTransferOpen(false);
+    setTransferNftId(null);
+    setTransferToWallet('');
+    setTransferring(false);
+  };
+
+  const transfer = async () => {
+    if (!transferNftId || transferring) return;
+    const to = transferToWallet.trim();
+    if (!to) return;
+
+    setTransferring(true);
+    setError(null);
     try {
-      await api.transferNft(id, toWallet.trim());
+      await api.transferNft(transferNftId, to);
+      closeTransfer();
       await refreshData();
-    } catch {
-      // no-op
+    } catch (err: any) {
+      setError(err?.message || 'Transfer failed.');
+      setTransferring(false);
     }
   };
 
   return (
     <AppLayout>
       <div className="max-w-300 mx-auto" ref={containerRef}>
+        {transferOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <button
+              type="button"
+              onClick={closeTransfer}
+              className="absolute inset-0 bg-black/40"
+              aria-label="Close transfer dialog"
+            />
+            <div className="relative w-full max-w-lg paper-card-elevated p-6 border border-(--paper-edge)">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <div className="text-mono text-[10px] uppercase tracking-widest text-(--ink-4)">
+                    Transfer NFT
+                  </div>
+                  <div className="font-display text-[20px] text-(--ink-1) mt-1">
+                    Send to Stellar wallet
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeTransfer}
+                  className="px-2 py-1 rounded-(--r-sm) border border-(--paper-edge) bg-(--paper-2) text-(--ink-2) text-[12px]"
+                >
+                  Close
+                </button>
+              </div>
+
+              <label className="block text-mono text-[10px] uppercase tracking-wider text-(--ink-4) mb-2">
+                Recipient wallet
+              </label>
+              <input
+                value={transferToWallet}
+                onChange={(e) => setTransferToWallet(e.target.value)}
+                placeholder="G..."
+                className="w-full px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[13px] text-(--ink-1)"
+              />
+              <p className="mt-2 text-[12px] text-(--ink-3) font-secondary">
+                Transfers are gated by accreditation on the recipient when enforcement is enabled.
+              </p>
+
+              <div className="mt-5 flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={closeTransfer}
+                  className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2)"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void transfer()}
+                  disabled={!transferToWallet.trim() || transferring}
+                  className="px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
+                >
+                  {transferring ? 'Transferring…' : 'Transfer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <header className="nft-item mb-8 md:mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-(--paper-2) border border-(--paper-edge) mb-4">
             <Ticket size={13} className="text-(--ink-3)" />
@@ -140,6 +252,9 @@ export function NFTs() {
           <p className="mt-3 max-w-185 font-secondary text-[15px] text-(--ink-2) leading-[1.7]">
             Package future stream rights into tradeable NFTs for eligible users. Same paper aesthetic, same low-friction flow, and transparent payout metadata.
           </p>
+          <div className="mt-4 p-3 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[13px] text-(--ink-2)">
+            Demo note: this NFT flow enforces an accreditation check when enabled. For a fellowship demo, this is a simulated eligibility gate and does not represent full regulatory coverage.
+          </div>
         </header>
 
         <section className="nft-item grid md:grid-cols-[1.25fr_1fr] gap-6 mb-8">
@@ -175,6 +290,28 @@ export function NFTs() {
               <li>Compliance metadata embedded in each token record.</li>
               <li>Real-time stream preview before purchase confirmation.</li>
             </ul>
+
+            {error && (
+              <div className="mt-4 p-3 rounded-(--r-md) border border-(--rose) bg-(--rose)/10 text-[13px] text-(--ink-1)">
+                {error}
+              </div>
+            )}
+
+            {isConnected && accreditation && (
+              <div className="mt-4 p-3 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] text-(--ink-2)">
+                <div className="text-mono text-[10px] uppercase tracking-wider text-(--ink-4) mb-1">
+                  Accreditation check
+                </div>
+                <div>
+                  {accreditation.eligible
+                    ? 'Eligible for mint/transfer.'
+                    : 'Not eligible for mint/transfer on this deployment.'}
+                  {accreditation.verification?.fallbackReason
+                    ? ` (${accreditation.verification.fallbackReason})`
+                    : ''}
+                </div>
+              </div>
+            )}
 
             {isConnected && (
               <div className="mt-5 pt-4 border-t border-(--paper-edge) space-y-3">
@@ -222,7 +359,7 @@ export function NFTs() {
                 <button
                   type="button"
                   onClick={mint}
-                  disabled={minting || loading}
+                  disabled={minting || loading || (accreditation ? !accreditation.eligible : false)}
                   className="w-full px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
                 >
                   {minting ? 'Minting...' : 'Mint NFT'}
@@ -231,6 +368,58 @@ export function NFTs() {
             )}
           </div>
         </section>
+
+        <div className="nft-item mb-6 flex items-center justify-between gap-3">
+          <div className="inline-flex rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) p-1">
+            <button
+              type="button"
+              onClick={() => setView('market')}
+              className={`px-3 py-1.5 rounded-(--r-sm) text-[12px] font-display ${
+                view === 'market'
+                  ? 'bg-(--paper-1) text-(--ink-1)'
+                  : 'text-(--ink-3)'
+              }`}
+            >
+              Market
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('mine')}
+              disabled={!isConnected}
+              className={`px-3 py-1.5 rounded-(--r-sm) text-[12px] font-display disabled:opacity-50 ${
+                view === 'mine'
+                  ? 'bg-(--paper-1) text-(--ink-1)'
+                  : 'text-(--ink-3)'
+              }`}
+            >
+              My NFTs
+            </button>
+          </div>
+          {view === 'mine' && isConnected && (
+            <select
+              value={myStatus}
+              onChange={(e) =>
+                setMyStatus(
+                  e.target.value as 'all' | 'active' | 'redeemed' | 'transferred',
+                )
+              }
+              className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2)"
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="redeemed">Redeemed</option>
+              <option value="transferred">Transferred</option>
+            </select>
+          )}
+          <button
+            type="button"
+            onClick={() => void refreshData()}
+            disabled={loading}
+            className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2) disabled:opacity-50"
+          >
+            Refresh
+          </button>
+        </div>
 
         <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {visibleItems.map((item) => (
@@ -272,7 +461,7 @@ export function NFTs() {
                       <button
                         type="button"
                         className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2)"
-                        onClick={() => transfer(item.id)}
+                        onClick={() => openTransfer(item.id)}
                         disabled={item.status !== 'active'}
                       >
                         Transfer

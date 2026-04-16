@@ -11,7 +11,8 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 import { useWalletStore } from '@/stores/walletStore';
 import { useSplitStore } from '@/stores/splitStore';
-import { api } from '@/lib/api';
+import { api, getAccessToken, readAccessTokenFromSession } from '@/lib/api';
+import { parseAnchorUpdatePayload, ws } from '@/lib/ws';
 
 type HarvestState = 'idle' | 'building' | 'signing' | 'submitting' | 'success' | 'error';
 
@@ -38,6 +39,7 @@ export function Dashboard() {
     positions,
     setWallet,
     fetchPositions,
+    applyStreamAnchor,
     tick,
   } = usePortfolioStore();
 
@@ -69,6 +71,27 @@ export function Dashboard() {
 
     Promise.all([fetchPositions(), fetchSplitConfig(publicKey)]).finally(() => setLoading(false));
   }, [isConnected, publicKey, navigate, setWallet, setSplitWallet, fetchPositions, fetchSplitConfig]);
+
+  // Live anchor stream (deposit / harvest) via authenticated WS — same socket as Agent COND_ACTION.
+  useEffect(() => {
+    if (!isConnected || !publicKey) return;
+    if (!getAccessToken() && !readAccessTokenFromSession()) return;
+
+    ws.connect(publicKey);
+    const unsub = ws.onMessage((msg) => {
+      if (msg.type === 'ANCHOR_UPDATE') {
+        const anchor = parseAnchorUpdatePayload(msg.data);
+        if (anchor) applyStreamAnchor(anchor);
+        return;
+      }
+      if (msg.type === 'HARVEST_COMPLETE') {
+        void fetchPositions({ quiet: true });
+      }
+    });
+    return () => {
+      unsub();
+    };
+  }, [isConnected, publicKey, applyStreamAnchor, fetchPositions]);
 
   // Live counter tick loop
   useEffect(() => {
@@ -151,7 +174,7 @@ export function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="max-w-250 mx-auto" ref={containerRef}>
+      <div className="max-w-[min(100%,1060px)] mx-auto" ref={containerRef}>
         {loading ? (
           <div className="animate-pulse space-y-8">
             <div className="h-75 bg-(--paper-2) rounded-(--r-xl)"></div>
@@ -185,8 +208,8 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 border-t border-(--paper-edge) pt-6 mb-8">
-                <div className="border-r border-(--paper-edge)">
+              <div className="grid sm:grid-cols-3 gap-4 border-t border-(--paper-edge) pt-6 mb-8">
+                <div className="sm:border-r sm:border-(--paper-edge)">
                   <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 flex items-center gap-1">
                     Pending Harvest
                     <Tooltip content="Yield accrued but not yet claimed to your wallet.">
@@ -195,7 +218,7 @@ export function Dashboard() {
                   </div>
                   <div className="font-display text-[24px] text-(--ink-1) font-medium">${(pendingYield || 0).toFixed(2)}</div>
                 </div>
-                <div className="border-r border-(--paper-edge) pl-4">
+                <div className="sm:border-r sm:border-(--paper-edge) sm:pl-4">
                   <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 flex items-center gap-1">
                     Avg APY
                     <Tooltip content="Annual Percentage Yield across all active holdings.">
@@ -204,7 +227,7 @@ export function Dashboard() {
                   </div>
                   <div className="font-display text-[24px] text-(--ink-1) font-medium">{(avgApy || 0).toFixed(2)}%</div>
                 </div>
-                <div className="pl-4">
+                <div className="sm:pl-4">
                   <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 flex items-center gap-1">
                     Daily Rate
                     <Tooltip content="Estimated yield generated every 24 hours.">
@@ -215,7 +238,7 @@ export function Dashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-6">
                 <MagneticButton
                   variant="custom"
                   magneticStrength={0}
@@ -253,7 +276,7 @@ export function Dashboard() {
               </div>
             </TiltCard>
 
-            <div className="grid lg:grid-cols-[1fr_300px] gap-8">
+            <div className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 xl:gap-8 items-start">
               {/* Split Config */}
               <div className="dash-item paper-card p-6 flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
@@ -262,7 +285,7 @@ export function Dashboard() {
                     <Info size={14} className="text-(--ink-3) cursor-help" />
                   </Tooltip>
                 </div>
-                <div className="flex-1 flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
                   <div className="w-40 h-40 relative shrink-0">
                     <PieChart width={160} height={160}>
                         <Pie
@@ -283,6 +306,7 @@ export function Dashboard() {
                           ))}
                         </Pie>
                         <RechartsTooltip 
+                          wrapperStyle={{ zIndex: 30 }}
                           contentStyle={{ 
                             backgroundColor: 'rgba(250, 250, 247, 0.92)', 
                             backdropFilter: 'blur(40px)',
@@ -295,31 +319,31 @@ export function Dashboard() {
                         />
                       </PieChart>
                     {/* Inner circle for donut effect */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
                       <div className="w-25 h-25 rounded-full bg-(--paper-2) shadow-inner flex items-center justify-center">
                          <span className="font-display font-medium text-[16px] text-(--ink-1)">{totalSplitPercent}%</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex-1 space-y-4 w-full">
+                  <div className="flex-1 space-y-4 w-full min-w-0">
                     <div className="max-h-56 overflow-y-auto pr-1 space-y-4">
                       {splits.map((split, i) => (
-                        <div key={`${split.destination}-${i}`} className="flex items-center justify-between p-4 rounded-(--r-md) bg-(--paper-1) border border-(--paper-edge) group">
-                          <div className="flex items-center gap-3">
+                        <div key={`${split.destination}-${i}`} className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 p-4 rounded-(--r-md) bg-(--paper-1) border border-(--paper-edge) group">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div className="w-3 h-3 rounded-full bg-(--surge)"></div>
                             <input
                               value={split.label}
                               onChange={(e) => updateSplitLabel(i, e.target.value)}
-                              className="font-secondary text-[15px] text-(--ink-1) bg-transparent border-b border-(--paper-edge) focus:outline-none focus:border-(--surge)"
+                              className="w-full max-w-45 font-secondary text-[15px] text-(--ink-1) bg-transparent border-b border-(--paper-edge) focus:outline-none focus:border-(--surge)"
                               maxLength={50}
                             />
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             <input
                               value={split.destination}
                               onChange={(e) => updateSplitDestination(i, e.target.value.toUpperCase())}
-                              className="w-52.5 font-mono text-[11px] text-(--ink-3) bg-transparent border border-(--paper-edge) rounded-(--r-sm) px-2 py-1 focus:outline-none focus:border-(--surge)"
+                              className="w-full sm:w-52.5 font-mono text-[11px] text-(--ink-3) bg-transparent border border-(--paper-edge) rounded-(--r-sm) px-2 py-1 focus:outline-none focus:border-(--surge)"
                             />
                             <input
                               type="number"
@@ -374,7 +398,7 @@ export function Dashboard() {
               </div>
 
               {/* COND Widget */}
-              <div className="dash-item paper-card border-t-2 border-t-(--violet) p-6">
+              <div className="dash-item paper-card border-t-2 border-t-(--violet) p-6 xl:mt-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <h3 className="font-display text-[16px] font-medium text-(--ink-1)">COND Agent</h3>

@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun run src/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "bun run src/db/seed.ts"
+    "db:seed": "bun run src/db/seed.ts",
+    "cron:cond-evaluate-all": "bun run scripts/cond-evaluate-all-cron.ts"
   },
   "dependencies": {
     "hono": "^4.7.0",

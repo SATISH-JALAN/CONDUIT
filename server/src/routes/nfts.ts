@@ -90,6 +90,31 @@ app.get("/market", async (c) => {
 
 app.use("*", authMiddleware);
 
+app.get("/accreditation", async (c) => {
+  const wallet = c.get("wallet");
+
+  try {
+    const verification = await readWalletAccreditationStatus(wallet);
+    const eligible =
+      !NFT_ENFORCE_ACCREDITATION ||
+      (!verification.enabled && !IS_PRODUCTION) ||
+      (verification.enabled && verification.ok && verification.value === true);
+
+    return c.json({
+      ok: true,
+      enforceAccreditation: NFT_ENFORCE_ACCREDITATION,
+      eligible,
+      verification,
+    });
+  } catch (err: any) {
+    logger.error({ err: err.message, wallet }, "NFT accreditation read failed");
+    return c.json(
+      { error: err.message || "Failed to read accreditation status" },
+      500,
+    );
+  }
+});
+
 app.get("/", async (c) => {
   const wallet = c.get("wallet");
 

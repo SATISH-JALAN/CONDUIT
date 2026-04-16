@@ -79,7 +79,7 @@ export const saveSplitConfigSchema = splitConfigSchema.extend({
 
 // ── Feature 5: Leaderboard / Race ──
 
-export const leaderboardPeriodSchema = z.enum(["7d", "30d"]);
+export const leaderboardPeriodSchema = z.enum(["4d", "7d", "30d"]);
 
 export const leaderboardQuerySchema = z.object({
   period: leaderboardPeriodSchema.default("7d"),
@@ -135,6 +135,12 @@ export const copyPortfolioSchema = z.object({
   leader_wallet: stellarAddressSchema,
 });
 
+// ── Feature 7: Creator Pools ──
+
+export const creatorPoolJoinSchema = z.object({
+  deposit_amount: z.number().nonnegative().default(0),
+});
+
 // ── WebSocket Messages ──
 
 export const wsMessageSchema = z.discriminatedUnion("type", [
@@ -165,6 +171,43 @@ export const wsMessageSchema = z.discriminatedUnion("type", [
     }),
   }),
 ]);
+
+// ── Feature 6: Internal execution boundary ──
+export const internalTxActionSchema = z.enum([
+  "harvest",
+  "rebalance",
+  "rotate",
+  "notify",
+]);
+
+export const internalTxRequestSchema = z.object({
+  wallet: stellarAddressSchema,
+  action: internalTxActionSchema,
+  dry_run: z.boolean().default(true),
+  // Rule-engine / agent-specific params; kept as JSON for forward compatibility.
+  params: z.record(z.unknown()).default({}),
+  // Request metadata for replay protection + audit
+  request_nonce: z.string().min(16).max(128),
+  request_ts: z.string().datetime(),
+});
+
+/** Signed body for Python / COND service to pull eligible wallets + mandates + positions. */
+export const internalCondSnapshotRequestSchema = z.object({
+  request_nonce: z.string().min(16).max(128),
+  request_ts: z.string().datetime(),
+});
+
+// ── Feature 9: COND v2 proposals ──
+
+export const condProposalSchema = z.object({
+  wallet: stellarAddressSchema,
+  action: internalTxActionSchema,
+  params: z.record(z.unknown()).default({}),
+  reasoning: z.string().min(1).max(2000),
+  confidence: z.number().min(0).max(1),
+  request_nonce: z.string().min(16).max(128),
+  request_ts: z.string().datetime(),
+});
 
 // ── Export types ──
 

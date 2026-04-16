@@ -1,659 +1,143 @@
 # CONDUIT
 
-## Real-Time Yield Streaming Protocol on Stellar
+[![CI/CD](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml)
 
-<div align="center">
-
-**Your money. Streaming.**
-
-Conduit transforms fixed-income from static payouts into a live, mobile-first income stream.
-
-</div>
-
----
+Real-time yield streaming protocol on Stellar.
 
 ## Overview
 
-Conduit is a mobile-first decentralized finance application designed to open the global bond market to everyone.
-It reimagines traditional fixed income as a real-time yield experience: users deposit into curated portfolios of tokenized government bonds and watch earnings accrue every second through a live counter.
-
-The protocol is built for accessibility, transparency, and retail-scale efficiency on Stellar.
-
----
-
-## Level 5 - Blue Belt Submission
-
-### Blue Belt Overview
-
-Conduit has been built and validated as a real-world Stellar Testnet MVP with user onboarding, feedback collection, and iteration.
-
-### Submission Evidence
-
-- Repository: [Conduit GitHub](https://github.com/SATISH-JALAN/Conduit)
-- Live demo: _Add deployed app URL (Vercel/Netlify)_
-- Demo video: _Add full MVP walkthrough video URL_
-- User feedback export (Google Sheet): [Blue Belt User Responses](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
-### Verified Testnet Users (5+)
-
-Add at least 5 real tester wallet addresses below and keep them verifiable on Stellar Explorer:
-
-1. GCUOCLOPD3I7ECINEXFOJVGFQFNJILYW26BERBCCQBQ7WHJMICHR2WPM
-2. GB2CC6D3E3SXRJUPNJ43WGMFFYEN5CNP6NRY5L2S7NUDLEAZW5IMRVLK
-3. GBMQJ3G5LDWODZKUUQWGGT6NIKMM7KL5NLHVIG53WLNLWB27Z4AKH3F4
-4. GDZWLHG6WBRYIGWE2JXJRI4LTXLWQSTBCSXK3XB6HLB2QOTS4DNXDSKP
-5.GA5RKOAUAVEA5POB4HKI2HCIZ3K67SZYLUW5SOACOAKCNDSM4XLC5BPR
-
-### Blue Belt Requirements Status
-
-| Requirement                | Status           | Evidence                                                                                  |
-| -------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
-| MVP fully functional       | ✅ Done          | Live product flows implemented across Home, Bonds, Dashboard, Agent, Race, NFTs, Creators |
-| 5+ real testnet users      | ✅ In Validation | User onboarding + feedback collection sheet linked above                                  |
-| Feedback documented        | ✅ Done          | Structured feedback questions and exported response sheet                                 |
-| 1 iteration completed      | ✅ Done          | Mobile UX and header/navigation improvements integrated                                   |
-| Architecture documentation | ✅ Done          | `docs/systemarch.md`, `docs/backendarch.md`                                               |
-
-### MVP Features Delivered In Blue Belt
-
-- Wallet onboarding and authentication flow
-- Bond box discovery and selection experience
-- Real-time yield streaming dashboard
-- Yield split configuration across destinations
-- Harvest transaction flow and status handling
-- NFT and social/creator surfaces for protocol extensions
-- Documentation and help pages for onboarding support
-
-### User Validation and Onboarding Artifacts
-
-- Google Form based user onboarding and product feedback collection
-- Captured user details fields: name, email, Stellar testnet wallet, rating, onboarding ease, feature usage, NPS, bug report, trust rating, next feature request
-- Exported responses attached via spreadsheet link in this README
-
-### Feedback Iteration Log (Blue Belt)
-
-**Iteration 1: Mobile usability and navigation clarity**
-
-- Problem reported by test users: mobile header overflow, hard-to-access actions, low contrast in sidebar, and friction while navigating key screens
-- Changes shipped:
-  - Responsive layout improvements in app shell and home flow
-  - Better mobile-safe header behavior and overflow control
-  - Improved sidebar readability and action accessibility
-- Commit link: _Add GitHub commit URL after push_
-
-### Next Phase Improvement Plan
-
-Based on current user feedback, the next phase will focus on:
-
-1. Faster first-time onboarding with guided walkthrough states
-2. Clearer transaction lifecycle messaging (build, sign, submit, confirm)
-3. Improved mobile density and touch ergonomics for dashboard controls
-4. Extended analytics (historical APY/yield charts and alerting)
-
-### Blue Belt Validation Flow
-
-```mermaid
-flowchart TD
-	A[Deploy MVP on Testnet] --> B[Onboard Users]
-	B --> C[Collect Feedback via Google Form]
-	C --> D[Export Responses to Sheet]
-	D --> E[Analyze UX and Bug Patterns]
-	E --> F[Implement Iteration]
-	F --> G[Document Improvements in README]
-	G --> H[Submit Blue Belt Repository]
-```
-
----
-
-## Core Product Experience
-
-Users deposit into curated bond strategies backed by real institutional-grade RWAs, including:
-
-- **Franklin Templeton BENJI**
-- **Ondo Finance USDY**
-- **KRWQ** (Korean Government Bonds via Shinhan)
-
-Instead of waiting for periodic distributions, users see yield stream in real time.
-
-### Streaming Yield Formula
-
-Conduit computes continuous accrual client-side using:
-
-`V(t) = P × e^(r × Δt)`
-
-Where:
-
-- `P` = principal
-- `r` = annualized rate converted to continuous time
-- `Δt` = elapsed time
-
-This enables a smooth live counter with **zero blockchain calls during streaming**.
-Settlement to Stellar occurs lazily when users choose to harvest.
-
----
-
-## Why Stellar
-
-Conduit is built on Stellar + Soroban to make continuous distribution viable:
-
-- **~$0.00001 transaction fees**
-- High-throughput, low-latency settlement
-- Cost structure suitable for frequent micro-accrual operations
-- Native RWA ecosystem (BENJI, USDY already on Stellar)
-
-This allows user experiences that are economically impractical on high-fee chains.
-
----
-
-## Bond Boxes
-
-Conduit abstracts DeFi complexity into five curated yield strategies:
-
-1. **Safe Harbor** — AAA-oriented, lower-volatility profile (~4.8% APY)
-2. **All Weather** — balanced duration/risk allocation
-3. **Yield Max** — higher carry target (~7.1% APY)
-4. **Fixed Lock** — term-based predictable profile
-5. **COND Custom** — dynamically managed AI strategy
-
-The interface is intentionally selection-first and familiar, like choosing playlists.
-
----
-
-## COND: Autonomous Portfolio Agent
-
-COND is Conduit's AI portfolio layer, built on **LangGraph** with **Claude** as the reasoning engine.
-
-Capabilities include:
-
-- Monitoring market and credit conditions
-- Detecting deterioration signals early
-- Rebalancing and rotation logic
-- Auto-compounding yield
-- Immutable on-chain decision logging for auditability
-
-### Safety + Control
-
-- User-controlled **Kill Switch**
-- Pauses all autonomous agent activity within 15 minutes
-- User withdrawal visibility and control remain intact
-
----
-
-## Protocol Extensions
-
-Beyond core streaming yield:
-
-- **Stream Splitting**: route yield to multiple wallets
-- **Yield Tokenization**: package future yield as tradable NFTs (accredited investors only)
-- **Yield Races**: social weekly leaderboard competitions
-- **Copy Portfolios**: strategy mirroring
-- **Creator Pools**: fans deposit, creators earn yield share (subscription-free monetization)
-
----
+Conduit is a full-stack project for tokenized bond/yield experiences:
+- **Client**: React + Vite app
+- **Server**: Bun + Hono API
+- **Contracts**: Rust/Soroban smart contracts
+- **Agent**: Optional Python FastAPI sidecar for COND automation
 
 ## Tech Stack
 
-| Layer               | Technology                           |
-| ------------------- | ------------------------------------ |
-| **Smart Contracts** | Rust → WASM on Soroban (Stellar)     |
-| **Backend**         | Bun + Hono + TypeScript              |
-| **Database**        | PostgreSQL + TimescaleDB             |
-| **Cache**           | Redis (anchor data for live counter) |
-| **AI Agent**        | Python + LangGraph + Claude Sonnet   |
-| **Frontend**        | React + Vite + TailwindCSS + GSAP    |
-| **Auth**            | JWT (jose) — wallet-based            |
-
----
+| Area | Stack |
+| --- | --- |
+| Frontend | TypeScript, React, Vite, Tailwind CSS |
+| Backend API | Bun, TypeScript, Hono |
+| Smart Contracts | Rust, Soroban (Stellar), WASM |
+| AI/Automation Sidecar | Python, FastAPI, HTTPX, Gemini SDK |
+| Database | PostgreSQL (TimescaleDB image) + Drizzle ORM |
+| Cache | Redis |
+| Package Manager | pnpm |
+| CI/CD | GitHub Actions (`.github/workflows/ci-cd.yml`) |
 
 ## Project Structure
 
+```text
+CONDUIT/
+├── client/                  # React + Vite frontend
+├── server/                  # Bun + Hono backend
+├── contracts/               # Rust/Soroban contracts workspace
+├── agent/                   # Optional Python sidecar
+├── docs/                    # Architecture docs
+├── scripts/                 # Utility/cron scripts
+├── docker-compose.yml       # Local infra services
+├── package.json             # Workspace scripts
+├── pnpm-workspace.yaml
+└── README.md
 ```
-Conduit/
-├── Root/
-│   ├── .env
-│   ├── .env.example
-│   ├── .git/
-│   ├── .gitignore
-│   ├── .vscode/
-│   ├── agent/
-│   ├── client/
-│   ├── contracts/
-│   ├── docker-compose.yml
-│   ├── docs/
-│   ├── node_modules/
-│   ├── package.json
-│   ├── pnpm-lock.yaml
-│   ├── pnpm-workspace.yaml
-│   ├── README.md
-│   └── server/
-│
-├── client/ (Client App)
-│   ├── dist/
-│   ├── index.html
-│   ├── node_modules/
-│   ├── package.json
-│   ├── pnpm-lock.yaml
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   │   ├── counter/
-│   │   │   │   └── YieldCounter.tsx
-│   │   │   ├── layout/
-│   │   │   │   ├── AppLayout.tsx
-│   │   │   │   └── Navbar.tsx
-│   │   │   └── ui/
-│   │   │       ├── CustomCursor.tsx
-│   │   │       ├── GlassCard.tsx
-│   │   │       ├── MagneticButton.tsx
-│   │   │       ├── ScrambleText.tsx
-│   │   │       ├── Skeleton.tsx
-│   │   │       ├── SplitText.tsx
-│   │   │       ├── SpotlightCard.tsx
-│   │   │       ├── TiltCard.tsx
-│   │   │       └── Tooltip.tsx
-│   │   ├── index.css
-│   │   ├── lib/
-│   │   │   ├── api.ts
-│   │   │   ├── formula.ts
-│   │   │   ├── gsap.ts
-│   │   │   ├── utils.ts
-│   │   │   └── ws.ts
-│   │   ├── main.tsx
-│   │   ├── pages/
-│   │   │   ├── Agent.tsx
-│   │   │   ├── BondDetail.tsx
-│   │   │   ├── Bonds.tsx
-│   │   │   ├── CreatorProfile.tsx
-│   │   │   ├── Creators.tsx
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── Docs.tsx
-│   │   │   ├── Home.tsx
-│   │   │   ├── NFTs.tsx
-│   │   │   ├── Onboarding.tsx
-│   │   │   └── Race.tsx
-│   │   └── stores/
-│   │       ├── portfolioStore.ts
-│   │       ├── raceStore.ts
-│   │       ├── splitStore.ts
-│   │       └── walletStore.ts
-│   ├── tsconfig.json
-│   └── vite.config.ts
-│
-├── server/ (Server App)
-│   ├── dist/
-│   ├── drizzle/
-│   │   ├── 0000_brave_catseye.sql
-│   │   ├── 0001_split_config_wallet_json.sql
-│   │   ├── 0002_leaderboard_race.sql
-│   │   ├── 0003_agent_nft_social.sql
-│   │   └── meta/
-│   │       ├── 0000_snapshot.json
-│   │       └── _journal.json
-│   ├── drizzle.config.ts
-│   ├── node_modules/
-│   ├── package.json
-│   ├── src/
-│   │   ├── db/
-│   │   │   ├── migrate.ts
-│   │   │   ├── schema.ts
-│   │   │   └── seed.ts
-│   │   ├── index.ts
-│   │   ├── routes/
-│   │   │   ├── agent.ts
-│   │   │   ├── auth.ts
-│   │   │   ├── boxes.ts
-│   │   │   ├── deposit.ts
-│   │   │   ├── harvest.ts
-│   │   │   ├── health.ts
-│   │   │   ├── leaderboard.ts
-│   │   │   ├── nfts.ts
-│   │   │   ├── position.ts
-│   │   │   ├── race.test.ts
-│   │   │   ├── race.ts
-│   │   │   ├── social.ts
-│   │   │   ├── split.test.ts
-│   │   │   └── split.ts
-│   │   ├── shared/
-│   │   │   ├── auth.ts
-│   │   │   ├── db.ts
-│   │   │   ├── leaderboard.ts
-│   │   │   ├── logger.ts
-│   │   │   ├── redis.ts
-│   │   │   ├── stellar.ts
-│   │   │   └── types.ts
-│   │   └── stream/
-│   │       ├── cache.ts
-│   │       └── formula.ts
-│   └── tsconfig.json
-│
-├── contracts/ (Smart Contracts)
-│   ├── .cargo/
-│   │   └── config.toml
-│   ├── Cargo.lock
-│   ├── Cargo.toml
-│   ├── README.md
-│   ├── rust-toolchain.toml
-│   ├── compliance/
-│   │   ├── Cargo.toml
-│   │   ├── src/
-│   │   │   └── lib.rs
-│   │   └── test_snapshots/
-│   │       └── tests/
-│   │           ├── get_admin_returns_initialized_admin.1.json
-│   │           ├── sanctions_default_false.1.json
-│   │           ├── set_admin_is_one_time_initializer.1.json
-│   │           ├── verify_kyc_persists_hash.1.json
-│   │           ├── verify_kyc_persists_hash_with_admin.1.json
-│   │           └── verify_kyc_requires_admin_setup.1.json
-│   ├── stream_router/
-│   │   ├── Cargo.toml
-│   │   ├── src/
-│   │   │   └── lib.rs
-│   │   └── test_snapshots/
-│   │       └── tests/
-│   │           ├── accrual_increases_over_time.1.json
-│   │           ├── deposit_rejects_apy_above_limit.1.json
-│   │           ├── deposit_rejects_zero_apy.1.json
-│   │           ├── harvest_resets_pending_yield.1.json
-│   │           └── withdraw_rejects_amount_above_total.1.json
-│   └── target/
-│
-└── docs/ (Docs)
-	├── backendarch.md
-	└── systemarch.md
-```
-
----
 
 ## Prerequisites
 
-| Tool               | Version | Purpose                  |
-| ------------------ | ------- | ------------------------ |
-| **Node.js**        | 18+     | Client dev server        |
-| **pnpm**           | 9+      | Package manager          |
-| **Bun**            | 1.0+    | Server runtime           |
-| **Docker Desktop** | Latest  | Postgres, Redis, Stellar |
-| **Rust**           | 1.70+   | Soroban smart contracts  |
-| **Stellar CLI**    | 23+     | Contract deployment      |
+- Node.js 20+
+- pnpm 9+
+- Bun 1.x
+- Docker + Docker Compose
+- Rust (stable) + Cargo
+- (Optional) Python 3.10+ for `agent/`
 
----
+## Run Locally
 
-## Getting Started
+All commands below are run from **repository root** unless explicitly marked otherwise.
 
-### 1. Clone the repo
+### 1) Clone and install
 
 ```bash
-git clone https://github.com/SATISH-JALAN/Conduit.git
-cd Conduit
+git clone https://github.com/SATISH-JALAN/CONDUIT.git
+cd CONDUIT
+pnpm install --frozen-lockfile
 ```
 
-### 2. Set up environment variables
+### 2) Start local dependencies (DB + Redis + Stellar)
 
 ```bash
-cp .env.example .env
+docker compose up -d postgres redis stellar
 ```
 
-Edit `.env` with your values (defaults work for local dev):
-
-```env
-DATABASE_URL=postgresql://conduit:conduit_dev@localhost:5432/conduit
-REDIS_URL=redis://localhost:6379
-STELLAR_RPC_URL=http://localhost:8000/soroban/rpc
-PORT=5000
-JWT_SECRET=your-secret-here
-CLIENT_URL=http://localhost:3000
-```
-
-### 3. Start infrastructure
+### 3) Database setup (required before server tests)
 
 ```bash
+pnpm --filter server exec drizzle-kit push --force --config=drizzle.config.ts
+```
+
+### 4) Start backend and frontend
+
+```bash
+# terminal 1 (root)
+pnpm --filter server dev
+
+# terminal 2 (root)
+pnpm --filter client dev
+```
+
+- Client: `http://localhost:3000`
+- Server: `http://localhost:5000`
+- Health check: `http://localhost:5000/api/health`
+
+## Common Commands
+
+Run from **repository root**:
+
+```bash
+# typecheck/build
+pnpm --filter client lint
+pnpm --filter client build
+pnpm --filter server build
+
+# tests
+pnpm --filter server test
+cargo test --manifest-path contracts/Cargo.toml
+
+# contracts
+pnpm contracts:build
+pnpm contracts:test
+
+# infra
 docker compose up -d
+docker compose down
 ```
 
-This starts:
+## Optional Python Agent (`agent/`)
 
-- **PostgreSQL 16 + TimescaleDB** on port `5432`
-- **Redis 7** on port `6379`
-- **Stellar Quickstart** (local blockchain) on port `8000`
-
-### 4. Install dependencies
-
-```bash
-pnpm install
-```
-
-### 5. Run database migrations
-
-```bash
-pnpm --filter server db:migrate
-```
-
-### 6. Start the app
-
-```bash
-# Terminal 1 — Backend
-pnpm --filter server dev      # → http://localhost:5000
-
-# Terminal 2 — Frontend
-pnpm --filter client dev      # → http://localhost:3000
-```
-
-### Verify it works
-
-```bash
-# Health check (should return {"status":"healthy"})
-curl http://localhost:5000/api/health
-```
-
----
-
-## API Endpoints
-
-### Public
-
-| Method | Endpoint      | Description                     |
-| ------ | ------------- | ------------------------------- |
-| `GET`  | `/api/health` | Server health + DB/Redis status |
-
-### Auth
-
-| Method | Endpoint            | Description                  |
-| ------ | ------------------- | ---------------------------- |
-| `POST` | `/api/auth/connect` | Connect wallet → returns JWT |
-| `POST` | `/api/auth/refresh` | Refresh access token         |
-
-_More endpoints added as features are built._
-
----
-
-## Frontend Routes
-
-| Route           | Page            | Description                           |
-| --------------- | --------------- | ------------------------------------- |
-| `/`             | Home            | Landing page with live demo counter   |
-| `/dashboard`    | Dashboard       | Yield counter, split config, holdings |
-| `/bonds`        | Bond Market     | Browse and filter bond boxes          |
-| `/agent`        | COND Agent      | AI chat interface + strategy settings |
-| `/race`         | Yield Race      | Leaderboard + competitions            |
-| `/nfts`         | Yield NFTs      | Tokenized future yield marketplace    |
-| `/creators`     | Creator Pools   | Fan deposits + creator yield share    |
-| `/creators/:id` | Creator Profile | Individual creator pool details       |
-| `/onboarding`   | Onboarding      | Wallet connection (Freighter/Albedo)  |
-
----
-
-## Database Schema
-
-9 tables managed via Drizzle ORM:
-
-| Table             | Purpose                                        |
-| ----------------- | ---------------------------------------------- |
-| `users`           | Wallet addresses + KYC status                  |
-| `bond_boxes`      | Curated yield strategies                       |
-| `positions`       | User holdings (principal, APY, sync timestamp) |
-| `split_configs`   | Yield routing to multiple destinations         |
-| `mandates`        | COND agent preferences per user                |
-| `harvests`        | Harvest history (TimescaleDB hypertable)       |
-| `apy_history`     | APY tracking over time                         |
-| `compliance_logs` | KYC/sanctions audit trail                      |
-| `cond_decisions`  | AI agent decision log                          |
-
----
-
-## Useful Commands
-
-```bash
-# Infrastructure
-docker compose up -d               # Start Postgres, Redis, Stellar
-docker compose down                # Stop all containers
-
-# Development
-pnpm --filter server dev           # Backend on :5000
-pnpm --filter client dev           # Frontend on :3000
-
-# Database
-pnpm --filter server db:generate   # Generate migration SQL from schema changes
-pnpm --filter server db:migrate    # Apply migrations
-pnpm --filter server db:studio     # Open Drizzle Studio (DB browser)
-
-# Build
-pnpm --filter client build         # Production frontend build
-pnpm --filter server build         # Production server build
-
-# COND v1 batch (HMAC → API, no Python needed)
-pnpm --filter server cron:cond-evaluate-all
-```
-
----
-
-## CI/CD Pipeline
-
-This repo now includes GitHub Actions workflow: `.github/workflows/ci-cd.yml`.
-
-### CI (runs on PRs to `main` and pushes to `main`)
-
-- Installs dependencies with `pnpm`
-- Runs client type-check (`pnpm --filter client lint`)
-- Builds client (`pnpm --filter client build`)
-- Runs server tests (`pnpm --filter server test`)
-- Builds server (`pnpm --filter server build`)
-- Runs Rust contract tests (`cargo test --manifest-path contracts/Cargo.toml`)
-
-### CD (runs on pushes to `main`, only if secrets exist)
-
-- `deploy-client` triggers `CLIENT_DEPLOY_HOOK_URL`
-- `deploy-server` triggers `SERVER_DEPLOY_HOOK_URL`
-
-Add these repository secrets in GitHub settings to enable deployments:
-
-- `CLIENT_DEPLOY_HOOK_URL` (for Vercel/Netlify/etc. webhook)
-- `SERVER_DEPLOY_HOOK_URL` (for Render/Railway/etc. webhook)
-
-If deploy secrets are not configured, CI still runs and deployment jobs are skipped.
-
----
-
-## COND agent sidecar (`agent/`, optional)
-
-Optional **Python + FastAPI** service for scheduled or manual calls to internal COND endpoints (same **HMAC** contract as the Bun server). Not required for the web app: the UI uses JWT + `/api/agent/evaluate`; the API can also run batch evaluation via **`pnpm --filter server cron:cond-evaluate-all`** (see below).
-
-| HTTP (sidecar) | Proxies to (Bun) |
-| --- | --- |
-| `POST /snapshot` | `POST /api/internal/cond-snapshot` |
-| `POST /run-all` | `POST /api/internal/cond-evaluate-all` |
-
-### Environment (`agent/`)
-
-| Variable | Description |
-| --- | --- |
-| `COND_HMAC_SECRET` | Same value as the Bun server (≥32 characters). |
-| `SERVER_PUBLIC_URL` | API origin, e.g. `http://127.0.0.1:5000` (no trailing slash). |
-| `COND_CRON_SECRET` | Optional. If set, `POST /run-all` and `POST /snapshot` require header `X-Cond-Cron-Secret`. Use when the sidecar is on the public internet. |
-
-### Local Python setup
-
-Create a venv under `agent/` so Pylance/basedpyright resolve imports (`agent/pyrightconfig.json` uses `.venv`):
+Run from **`agent/` folder**:
 
 ```bash
 cd agent
 python -m venv .venv
-# Windows: .venv\Scripts\activate  |  macOS/Linux: source .venv/bin/activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-Select interpreter `agent/.venv`, then:
-
-```bash
-export COND_HMAC_SECRET='your-32-plus-char-secret'
-export SERVER_PUBLIC_URL=http://127.0.0.1:5000
 uvicorn main:app --reload --port 8088
 ```
 
-- `GET http://localhost:8088/health`
-- `POST http://localhost:8088/run-all`
+## CI/CD
 
-### Docker
+Workflow file: `.github/workflows/ci-cd.yml`
 
-From repo root (set `COND_HMAC_SECRET` in your shell):
+### CI jobs
+- Install dependencies
+- Client typecheck: `pnpm --filter client lint`
+- Client build: `pnpm --filter client build`
+- Server tests: `pnpm --filter server test`
+- Server build: `pnpm --filter server build`
+- Contract tests: `cargo test --manifest-path contracts/Cargo.toml`
 
-```bash
-export COND_HMAC_SECRET='...'
-docker compose up --build cond-agent
-```
-
-The `cond-agent` service calls the API on the host via `host.docker.internal` (see `docker-compose.yml`).
-
-### Cron: Python sidecar (`/run-all`)
-
-1. Deploy the agent with `COND_HMAC_SECRET`, `SERVER_PUBLIC_URL`, and optionally `COND_CRON_SECRET`.
-2. Cron job env: `COND_AGENT_URL=https://your-cond-agent.example.com`, and `COND_CRON_SECRET` if the agent uses it.
-
-From repo root:
-
-```bash
-bash scripts/cond-agent-cron-hit.sh
-```
-
-One-liner:
-
-```bash
-curl -fsS -X POST "$COND_AGENT_URL/run-all" -H "X-Cond-Cron-Secret: $COND_CRON_SECRET"
-```
-
-### Cron: Bun only (no Python)
-
-Same batch job from the **server** package (signs `POST /api/internal/cond-evaluate-all`):
-
-**Render:** Cron Job with the same env as the API (`COND_HMAC_SECRET`, `SERVER_PUBLIC_URL`), root directory **`server`**, command:
-
-```bash
-bun run cron:cond-evaluate-all
-```
-
-**Repo root (e.g. crontab):**
-
-```bash
-bash scripts/render-cron-cond-bun.sh
-```
-
----
-
-## Feature Roadmap
-
-| Feature            | Status     | Description                       |
-| ------------------ | ---------- | --------------------------------- |
-| Bond Box Catalog   | 🔜 Next    | Browse tokenized bond strategies  |
-| Live Yield Counter | 📋 Planned | Real-time streaming via WebSocket |
-| Deposit & Harvest  | 📋 Planned | On-chain transactions via Soroban |
-| Yield Split        | 📋 Planned | Route yield to multiple wallets   |
-| Yield Race         | 📋 Planned | Social leaderboard competitions   |
-| COND Agent v1      | 📋 Planned | Rule-based AI portfolio manager   |
-| KYC & Compliance   | 📋 Planned | Persona + Chainalysis integration |
-| Creator Pools      | 📋 Planned | Fan deposits, creator yield share |
-| Yield NFTs         | 📋 Planned | Tokenized future yield            |
-| COND Agent v2      | 📋 Planned | LangGraph + Claude reasoning      |
-| Stableswap AMM     | 📋 Planned | Curve-style in-box bond swaps     |
-
----
+### CD jobs
+- Trigger client deploy hook (`CLIENT_DEPLOY_HOOK_URL`)
+- Trigger server deploy hook (`SERVER_DEPLOY_HOOK_URL`)
 
 ## License
 

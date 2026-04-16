@@ -14,6 +14,32 @@ jobs:
   ci:
     name: Quality Checks
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: conduit
+          POSTGRES_PASSWORD: conduit_dev
+          POSTGRES_DB: conduit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U conduit"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://conduit:conduit_dev@127.0.0.1:5432/conduit
+      REDIS_URL: redis://127.0.0.1:6379
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +62,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Push server test schema
+        run: pnpm --filter server exec drizzle-kit push --force --config=drizzle.config.ts
 
       - name: Client typecheck
         run: pnpm --filter client lint
@@ -76,16 +105,24 @@ jobs:
     name: Deploy Client
     runs-on: ubuntu-latest
     needs: [ci]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CLIENT_DEPLOY_HOOK_URL != ''
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Trigger client deploy hook
+        if: ${{ secrets.CLIENT_DEPLOY_HOOK_URL != '' }}
         run: curl -fsS -X POST "${{ secrets.CLIENT_DEPLOY_HOOK_URL }}"
+      - name: Skip client deploy (missing secret)
+        if: ${{ secrets.CLIENT_DEPLOY_HOOK_URL == '' }}
+        run: echo "CLIENT_DEPLOY_HOOK_URL is not configured. Skipping deploy."
 
   deploy-server:
     name: Deploy Server
     runs-on: ubuntu-latest
     needs: [ci]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.SERVER_DEPLOY_HOOK_URL != ''
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: Trigger server deploy hook
+        if: ${{ secrets.SERVER_DEPLOY_HOOK_URL != '' }}
         run: curl -fsS -X POST "${{ secrets.SERVER_DEPLOY_HOOK_URL }}"
+      - name: Skip server deploy (missing secret)
+        if: ${{ secrets.SERVER_DEPLOY_HOOK_URL == '' }}
+        run: echo "SERVER_DEPLOY_HOOK_URL is not configured. Skipping deploy."

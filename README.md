@@ -1,4 +1,4 @@
-<![CDATA[# CONDUIT
+# CONDUIT
 
 [![CI/CD](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml)
 

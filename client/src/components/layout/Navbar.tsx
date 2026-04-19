@@ -63,11 +63,11 @@ export function Navbar() {
       )}
     >
       <div className="w-full max-w-7xl mx-auto px-4 md:px-14 flex items-center justify-between gap-2">
-        <Link to="/" className="flex items-center group relative">
-          <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1)">
-            CONDUIT
+        <Link to="/" className="flex items-center gap-0 group">
+          <img src="/logo.png" alt="Conduit Logo" className="h-15 w-auto" />
+          <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1) -ml-4">
+            CONDUIT<span className="text-(--surge)">.</span>
           </span>
-          <span className="absolute bottom-0.5 -right-0.5 w-0.75 h-0.75 rounded-full bg-(--surge)"></span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

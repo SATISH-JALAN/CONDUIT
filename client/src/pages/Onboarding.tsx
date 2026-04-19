@@ -85,7 +85,7 @@ export function Onboarding() {
                     {connecting ? (
                       <Loader2 size={20} className="animate-spin text-[var(--surge)]" />
                     ) : (
-                      <img src="https://cryptologos.cc/logos/stellar-xlm-logo.svg?v=035" alt="Freighter" className="w-6 h-6 grayscale opacity-70" />
+                      <Wallet size={20} className="text-[var(--ink-2)]" />
                     )}
                     {connecting ? 'Connecting...' : 'Freighter'}
                   </span>
@@ -95,7 +95,7 @@ export function Onboarding() {
                 <div className="relative">
                   <MagneticButton variant="neo" className="w-full justify-between px-6 py-4 opacity-50">
                     <span className="flex items-center gap-3 font-medium">
-                      <img src="https://cryptologos.cc/logos/stellar-xlm-logo.svg?v=035" alt="Albedo" className="w-6 h-6 grayscale opacity-70" />
+                      <Wallet size={20} className="text-[var(--ink-3)]" />
                       Albedo
                     </span>
                     <span className="text-mono text-[10px] text-[var(--ink-4)] uppercase">Coming Soon</span>

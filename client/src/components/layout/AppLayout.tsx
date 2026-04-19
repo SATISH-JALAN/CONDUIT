@@ -65,11 +65,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1)">
-              CONDUIT
+          <Link to="/" className="flex items-center gap-0">
+            <img src="/logo.png" alt="Conduit Logo" className="h-15 w-auto" />
+            <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1) -ml-4">
+              CONDUIT<span className="text-(--surge)">.</span>
             </span>
-            <span className="w-0.75 h-0.75 rounded-full bg-(--surge) mt-2"></span>
           </Link>
           <button 
             className="lg:hidden text-(--ink-3) hover:text-(--ink-1)"

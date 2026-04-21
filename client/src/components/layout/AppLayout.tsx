@@ -64,12 +64,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         "w-65 fixed top-0 left-0 h-screen frosted-heavy border-r border-(--paper-edge) flex flex-col z-50 transition-transform duration-300 ease-in-out lg:translate-x-0",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="p-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-0">
-            <img src="/logo.png" alt="Conduit Logo" className="h-15 w-auto" />
-            <span className="font-display font-bold text-[18px] tracking-tight text-(--ink-1) -ml-4">
-              CONDUIT<span className="text-(--surge)">.</span>
-            </span>
+        <div className="px-6 py-2 flex items-center justify-between overflow-hidden">
+          <Link to="/" className="flex items-center">
+            <img src="/logo.png" alt="Conduit" className="h-35 w-auto object-contain -my-10 -ml-7" />
           </Link>
           <button 
             className="lg:hidden text-(--ink-3) hover:text-(--ink-1)"

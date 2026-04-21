@@ -116,9 +116,9 @@ export function Home() {
             <h1 className="text-[clamp(42px,5vw,72px)] font-display font-bold leading-[0.92] tracking-[-0.04em] animate-weight">
               <SplitText className="block text-(--ink-1)">Your money.</SplitText>
               <SplitText className="block text-(--surge)" delay={0.1}>Streaming.</SplitText>
-              <SplitText className="block text-[40%] font-secondary italic font-light text-(--ink-3) leading-[1.16] mt-2 pb-[0.16em]" delay={0.2}>
+              {/* <SplitText className="block text-[40%] font-secondary italic font-light text-(--ink-3) leading-[1.16] mt-2 pb-[0.16em]" delay={0.2}>
                 every second.
-              </SplitText>
+              </SplitText> */}
             </h1>
 
             <p className="font-body text-[15px] font-light text-(--ink-2) leading-[1.7] max-w-110">

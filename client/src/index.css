@@ -110,6 +110,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* CUSTOM SCROLLBAR & SELECTION */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--paper-1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--paper-edge);
+  border-radius: var(--r-full, 9999px);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-4);
+}
+::selection {
+  background-color: var(--surge-pale-2);
+  color: var(--surge);
+}
+
 /* ORGANIC GRAIN OVERLAY */
 body::after {
   content: '';
@@ -211,6 +231,9 @@ body::after {
     rgba(0,122,94,0.4) 100%
   );
   -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;

@@ -19,6 +19,7 @@ import { Creators } from '@/pages/Creators';
 import { CreatorProfile } from '@/pages/CreatorProfile';
 import { Docs } from '@/pages/Docs';
 import { CustomCursor } from '@/components/ui/CustomCursor';
+import { Preloader } from '@/components/ui/Preloader';
 import { useWalletStore } from '@/stores/walletStore';
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
 
   return (
     <Router>
+      <Preloader />
       <CustomCursor />
       <Navbar />
       

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useWalletStore } from '@/stores/walletStore';
 import { usePortfolioStore } from '@/stores/portfolioStore';
+import { Identicon } from '@/components/ui/Identicon';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -123,7 +124,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <Menu size={24} />
             </button>
-            <div className="w-8 h-8 rounded-full bg-linear-to-br from-(--surge) to-(--sky) shrink-0"></div>
+            {publicKey ? (
+              <Identicon address={publicKey} size={32} />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-(--paper-edge) opacity-50 shrink-0"></div>
+            )}
             <div className="text-mono text-[12px] text-(--ink-4) hidden sm:block">
               {publicKey ? `${publicKey.slice(0, 6)}...${publicKey.slice(-6)}` : 'Wallet not connected'}
             </div>

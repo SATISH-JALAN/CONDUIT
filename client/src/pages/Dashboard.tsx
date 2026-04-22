@@ -4,8 +4,10 @@ import { gsap } from '@/lib/gsap';
 import { YieldCounter } from '@/components/counter/YieldCounter';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { MagneticButton } from '@/components/ui/MagneticButton';
+import { ConduitLoader } from '@/components/ui/ConduitLoader';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Pencil, ArrowUpRight, ArrowDownRight, Info, Loader2, CheckCircle, ExternalLink, AlertCircle } from 'lucide-react';
+import { Pencil, ArrowUpRight, ArrowDownRight, Info, CheckCircle, ExternalLink, AlertCircle, Box } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { usePortfolioStore } from '@/stores/portfolioStore';
@@ -255,9 +257,9 @@ export function Dashboard() {
                   }`}
                   onClick={isHarvesting || pendingYield <= 0 ? undefined : handleHarvest}
                 >
-                  {harvestState === 'building' && <><Loader2 size={18} className="animate-spin" /> Building TX...</>}
-                  {harvestState === 'signing' && <><Loader2 size={18} className="animate-spin" /> Sign in Wallet...</>}
-                  {harvestState === 'submitting' && <><Loader2 size={18} className="animate-spin" /> Submitting...</>}
+                  {harvestState === 'building' && <><ConduitLoader size={18} variant="muted" /> Building TX...</>}
+                  {harvestState === 'signing' && <><ConduitLoader size={18} variant="muted" /> Sign in Wallet...</>}
+                  {harvestState === 'submitting' && <><ConduitLoader size={18} variant="muted" /> Submitting...</>}
                   {harvestState === 'success' && <><CheckCircle size={18} /> Harvested!</>}
                   {harvestState === 'error' && <><AlertCircle size={18} /> Failed — Try Again</>}
                   {harvestState === 'idle' && (pendingYield > 0 ? 'Harvest Yield' : 'Nothing to Harvest')}
@@ -398,7 +400,7 @@ export function Dashboard() {
               </div>
 
               {/* COND Widget */}
-              <div className="dash-item paper-card border-t-2 border-t-(--violet) p-6 xl:mt-6">
+              <div className="dash-item paper-card border-t-2 border-t-(--violet) p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <h3 className="font-display text-[16px] font-medium text-(--ink-1)">COND Agent</h3>
@@ -457,8 +459,18 @@ export function Dashboard() {
                   <tbody>
                     {positions.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="p-8 text-center text-(--ink-3) font-secondary text-[14px]">
-                          No active holdings. Head to the <a href="/bonds" className="text-(--surge) hover:underline">Bond Market</a> to deposit.
+                        <td colSpan={4} className="p-0 border-b-0">
+                          <EmptyState 
+                            icon={Box}
+                            title="No active holdings"
+                            description="Start earning up to 5% APY. Pick a strategy box and stream returns in real-time."
+                            action={
+                              <a href="/bonds" className="inline-flex items-center text-(--surge) font-display text-[15px] font-medium hover:underline">
+                                Explore Bond Market
+                              </a>
+                            }
+                            className="my-4"
+                          />
                         </td>
                       </tr>
                     ) : (

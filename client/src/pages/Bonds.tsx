@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Search, ChevronDown, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { api, type BondBox } from '@/lib/api';
 
 type SortOption = 'apy-desc' | 'apy-asc' | 'duration-asc' | 'duration-desc' | 'min-asc' | 'min-desc';
@@ -209,8 +210,17 @@ export function Bonds() {
             ))}
             
             {filteredAndSortedBonds.length === 0 && (
-              <div className="col-span-full text-center py-12">
-                <p className="text-(--ink-3) font-secondary text-[15px]">No bonds found matching your criteria.</p>
+              <div className="col-span-full">
+                <EmptyState 
+                  icon={Search}
+                  title="No bonds found"
+                  description="We couldn't find any bonds matching your search criteria. Try adjusting your filters or search term."
+                  action={
+                    <button onClick={() => setSearch('')} className="text-(--surge) font-display text-[15px] font-medium hover:underline">
+                      Clear Search
+                    </button>
+                  }
+                />
               </div>
             )}
           </div>

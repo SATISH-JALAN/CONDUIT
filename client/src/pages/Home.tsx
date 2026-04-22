@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import { MagneticButton } from '@/components/ui/MagneticButton';
@@ -11,6 +11,7 @@ import { ArrowRight, Zap, ShieldCheck, Activity } from 'lucide-react';
 import { calculateValue } from '@/lib/formula';
 import { useRaceStore } from '@/stores/raceStore';
 import { useWalletStore } from '@/stores/walletStore';
+import { HeroParticles } from '@/components/ui/HeroParticles';
 
 export function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,10 +103,17 @@ export function Home() {
   return (
     <div className="min-h-screen overflow-x-hidden" ref={containerRef}>
       {/* HERO SECTION */}
-      <section className="min-h-screen pt-22 pb-8 md:pt-24 md:pb-0 max-w-7xl mx-auto px-4 md:px-14 flex items-center">
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 items-center w-full">
+      <section className="min-h-screen pt-22 pb-8 md:pt-24 md:pb-0 relative flex items-center">
+        {/* INTERACTIVE ANTIGRAVITY PARTICLES */}
+        <div className="absolute inset-0 z-0 overflow-hidden" style={{ maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)' }}>
+          <HeroParticles key="monochrome-grid-v2" />
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 md:px-14 grid lg:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 items-center w-full relative z-10">
           {/* Left Column */}
-          <div className="space-y-5 md:space-y-6">
+          <div className="space-y-5 md:space-y-6 relative z-10">
+
+
             <div className="inline-block px-4 py-1.5 rounded-full bg-(--paper-3) border border-(--paper-edge)">
               <ScrambleText 
                 text="REAL-TIME YIELD STREAMING" 
@@ -113,19 +121,21 @@ export function Home() {
               />
             </div>
 
-            <h1 className="text-[clamp(42px,5vw,72px)] font-display font-bold leading-[0.92] tracking-[-0.04em] animate-weight">
-              <SplitText className="block text-(--ink-1)">Your money.</SplitText>
-              <SplitText className="block text-(--surge)" delay={0.1}>Streaming.</SplitText>
-              {/* <SplitText className="block text-[40%] font-secondary italic font-light text-(--ink-3) leading-[1.16] mt-2 pb-[0.16em]" delay={0.2}>
-                every second.
-              </SplitText> */}
+            <h1 className="text-[clamp(42px,5vw,72px)] font-display font-bold leading-[1] tracking-[-0.04em] animate-weight relative">
+              <SplitText className="block text-(--ink-1) pb-1">Your money.</SplitText>
+              <div className="relative inline-block pb-4">
+                {/* Fixed the 'g' cutoff by adding bottom padding, leading adjustment, and a container */}
+                <SplitText className="block text-(--surge)" delay={0.1}>Streaming.</SplitText>
+                {/* Underline swoosh graphic */}
+                <div className="absolute -bottom-1 left-0 w-full h-[6px] bg-(--surge-pale) rounded-full transform scale-x-0 origin-left animate-[scale-x_1s_ease-out_0.5s_forwards]" />
+              </div>
             </h1>
 
-            <p className="font-body text-[15px] font-light text-(--ink-2) leading-[1.7] max-w-110">
+            <p className="font-body text-[16px] font-light text-(--ink-2) leading-[1.7] max-w-110 md:text-[18px]">
               Deposit into tokenized government bonds. Watch a live counter tick upward every second. Split your yield stream. COND manages it all. Built on Stellar - $0.00001 per transaction.
             </p>
 
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 pt-0">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
               {!isConnected && (
                 <Link to="/onboarding" className="w-full sm:hidden">
                   <MagneticButton variant="primary" className="w-full justify-center font-display text-[16px] px-9 py-3.5 rounded-(--r-lg)">
@@ -135,35 +145,49 @@ export function Home() {
               )}
               <Link to="/bonds" className="w-full sm:w-auto">
                 <MagneticButton variant="primary" className="w-full sm:w-auto justify-center font-display text-[16px] px-9 py-3.5 rounded-(--r-lg) hover:shadow-[0_0_20px_rgba(0,122,94,0.4)] transition-all">
-                  Start Earning <ArrowRight className="inline-block ml-2" size={16} />
+                  Start Earning <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={16} />
                 </MagneticButton>
               </Link>
-              <Link to="/onboarding" className="w-full sm:w-auto">
-                <MagneticButton className="w-full sm:w-auto justify-center bg-(--paper-2) text-(--ink-2) font-display text-[16px] px-9 py-3.5 rounded-(--r-lg) hover:bg-(--paper-3) transition-all shadow-[0_2px_4px_var(--paper-shadow)]">
-                  Watch Demo
+              <button onClick={() => window.open('https://youtube.com', '_blank')} className="w-full sm:w-auto">
+                <MagneticButton className="w-full sm:w-auto justify-center bg-transparent border border-(--paper-edge) text-(--ink-2) font-display text-[16px] px-9 py-3.5 rounded-(--r-lg) hover:bg-(--paper-2) hover:text-(--surge) transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-(--surge-pale) flex items-center justify-center">
+                      <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-(--surge) border-b-[4px] border-b-transparent ml-0.5"></div>
+                    </div>
+                    Watch Demo
+                  </div>
                 </MagneticButton>
-              </Link>
+              </button>
             </div>
 
             {/* Trust Strip */}
-            <div className="grid grid-cols-3 gap-4 md:gap-8 pt-4 border-t border-(--paper-edge) mt-4">
-              <div>
-                <div className="font-display text-[22px] text-(--surge) font-medium">
+            <div className="grid grid-cols-3 gap-4 md:gap-8 pt-6 border-t border-(--paper-edge) mt-6">
+              <div className="relative group cursor-default">
+                <div className="absolute -inset-2 bg-gradient-to-r from-(--surge-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                <div className="font-display text-[24px] text-(--surge) font-medium flex items-center gap-1">
                   <NumberFlow value={140} format={{ style: 'currency', currency: 'USD', notation: 'compact' }} />T
                 </div>
-                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider">Global Bond Market</div>
+                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
+                  Global Bond Market
+                </div>
               </div>
-              <div>
-                <div className="font-display text-[22px] text-(--surge) font-medium">
+              <div className="relative group cursor-default">
+                <div className="absolute -inset-2 bg-gradient-to-r from-(--violet-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--violet) transition-colors">
                   <NumberFlow value={1} format={{ style: 'currency', currency: 'USD', notation: 'compact' }} />B+
                 </div>
-                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider">Stellar RWA</div>
+                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
+                  Stellar RWA TVL
+                </div>
               </div>
-                <div>
-                  <div className="font-display text-[22px] text-(--surge) font-medium">
+                <div className="relative group cursor-default">
+                  <div className="absolute -inset-2 bg-gradient-to-r from-(--amber-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                  <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--amber) transition-colors">
                     <NumberFlow value={0.0521} format={{ style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
                   </div>
-                  <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider">APY</div>
+                  <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
+                    Current Platform APY
+                  </div>
                 </div>
             </div>
           </div>

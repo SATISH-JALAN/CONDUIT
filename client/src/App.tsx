@@ -39,7 +39,7 @@ export default function App() {
       <Preloader />
       <CustomCursor />
       <Navbar />
-      
+
       <main className="relative z-10">
         <Routes>
           <Route path="/" element={<Home />} />

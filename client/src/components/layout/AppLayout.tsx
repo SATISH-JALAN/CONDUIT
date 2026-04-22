@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  Zap, 
-  Wallet, 
-  Bot, 
-  Flag, 
-  Image as ImageIcon, 
-  Users, 
+import {
+  Zap,
+  Wallet,
+  Bot,
+  Flag,
+  Image as ImageIcon,
+  Users,
   BookOpen,
   Settings,
   Bell,
@@ -54,7 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-(--paper-1) flex">
       {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-(--ink-1)/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -69,7 +69,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Link to="/" className="flex items-center">
             <img src="/logo.png" alt="Conduit" className="h-35 w-auto object-contain -my-10 -ml-7" />
           </Link>
-          <button 
+          <button
             className="lg:hidden text-(--ink-3) hover:text-(--ink-1)"
             onClick={() => setIsMobileMenuOpen(false)}
           >
@@ -88,8 +88,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => setActiveTab(item.name)}
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-3 rounded-(--r-md) font-display text-[12px] transition-all duration-200 group',
-                  isActive 
-                    ? 'bg-(--surge-pale) border-l-2 border-(--surge) text-(--surge)' 
+                  isActive
+                    ? 'bg-(--surge-pale) border-l-2 border-(--surge) text-(--surge)'
                     : 'text-(--ink-3) hover:bg-(--paper-3) hover:text-(--ink-1)'
                 )}
               >
@@ -118,7 +118,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Top Bar */}
         <header className="h-20 px-4 md:px-8 flex items-center justify-between border-b border-(--paper-edge) bg-(--paper-1)/80 backdrop-blur-md sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               className="lg:hidden text-(--ink-3) hover:text-(--ink-1) mr-2"
               onClick={() => setIsMobileMenuOpen(true)}
             >
@@ -151,3 +151,4 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

@@ -22,8 +22,8 @@ export function Dashboard() {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [chartData, setChartData] = useState<{name: string, value: number, color: string}[]>([]);
-  
+  const [chartData, setChartData] = useState<{ name: string, value: number, color: string }[]>([]);
+
   // Harvest state
   const [harvestState, setHarvestState] = useState<HarvestState>('idle');
   const [harvestTx, setHarvestTx] = useState<string | null>(null);
@@ -114,7 +114,7 @@ export function Dashboard() {
         { y: 30, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out', clearProps: 'opacity,transform,visibility' }
       );
-      
+
     }
   }, [loading]);
 
@@ -244,17 +244,16 @@ export function Dashboard() {
                 <MagneticButton
                   variant="custom"
                   magneticStrength={0}
-                  className={`flex-1 py-4 px-8 rounded-(--r-lg) transition-all font-display text-[16px] font-medium flex items-center justify-center gap-2 ${
-                    pendingYield <= 0
+                  className={`flex-1 py-4 px-8 rounded-(--r-lg) transition-all font-display text-[16px] font-medium flex items-center justify-center gap-2 ${pendingYield <= 0
                       ? 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed border border-(--paper-edge)'
                       : isHarvesting
-                      ? 'bg-(--surge) text-white opacity-80 cursor-wait'
-                      : harvestState === 'success'
-                      ? 'bg-(--surge-pale) text-(--surge) border border-(--surge-pale-2)'
-                      : harvestState === 'error'
-                      ? 'bg-(--rose-pale) text-(--rose) border border-(--rose-pale-2)'
-                      : 'bg-(--surge) text-white hover:brightness-110 shadow-[0_4px_14px_rgba(0,122,94,0.3)] cursor-pointer'
-                  }`}
+                        ? 'bg-(--surge) text-white opacity-80 cursor-wait'
+                        : harvestState === 'success'
+                          ? 'bg-(--surge-pale) text-(--surge) border border-(--surge-pale-2)'
+                          : harvestState === 'error'
+                            ? 'bg-(--rose-pale) text-(--rose) border border-(--rose-pale-2)'
+                            : 'bg-(--surge) text-white hover:brightness-110 shadow-[0_4px_14px_rgba(0,122,94,0.3)] cursor-pointer'
+                    }`}
                   onClick={isHarvesting || pendingYield <= 0 ? undefined : handleHarvest}
                 >
                   {harvestState === 'building' && <><ConduitLoader size={18} variant="muted" /> Building TX...</>}
@@ -290,44 +289,44 @@ export function Dashboard() {
                 <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
                   <div className="w-40 h-40 relative shrink-0">
                     <PieChart width={160} height={160}>
-                        <Pie
-                          data={chartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                          animationBegin={0}
-                          animationDuration={1500}
-                          animationEasing="ease-out"
-                          stroke="none"
-                        >
-                          {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip 
-                          wrapperStyle={{ zIndex: 30 }}
-                          contentStyle={{ 
-                            backgroundColor: 'rgba(250, 250, 247, 0.92)', 
-                            backdropFilter: 'blur(40px)',
-                            border: '1px solid rgba(213, 209, 202, 0.8)',
-                            borderRadius: '12px',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
-                          }}
-                          itemStyle={{ color: 'var(--ink-1)', fontFamily: 'var(--font-secondary)', fontSize: '13px' }}
-                          formatter={(value: number) => [`${value}%`, 'Allocation']}
-                        />
-                      </PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                        animationBegin={0}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                        stroke="none"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        wrapperStyle={{ zIndex: 30 }}
+                        contentStyle={{
+                          backgroundColor: 'rgba(250, 250, 247, 0.92)',
+                          backdropFilter: 'blur(40px)',
+                          border: '1px solid rgba(213, 209, 202, 0.8)',
+                          borderRadius: '12px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+                        }}
+                        itemStyle={{ color: 'var(--ink-1)', fontFamily: 'var(--font-secondary)', fontSize: '13px' }}
+                        formatter={(value: number) => [`${value}%`, 'Allocation']}
+                      />
+                    </PieChart>
                     {/* Inner circle for donut effect */}
                     <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
                       <div className="w-25 h-25 rounded-full bg-(--paper-2) shadow-inner flex items-center justify-center">
-                         <span className="font-display font-medium text-[16px] text-(--ink-1)">{totalSplitPercent}%</span>
+                        <span className="font-display font-medium text-[16px] text-(--ink-1)">{totalSplitPercent}%</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex-1 space-y-4 w-full min-w-0">
                     <div className="max-h-56 overflow-y-auto pr-1 space-y-4">
                       {splits.map((split, i) => (
@@ -381,11 +380,10 @@ export function Dashboard() {
                         Total: {totalSplitPercent}%
                       </div>
                       <button
-                        className={`px-4 py-2 rounded-(--r-sm) text-mono text-[11px] uppercase tracking-wider ${
-                          splitValid && !savingSplits
+                        className={`px-4 py-2 rounded-(--r-sm) text-mono text-[11px] uppercase tracking-wider ${splitValid && !savingSplits
                             ? 'bg-(--surge) text-white'
                             : 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed'
-                        }`}
+                          }`}
                         onClick={splitValid && !savingSplits ? () => saveSplitConfig() : undefined}
                       >
                         {savingSplits ? 'Saving...' : 'Save Split'}
@@ -410,7 +408,7 @@ export function Dashboard() {
                   </div>
                   <span className="px-2 py-1 rounded-full bg-(--violet-pale) text-(--violet) text-mono text-[9px] uppercase">Active</span>
                 </div>
-                
+
                 <div className="space-y-4 mb-6">
                   <div>
                     <div className="text-mono text-[10px] text-(--ink-4) mb-1">PERFORMANCE</div>
@@ -460,7 +458,7 @@ export function Dashboard() {
                     {positions.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="p-0 border-b-0">
-                          <EmptyState 
+                          <EmptyState
                             icon={Box}
                             title="No active holdings"
                             description="Start earning up to 5% APY. Pick a strategy box and stream returns in real-time."

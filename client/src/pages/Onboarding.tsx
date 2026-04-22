@@ -43,7 +43,7 @@ export function Onboarding() {
           <div className="w-20 h-20 mx-auto rounded-full bg-[var(--surge-pale)] flex items-center justify-center text-[var(--surge)] mb-8 shadow-inner border border-[var(--surge-pale-2)]">
             {isConnected ? <CheckCircle size={40} /> : <Wallet size={40} />}
           </div>
-          
+
           {isConnected && publicKey ? (
             /* Connected State */
             <>
@@ -70,14 +70,14 @@ export function Onboarding() {
               <h1 className="text-3xl md:text-4xl font-display font-semibold text-[var(--ink-1)] tracking-tight mb-4">
                 Connect Wallet
               </h1>
-              
+
               <p className="text-[var(--ink-3)] font-secondary text-lg mb-10 leading-relaxed">
                 Connect your Stellar wallet to start streaming yield from tokenized real-world assets.
               </p>
 
               <div className="space-y-4 mb-10">
-                <MagneticButton 
-                  variant="neo" 
+                <MagneticButton
+                  variant="neo"
                   className="w-full justify-between px-6 py-4"
                   onClick={handleFreighterConnect}
                 >
@@ -130,7 +130,7 @@ export function Onboarding() {
             <span>Secure connection via Stellar Network</span>
           </div>
         </GlassCard>
-        
+
         <div className="mt-8 text-center onboard-item">
           <Link to="/" className="text-[var(--ink-3)] hover:text-[var(--surge)] transition-colors font-secondary text-sm">
             Return to Home

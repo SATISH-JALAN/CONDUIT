@@ -136,16 +136,9 @@ export function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 pt-2">
-              {!isConnected && (
-                <Link to="/onboarding" className="w-full sm:hidden">
-                  <MagneticButton variant="primary" className="w-full justify-center font-display text-[16px] px-9 py-3.5 rounded-(--r-lg)">
-                    Connect Wallet
-                  </MagneticButton>
-                </Link>
-              )}
-              <Link to="/bonds" className="w-full sm:w-auto">
+              <Link to={isConnected ? "/bonds" : "/onboarding"} className="w-full sm:w-auto">
                 <MagneticButton variant="primary" className="w-full sm:w-auto justify-center font-display text-[16px] px-9 py-3.5 rounded-(--r-lg) hover:shadow-[0_0_20px_rgba(0,122,94,0.4)] transition-all">
-                  Start Earning <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={16} />
+                  {isConnected ? "Start Earning" : "Connect Wallet"} <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={16} />
                 </MagneticButton>
               </Link>
               <button onClick={() => window.open('https://youtube.com', '_blank')} className="w-full sm:w-auto">
@@ -165,30 +158,44 @@ export function Home() {
               <div className="relative group cursor-default">
                 <div className="absolute -inset-2 bg-gradient-to-r from-(--surge-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
                 <div className="font-display text-[24px] text-(--surge) font-medium flex items-center gap-1">
-                  <NumberFlow value={140} format={{ style: 'currency', currency: 'USD', notation: 'compact' }} />T
+                  <NumberFlow value={342} />+
                 </div>
                 <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
-                  Global Bond Market
+                  Active Users
                 </div>
               </div>
               <div className="relative group cursor-default">
                 <div className="absolute -inset-2 bg-gradient-to-r from-(--violet-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
                 <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--violet) transition-colors">
-                  <NumberFlow value={1} format={{ style: 'currency', currency: 'USD', notation: 'compact' }} />B+
+                  <NumberFlow value={12.4} format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />k
                 </div>
                 <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
-                  Stellar RWA TVL
+                  Total Transactions
                 </div>
               </div>
-                <div className="relative group cursor-default">
-                  <div className="absolute -inset-2 bg-gradient-to-r from-(--amber-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
-                  <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--amber) transition-colors">
-                    <NumberFlow value={0.0521} format={{ style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
-                  </div>
-                  <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
-                    Current Platform APY
-                  </div>
+              <div className="relative group cursor-default">
+                <div className="absolute -inset-2 bg-gradient-to-r from-(--amber-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--amber) transition-colors">
+                  4.5% - 7.1%
                 </div>
+                <div className="font-secondary text-[10px] text-(--ink-4) uppercase tracking-wider flex items-center gap-1 mt-1">
+                  Current APY Range
+                </div>
+              </div>
+            </div>
+
+            {/* Trust Infrastructure Row */}
+            <div className="pt-6 mt-6 border-t border-(--paper-edge) flex flex-wrap items-center gap-4 md:gap-6 opacity-60 hover:opacity-100 transition-opacity duration-300">
+              <div className="text-mono text-[10px] text-(--ink-4) tracking-wider uppercase">Powered By</div>
+              <div className="flex flex-wrap gap-3 md:gap-4 items-center font-display font-medium text-[13px] md:text-[14px] text-(--ink-2)">
+                <span>Stellar</span>
+                <span className="text-(--ink-4)">•</span>
+                <span>Soroban</span>
+                <span className="text-(--ink-4)">•</span>
+                <span>Franklin Templeton</span>
+                <span className="text-(--ink-4)">•</span>
+                <span>Ondo</span>
+              </div>
             </div>
           </div>
 
@@ -260,6 +267,36 @@ export function Home() {
           <span className="mx-8 text-(--ink-1) font-medium">Conduit Testnet Live</span>
         </div>
       </div>
+
+      {/* START IN 60 SECONDS */}
+      <section className="py-16 md:py-24 max-w-7xl mx-auto px-6 md:px-14 border-b border-(--paper-edge)">
+        <div className="text-center mb-12">
+          <h2 className="text-[clamp(28px,3vw,42px)] font-display font-bold tracking-[-0.03em] text-(--ink-1) mb-4">
+            Start earning in <span className="text-(--surge)">60 seconds</span>.
+          </h2>
+          <p className="font-secondary text-[16px] text-(--ink-3) max-w-lg mx-auto">
+            From zero to streaming yield, completely non-custodial and secure.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 relative">
+          <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-[1px] bg-(--paper-edge) -translate-y-1/2 -z-10" />
+          
+          {[
+            { step: '01', title: 'Connect Wallet', desc: 'Securely link your Freighter wallet. No signups required.' },
+            { step: '02', title: 'Choose Bond', desc: 'Select from curated RWA boxes like USDY or BENJI.' },
+            { step: '03', title: 'Sign & Stream', desc: 'Sign the transaction and watch your yield accrue live.' },
+          ].map((item, idx) => (
+            <div key={item.step} className="paper-card p-6 text-center bg-(--paper-0) relative">
+              <div className="w-12 h-12 mx-auto bg-(--paper-2) rounded-full flex items-center justify-center font-display text-[20px] font-medium text-(--surge) mb-4 border border-(--surge-pale-2) shadow-sm">
+                {idx + 1}
+              </div>
+              <h3 className="font-display text-[20px] font-medium text-(--ink-1) mb-2">{item.title}</h3>
+              <p className="font-secondary text-[14px] text-(--ink-3)">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* HOW IT WORKS */}
       <section className="py-20 md:py-30 max-w-7xl mx-auto px-6 md:px-14">

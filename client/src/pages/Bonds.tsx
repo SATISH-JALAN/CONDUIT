@@ -6,6 +6,7 @@ import { Search, ChevronDown, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { MagneticButton } from '@/components/ui/MagneticButton';
 import { api, type BondBox } from '@/lib/api';
 
 type SortOption = 'apy-desc' | 'apy-asc' | 'duration-asc' | 'duration-desc' | 'min-asc' | 'min-desc';
@@ -19,6 +20,16 @@ export function Bonds() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('apy-desc');
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [compareList, setCompareList] = useState<string[]>([]);
+
+  const toggleCompare = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setCompareList(prev => {
+      if (prev.includes(id)) return prev.filter(bId => bId !== id);
+      if (prev.length >= 3) return prev;
+      return [...prev, id];
+    });
+  };
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'apy-desc', label: 'Highest APY' },
@@ -201,7 +212,17 @@ export function Bonds() {
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-(--paper-edge) text-center">
+                <div className="mt-4 pt-4 border-t border-(--paper-edge) flex justify-between items-center">
+                  <button 
+                    onClick={(e) => toggleCompare(e, bond.id)}
+                    className={`text-mono text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-full border transition-colors ${
+                      compareList.includes(bond.id) 
+                        ? 'bg-(--surge) border-(--surge) text-white' 
+                        : 'border-(--paper-edge) text-(--ink-3) hover:border-(--surge-pale-2) hover:text-(--surge)'
+                    }`}
+                  >
+                    {compareList.includes(bond.id) ? 'Added' : '+ Compare'}
+                  </button>
                   <span className="text-mono text-[11px] text-(--ink-4) group-hover:text-(--surge) transition-colors uppercase tracking-wider">
                     View Details →
                   </span>
@@ -226,6 +247,40 @@ export function Bonds() {
           </div>
         )}
       </div>
+
+      {compareList.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-(--paper-1) border-t border-(--paper-edge) shadow-[0_-10px_40px_rgba(0,0,0,0.05)] transform transition-transform duration-300">
+          <div className="max-w-300 mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+              <span className="text-mono text-[11px] text-(--ink-4) uppercase tracking-wider whitespace-nowrap">
+                Compare ({compareList.length}/3)
+              </span>
+              <div className="flex gap-3">
+                {compareList.map(id => {
+                  const b = allBonds.find(x => x.id === id);
+                  if (!b) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-2 bg-(--paper-2) border border-(--paper-edge) rounded-full px-3 py-1.5 min-w-max">
+                      <span className="text-[12px] font-medium text-(--ink-1)">{b.name}</span>
+                      <button onClick={() => setCompareList(prev => prev.filter(x => x !== id))} className="text-(--ink-4) hover:text-(--rose)">
+                        &times;
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-3 w-full md:w-auto">
+              <button onClick={() => setCompareList([])} className="px-4 py-2 text-mono text-[11px] text-(--ink-3) hover:text-(--ink-1) uppercase tracking-wider">
+                Clear
+              </button>
+              <MagneticButton variant="primary" className="px-6 py-2 rounded-full font-display text-[14px]">
+                {compareList.length < 2 ? 'Select more to compare' : 'Compare Bonds'}
+              </MagneticButton>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

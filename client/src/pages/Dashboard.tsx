@@ -6,6 +6,9 @@ import { TiltCard } from '@/components/ui/TiltCard';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { ConduitLoader } from '@/components/ui/ConduitLoader';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { DeltaStatCard } from '@/components/ui/DeltaStatCard';
+import { SplitHealthBar } from '@/components/ui/SplitHealthBar';
+import { TransactionLifecyclePanel, type TransactionStep } from '@/components/ui/TransactionLifecyclePanel';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Pencil, ArrowUpRight, ArrowDownRight, Info, CheckCircle, ExternalLink, AlertCircle, Box } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
@@ -211,68 +214,76 @@ export function Dashboard() {
               </div>
 
               <div className="grid sm:grid-cols-3 gap-4 border-t border-(--paper-edge) pt-6 mb-8">
-                <div className="sm:border-r sm:border-(--paper-edge)">
-                  <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 flex items-center gap-1">
-                    Pending Harvest
-                    <Tooltip content="Yield accrued but not yet claimed to your wallet.">
-                      <Info size={10} className="text-(--ink-3) cursor-help" />
-                    </Tooltip>
-                  </div>
-                  <div className="font-display text-[24px] text-(--ink-1) font-medium">${(pendingYield || 0).toFixed(2)}</div>
-                </div>
-                <div className="sm:border-r sm:border-(--paper-edge) sm:pl-4">
-                  <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 flex items-center gap-1">
-                    Avg APY
-                    <Tooltip content="Annual Percentage Yield across all active holdings.">
-                      <Info size={10} className="text-(--ink-3) cursor-help" />
-                    </Tooltip>
-                  </div>
-                  <div className="font-display text-[24px] text-(--ink-1) font-medium">{(avgApy || 0).toFixed(2)}%</div>
-                </div>
-                <div className="sm:pl-4">
-                  <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 flex items-center gap-1">
-                    Daily Rate
-                    <Tooltip content="Estimated yield generated every 24 hours.">
-                      <Info size={10} className="text-(--ink-3) cursor-help" />
-                    </Tooltip>
-                  </div>
-                  <div className="font-display text-[24px] text-(--ink-1) font-medium">${((totalYieldPerSecond || 0) * 86400).toFixed(2)}</div>
-                </div>
+                <DeltaStatCard 
+                  label="Pending Harvest" 
+                  value={`$${(pendingYield || 0).toFixed(2)}`} 
+                  className="bg-(--paper-0)" 
+                />
+                <DeltaStatCard 
+                  label="Avg APY" 
+                  value={`${(avgApy || 0).toFixed(2)}%`} 
+                  delta={0.42} 
+                  deltaLabel="vs market"
+                  className="bg-(--paper-0)" 
+                />
+                <DeltaStatCard 
+                  label="Daily Rate" 
+                  value={`$${((totalYieldPerSecond || 0) * 86400).toFixed(2)}`} 
+                  className="bg-(--paper-0)" 
+                />
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-6">
-                <MagneticButton
-                  variant="custom"
-                  magneticStrength={0}
-                  className={`flex-1 py-4 px-8 rounded-(--r-lg) transition-all font-display text-[16px] font-medium flex items-center justify-center gap-2 ${pendingYield <= 0
-                      ? 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed border border-(--paper-edge)'
-                      : isHarvesting
-                        ? 'bg-(--surge) text-white opacity-80 cursor-wait'
-                        : harvestState === 'success'
-                          ? 'bg-(--surge-pale) text-(--surge) border border-(--surge-pale-2)'
-                          : harvestState === 'error'
-                            ? 'bg-(--rose-pale) text-(--rose) border border-(--rose-pale-2)'
-                            : 'bg-(--surge) text-white hover:brightness-110 shadow-[0_4px_14px_rgba(0,122,94,0.3)] cursor-pointer'
-                    }`}
-                  onClick={isHarvesting || pendingYield <= 0 ? undefined : handleHarvest}
-                >
-                  {harvestState === 'building' && <><ConduitLoader size={18} variant="muted" /> Building TX...</>}
-                  {harvestState === 'signing' && <><ConduitLoader size={18} variant="muted" /> Sign in Wallet...</>}
-                  {harvestState === 'submitting' && <><ConduitLoader size={18} variant="muted" /> Submitting...</>}
-                  {harvestState === 'success' && <><CheckCircle size={18} /> Harvested!</>}
-                  {harvestState === 'error' && <><AlertCircle size={18} /> Failed — Try Again</>}
-                  {harvestState === 'idle' && (pendingYield > 0 ? 'Harvest Yield' : 'Nothing to Harvest')}
-                </MagneticButton>
-
-                {harvestTx && (
-                  <a
-                    href={`https://stellar.expert/explorer/testnet/tx/${harvestTx}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-mono text-[11px] text-(--surge) hover:underline uppercase tracking-wider px-4"
+              <div className="flex flex-col mt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <MagneticButton
+                    variant="custom"
+                    magneticStrength={0}
+                    className={`flex-1 py-4 px-8 rounded-(--r-lg) transition-all font-display text-[16px] font-medium flex items-center justify-center gap-2 ${pendingYield <= 0
+                        ? 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed border border-(--paper-edge)'
+                        : isHarvesting
+                          ? 'bg-(--surge) text-white opacity-80 cursor-wait'
+                          : harvestState === 'success'
+                            ? 'bg-(--surge-pale) text-(--surge) border border-(--surge-pale-2)'
+                            : harvestState === 'error'
+                              ? 'bg-(--rose-pale) text-(--rose) border border-(--rose-pale-2)'
+                              : 'bg-(--surge) text-white hover:brightness-110 shadow-[0_4px_14px_rgba(0,122,94,0.3)] cursor-pointer'
+                      }`}
+                    onClick={isHarvesting || pendingYield <= 0 ? undefined : handleHarvest}
                   >
-                    <ExternalLink size={12} /> View TX
-                  </a>
+                    {harvestState === 'building' && <><ConduitLoader size={18} variant="muted" /> Building TX...</>}
+                    {harvestState === 'signing' && <><ConduitLoader size={18} variant="muted" /> Sign in Wallet...</>}
+                    {harvestState === 'submitting' && <><ConduitLoader size={18} variant="muted" /> Submitting...</>}
+                    {harvestState === 'success' && <><CheckCircle size={18} /> Harvested!</>}
+                    {harvestState === 'error' && <><AlertCircle size={18} /> Failed — Try Again</>}
+                    {harvestState === 'idle' && (pendingYield > 0 ? 'Harvest Yield' : 'Nothing to Harvest')}
+                  </MagneticButton>
+
+                  {harvestTx && (
+                    <a
+                      href={`https://stellar.expert/explorer/testnet/tx/${harvestTx}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-mono text-[11px] text-(--surge) hover:underline uppercase tracking-wider px-4"
+                    >
+                      <ExternalLink size={12} /> View TX
+                    </a>
+                  )}
+                </div>
+
+                {harvestState !== 'idle' && (
+                  <div className="mt-6">
+                    <TransactionLifecyclePanel
+                      currentStep={
+                        harvestState === 'signing' ? 'sign' :
+                        harvestState === 'submitting' ? 'submit' :
+                        harvestState === 'success' || harvestState === 'error' ? 'confirm' : 'build'
+                      }
+                      isError={harvestState === 'error'}
+                      txHash={harvestTx || undefined}
+                      explorerUrl={harvestTx ? `https://stellar.expert/explorer/testnet/tx/${harvestTx}` : undefined}
+                      className="bg-(--paper-0)"
+                    />
+                  </div>
                 )}
               </div>
             </TiltCard>
@@ -369,30 +380,37 @@ export function Dashboard() {
                       ))}
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 pt-2">
-                      <button
-                        className="px-3 py-2 rounded-(--r-sm) border border-(--paper-edge) text-mono text-[11px] text-(--ink-2) hover:border-(--surge)"
-                        onClick={() => addSplit()}
-                      >
-                        Add Destination
-                      </button>
-                      <div className={`font-mono text-[11px] ${splitValid ? 'text-(--surge)' : 'text-(--rose)'}`}>
-                        Total: {totalSplitPercent}%
+                    <div className="pt-4 border-t border-(--paper-edge) space-y-4">
+                      <SplitHealthBar 
+                        items={splits.map((s, i) => ({ 
+                          id: s.destination || String(i), 
+                          label: s.label || `Split ${i + 1}`, 
+                          percentage: s.percentage,
+                          color: ['bg-(--surge)', 'bg-(--sky)', 'bg-(--amber)', 'bg-(--violet)', 'bg-(--rose)'][i % 5]
+                        }))} 
+                      />
+                      <div className="flex items-center justify-between gap-3">
+                        <button
+                          className="px-3 py-2 rounded-(--r-sm) border border-(--paper-edge) text-mono text-[11px] text-(--ink-2) hover:border-(--surge)"
+                          onClick={() => addSplit()}
+                        >
+                          Add Destination
+                        </button>
+                        <button
+                          className={`px-4 py-2 rounded-(--r-sm) text-mono text-[11px] uppercase tracking-wider ${splitValid && !savingSplits
+                              ? 'bg-(--surge) text-white'
+                              : 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed'
+                            }`}
+                          onClick={splitValid && !savingSplits ? () => saveSplitConfig() : undefined}
+                        >
+                          {savingSplits ? 'Saving...' : 'Save Split'}
+                        </button>
                       </div>
-                      <button
-                        className={`px-4 py-2 rounded-(--r-sm) text-mono text-[11px] uppercase tracking-wider ${splitValid && !savingSplits
-                            ? 'bg-(--surge) text-white'
-                            : 'bg-(--paper-2) text-(--ink-4) cursor-not-allowed'
-                          }`}
-                        onClick={splitValid && !savingSplits ? () => saveSplitConfig() : undefined}
-                      >
-                        {savingSplits ? 'Saving...' : 'Save Split'}
-                      </button>
-                    </div>
 
-                    {splitError && (
-                      <div className="text-mono text-[11px] text-(--rose)">{splitError}</div>
-                    )}
+                      {splitError && (
+                        <div className="text-mono text-[11px] text-(--rose)">{splitError}</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

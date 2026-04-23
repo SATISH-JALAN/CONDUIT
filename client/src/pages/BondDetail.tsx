@@ -5,10 +5,11 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ArrowLeft, Shield, Clock, DollarSign, TrendingUp, Loader2, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { MagneticButton } from '@/components/ui/MagneticButton';
+import { TransactionLifecyclePanel, type TransactionStep } from '@/components/ui/TransactionLifecyclePanel';
 import { api, BondBox } from '@/lib/api';
 import { useWalletStore } from '@/stores/walletStore';
 
-type DepositState = 'idle' | 'building' | 'signing' | 'submitting' | 'success' | 'error';
+type DepositState = 'idle' | 'processing' | 'success' | 'error';
 
 export function BondDetail() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +22,7 @@ export function BondDetail() {
   // Deposit state
   const [amount, setAmount] = useState<string>('');
   const [depositState, setDepositState] = useState<DepositState>('idle');
+  const [txStep, setTxStep] = useState<TransactionStep>('build');
   const [depositError, setDepositError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
 
@@ -65,21 +67,23 @@ export function BondDetail() {
     }
 
     setDepositError(null);
-    setDepositState('building');
+    setDepositState('processing');
+    setTxStep('build');
 
     try {
       // Step 1: Build unsigned transaction
       const buildResult = await api.depositBuild(publicKey, id, depositAmount);
 
       // Step 2: User signs with Freighter
-      setDepositState('signing');
+      setTxStep('sign');
       const signedXdr = await signTx(buildResult.xdr, buildResult.networkPassphrase);
 
       // Step 3: Submit signed transaction
-      setDepositState('submitting');
+      setTxStep('submit');
       const submitResult = await api.depositSubmit(publicKey, id, depositAmount, signedXdr);
 
       setTxHash(submitResult.txHash);
+      setTxStep('confirm');
       setDepositState('success');
     } catch (err: any) {
       setDepositError(err.message || 'Deposit failed');
@@ -132,17 +136,7 @@ export function BondDetail() {
   const projectedMonthly = (parsedAmount * bond.apy / 100 / 12);
   const projectedYearly = (parsedAmount * bond.apy / 100);
 
-  const depositButtonText = () => {
-    switch (depositState) {
-      case 'building': return 'Building Transaction...';
-      case 'signing': return 'Confirm in Freighter...';
-      case 'submitting': return 'Submitting to Stellar...';
-      case 'success': return '✓ Deposit Successful!';
-      default: return 'Deposit & Start Earning';
-    }
-  };
-
-  const isProcessing = ['building', 'signing', 'submitting'].includes(depositState);
+  const isProcessing = depositState === 'processing';
 
   return (
     <AppLayout>
@@ -210,9 +204,11 @@ export function BondDetail() {
         </div>
 
         {/* Bottom Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Projected Returns */}
-          <div className="detail-item bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6">
+        <div className="grid lg:grid-cols-[1.5fr_1fr] gap-6 items-start">
+          {/* Main Content Area */}
+          <div className="space-y-6">
+            {/* Projected Returns */}
+            <div className="detail-item bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6">
             <h3 className="text-mono text-[11px] text-(--ink-4) uppercase tracking-wider mb-6">
               Projected Returns {parsedAmount > 0 ? `(on $${parsedAmount.toLocaleString()})` : ''}
             </h3>
@@ -236,100 +232,78 @@ export function BondDetail() {
                 </span>
               </div>
             </div>
+              </div>
           </div>
 
-          {/* Deposit Action */}
-          <div className="detail-item bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6 flex flex-col">
-            <h3 className="text-mono text-[11px] text-(--ink-4) uppercase tracking-wider mb-6">
-              Deposit
-            </h3>
-            <div className="flex-1 flex flex-col justify-between">
-              {depositState === 'success' ? (
-                /* Success State */
-                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-(--surge-pale) flex items-center justify-center">
-                    <CheckCircle size={32} className="text-(--surge)" />
-                  </div>
-                  <div>
-                    <p className="font-display text-[18px] text-(--ink-1) font-medium mb-1">Deposit Successful!</p>
-                    <p className="font-secondary text-[13px] text-(--ink-3)">
-                      Your yield is now streaming continuously.
+          {/* Sticky Deposit Action Sidebar */}
+          <div className="detail-item sticky top-24 space-y-4">
+            <div className="bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-6 flex flex-col">
+              <h3 className="text-mono text-[11px] text-(--ink-4) uppercase tracking-wider mb-6">
+                Deposit
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-mono text-[10px] text-(--ink-4) uppercase mb-2 block">Amount (XLM)</label>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => { setAmount(e.target.value); setDepositError(null); }}
+                    placeholder={`Min $${bond.min.toLocaleString()}`}
+                    disabled={isProcessing || depositState === 'success'}
+                    className="w-full px-4 py-3 rounded-(--r-md) bg-(--paper-2) border border-(--paper-edge) focus:outline-none focus:border-(--surge-pale-2) focus:ring-1 focus:ring-(--surge-pale-2) font-display text-[20px] text-(--ink-1) placeholder:text-(--ink-4) transition-all disabled:opacity-50"
+                  />
+                </div>
+
+                {parsedAmount > 0 && depositState === 'idle' && (
+                  <div className="p-3 rounded-(--r-md) bg-(--surge-pale) border border-(--surge-pale-2)">
+                    <p className="text-mono text-[10px] text-(--surge) uppercase tracking-wider">
+                      Estimated daily yield: ${(parsedAmount * bond.apy / 100 / 365).toFixed(4)} / day
                     </p>
                   </div>
-                  {txHash && (
-                    <a
-                      href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-mono text-[11px] text-(--surge) hover:underline uppercase tracking-wider"
-                    >
-                      View Transaction <ExternalLink size={10} />
-                    </a>
-                  )}
+                )}
+
+                {(depositState !== 'idle' || depositError) && (
+                  <TransactionLifecyclePanel
+                    currentStep={txStep}
+                    isError={depositState === 'error'}
+                    errorMessage={depositError || undefined}
+                    txHash={txHash || undefined}
+                    explorerUrl={txHash ? `https://stellar.expert/explorer/testnet/tx/${txHash}` : undefined}
+                    className="w-full"
+                  />
+                )}
+
+                {!walletConnected ? (
+                  <MagneticButton
+                    variant="custom"
+                    className="w-full mt-4 py-3 rounded-full bg-(--ink-1) text-(--paper-1) font-display text-[14px] font-medium text-center cursor-pointer hover:brightness-110 transition-all"
+                    onClick={() => navigate('/onboarding')}
+                  >
+                    Connect Wallet First
+                  </MagneticButton>
+                ) : depositState === 'success' ? (
                   <button
                     onClick={() => navigate('/dashboard')}
-                    className="mt-4 px-6 py-2 rounded-full border border-(--surge) text-(--surge) font-display text-[13px] hover:bg-(--surge-pale) transition-all"
+                    className="w-full mt-4 px-6 py-3 rounded-full border border-(--surge) text-(--surge) font-display text-[14px] hover:bg-(--surge-pale) transition-all"
                   >
                     Go to Dashboard →
                   </button>
-                </div>
-              ) : (
-                /* Input State */
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-mono text-[10px] text-(--ink-4) uppercase mb-2 block">Amount (XLM)</label>
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => { setAmount(e.target.value); setDepositError(null); }}
-                      placeholder={`Min $${bond.min.toLocaleString()}`}
-                      disabled={isProcessing}
-                      className="w-full px-4 py-3 rounded-(--r-md) bg-(--paper-2) border border-(--paper-edge) focus:outline-none focus:border-(--surge-pale-2) focus:ring-1 focus:ring-(--surge-pale-2) font-display text-[20px] text-(--ink-1) placeholder:text-(--ink-4) transition-all disabled:opacity-50"
-                    />
-                  </div>
-
-                  {parsedAmount > 0 && (
-                    <div className="p-3 rounded-(--r-md) bg-(--surge-pale) border border-(--surge-pale-2)">
-                      <p className="text-mono text-[10px] text-(--surge) uppercase tracking-wider">
-                        Estimated daily yield: ${(parsedAmount * bond.apy / 100 / 365).toFixed(4)} / day
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Error message */}
-                  {(depositError || depositState === 'error') && (
-                    <div className="p-3 rounded-(--r-md) bg-(--rose-pale) border border-(--rose-pale-2) flex items-start gap-2">
-                      <AlertCircle size={14} className="text-(--rose) mt-0.5 shrink-0" />
-                      <p className="text-mono text-[10px] text-(--rose) uppercase tracking-wider">
-                        {depositError}
-                      </p>
-                    </div>
-                  )}
-
-                  {!walletConnected ? (
-                    <MagneticButton
-                      variant="custom"
-                      className="w-full mt-4 py-3 rounded-full bg-(--ink-1) text-(--paper-1) font-display text-[14px] font-medium text-center cursor-pointer hover:brightness-110 transition-all"
-                      onClick={() => navigate('/onboarding')}
-                    >
-                      Connect Wallet First
-                    </MagneticButton>
-                  ) : (
-                    <MagneticButton
-                      variant="custom"
-                      className={`w-full mt-4 py-3 rounded-full font-display text-[14px] font-medium text-center transition-all flex items-center justify-center gap-2 ${
-                        isProcessing
-                          ? 'bg-(--surge) text-white opacity-80 cursor-wait'
-                          : 'bg-(--surge) text-white cursor-pointer hover:brightness-110'
-                      }`}
-                      onClick={isProcessing ? undefined : handleDeposit}
-                    >
-                      {isProcessing && <Loader2 size={16} className="animate-spin" />}
-                      {depositButtonText()}
-                    </MagneticButton>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <MagneticButton
+                    variant="custom"
+                    className={`w-full mt-4 py-3 rounded-full font-display text-[14px] font-medium text-center transition-all flex items-center justify-center gap-2 ${
+                      isProcessing
+                        ? 'bg-(--surge) text-white opacity-80 cursor-wait'
+                        : 'bg-(--surge) text-white cursor-pointer hover:brightness-110'
+                    }`}
+                    onClick={isProcessing ? undefined : handleDeposit}
+                  >
+                    {isProcessing && <Loader2 size={16} className="animate-spin" />}
+                    Deposit & Start Earning
+                  </MagneticButton>
+                )}
+              </div>
             </div>
           </div>
         </div>

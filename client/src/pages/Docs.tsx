@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -35,6 +35,28 @@ type DocTopic = {
   keywords: string[];
   content: React.ReactNode;
 };
+
+function useReadTopics() {
+  const [readTopics, setReadTopics] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('conduit:read-topics');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markRead = (slug: string) => {
+    setReadTopics((prev) => {
+      if (prev.includes(slug)) return prev;
+      const next = [...prev, slug];
+      try { localStorage.setItem('conduit:read-topics', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  return { readTopics, markRead };
+}
 
 const FLOW_STEPS = [
   {
@@ -455,6 +477,13 @@ export function Docs() {
   const { topic } = useParams<{ topic?: string }>();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const { readTopics, markRead } = useReadTopics();
+
+  useEffect(() => {
+    if (topic) {
+      markRead(topic);
+    }
+  }, [topic]);
 
   const filteredTopics = useMemo(() => {
     if (!query.trim()) {
@@ -552,6 +581,16 @@ export function Docs() {
             className="paper-card-elevated rounded-(--r-lg) p-4 lg:sticky lg:top-22 lg:self-start lg:h-[calc(100vh-7rem)] lg:overflow-y-auto overscroll-contain"
           >
             <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-wider mb-3">Documentation</div>
+            
+            <div className="mb-4">
+              <div className="flex justify-between items-center text-mono text-[9px] text-(--ink-4) uppercase tracking-wider mb-2">
+                <span>Reading Progress</span>
+                <span className="text-(--surge)">{Math.round((readTopics.length / TOPICS.length) * 100)}%</span>
+              </div>
+              <div className="h-1 bg-(--paper-edge) rounded-full overflow-hidden">
+                <div className="h-full bg-(--surge) transition-all duration-500" style={{ width: `${(readTopics.length / TOPICS.length) * 100}%` }} />
+              </div>
+            </div>
 
             <label className="block relative mb-4">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-(--ink-4)" />
@@ -583,11 +622,14 @@ export function Docs() {
                         <Link
                           key={item.slug}
                           to={`/docs/${item.slug}`}
-                          className={`block px-3 py-2 rounded-(--r-sm) text-[13px] font-secondary transition-colors ${
+                          className={`flex items-center justify-between px-3 py-2 rounded-(--r-sm) text-[13px] font-secondary transition-colors ${
                             active ? 'bg-(--surge-pale) text-(--surge)' : 'text-(--ink-2) hover:bg-(--paper-3)'
                           }`}
                         >
-                          {item.title}
+                          <span>{item.title}</span>
+                          {readTopics.includes(item.slug) && (
+                            <CheckCircle2 size={12} className={active ? "text-(--surge)" : "text-(--ink-4)"} />
+                          )}
                         </Link>
                       );
                     })}

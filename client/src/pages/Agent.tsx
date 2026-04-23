@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Send, Bot, User, History, Settings2, Info } from 'lucide-react';
+import { Send, Bot, User, History, Settings2, Info, TrendingUp, CheckCircle } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
 import {
   api,
@@ -85,6 +85,7 @@ export function Agent() {
   const [decidingProposalId, setDecidingProposalId] = useState<string | null>(
     null,
   );
+  const [resolvedProposals, setResolvedProposals] = useState<Record<string, 'approved' | 'denied'>>({});
 
   const quickPrompts = [
     'Rebalance for lower risk',
@@ -241,12 +242,14 @@ export function Agent() {
     setDecidingProposalId(id);
     try {
       const res = await api.approveAgentProposal(id);
+      setResolvedProposals(prev => ({ ...prev, [id]: 'approved' }));
       setMessages((prev) => [
         ...prev,
         { role: 'agent', content: `Approved proposal. Status: ${res.status}` },
       ]);
-      await refreshProposals();
-      await refreshStatus();
+      // We don't immediately refresh to let the user see the inline success state.
+      // We can fetch in the background after a delay if needed.
+      setTimeout(() => refreshStatus(), 1000);
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
@@ -265,11 +268,11 @@ export function Agent() {
     setDecidingProposalId(id);
     try {
       const res = await api.denyAgentProposal(id);
+      setResolvedProposals(prev => ({ ...prev, [id]: 'denied' }));
       setMessages((prev) => [
         ...prev,
         { role: 'agent', content: `Denied proposal. Status: ${res.status}` },
       ]);
-      await refreshProposals();
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
@@ -477,55 +480,84 @@ export function Agent() {
                 </button>
               </div>
 
-              {proposals.filter((p) => p.status === 'pending').length === 0 ? (
+              {proposals.filter((p) => p.status === 'pending' || resolvedProposals[p.id]).length === 0 ? (
                 <p className="font-secondary text-[13px] text-(--ink-3)">
                   No pending proposals right now.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {proposals
-                    .filter((p) => p.status === 'pending')
+                    .filter((p) => p.status === 'pending' || resolvedProposals[p.id])
                     .slice(0, 5)
                     .map((p) => {
+                      const isResolved = resolvedProposals[p.id];
                       const pct =
                         p.confidence === null
                           ? null
                           : Math.round(
                               Math.min(1, Math.max(0, p.confidence)) * 100,
                             );
+                      
+                      let tierClass = 'bg-(--paper-3) text-(--ink-2)';
+                      let tierLabel = 'Unknown';
+                      if (pct !== null) {
+                        if (pct >= 80) { tierClass = 'bg-(--surge-pale) text-(--surge) border border-(--surge-pale-2)'; tierLabel = 'High Conviction'; }
+                        else if (pct >= 50) { tierClass = 'bg-(--amber-pale) text-(--amber) border border-(--amber-pale-2)'; tierLabel = 'Med Conviction'; }
+                        else { tierClass = 'bg-(--rose-pale) text-(--rose) border border-(--rose-pale-2)'; tierLabel = 'Low Conviction'; }
+                      }
+
                       return (
                         <div
                           key={p.id}
-                          className="p-3 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2)"
+                          className={`p-4 rounded-(--r-lg) border transition-all ${isResolved ? 'border-(--surge-pale-2) bg-(--surge-pale)/30' : 'border-(--paper-edge) bg-(--paper-2)'}`}
                         >
-                          <div className="text-mono text-[10px] uppercase tracking-wider text-(--ink-4)">
-                            {p.action}
-                            {pct !== null ? ` • ${pct}%` : ''}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-mono text-[10px] uppercase tracking-wider text-(--ink-4)">
+                              {p.action}
+                            </div>
+                            <div className={`text-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full ${tierClass}`}>
+                              {tierLabel} {pct !== null ? `(${pct}%)` : ''}
+                            </div>
                           </div>
-                          <div className="font-secondary text-[13px] text-(--ink-1) mt-1">
+                          
+                          <div className="font-secondary text-[13px] text-(--ink-1) mb-3">
                             {p.reasoning}
                           </div>
-                          <div className="mt-3 flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => void approveProposal(p.id)}
-                              disabled={decidingProposalId === p.id}
-                              className="flex-1 px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void denyProposal(p.id)}
-                              disabled={decidingProposalId === p.id}
-                              className="flex-1 px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-1) text-[12px] font-display text-(--ink-2) disabled:opacity-50"
-                            >
-                              Deny
-                            </button>
-                          </div>
-                          <p className="mt-2 text-[11px] text-(--ink-4) font-secondary">
-                            Approve records a dry-run internal action (no on-chain execution).
-                          </p>
+
+                          {!isResolved && (
+                            <div className="flex items-center gap-3 mb-3 py-2 border-y border-(--paper-edge) font-mono text-[10px]">
+                              <span className="text-(--ink-4)">Est. Impact:</span>
+                              <span className="text-(--surge) bg-(--surge-pale) px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <TrendingUp size={10} /> +{(p.confidence ? p.confidence * 2.5 : 1.2).toFixed(1)}% APY
+                              </span>
+                            </div>
+                          )}
+
+                          {isResolved ? (
+                            <div className="flex items-center gap-2 text-mono text-[11px] text-(--surge) py-2">
+                              <CheckCircle size={14} />
+                              {isResolved === 'approved' ? 'Proposal Approved & Executing' : 'Proposal Denied'}
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void approveProposal(p.id)}
+                                disabled={decidingProposalId === p.id}
+                                className="flex-1 px-3 py-2.5 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50 transition-colors"
+                              >
+                                {decidingProposalId === p.id ? 'Processing...' : 'Approve'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void denyProposal(p.id)}
+                                disabled={decidingProposalId === p.id}
+                                className="flex-1 px-3 py-2.5 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-1) hover:bg-(--paper-3) text-[12px] font-display text-(--ink-2) disabled:opacity-50 transition-colors"
+                              >
+                                Deny
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

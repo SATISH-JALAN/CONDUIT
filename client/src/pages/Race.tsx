@@ -4,6 +4,8 @@ import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Trophy, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import { MagneticButton } from '@/components/ui/MagneticButton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ConduitLoader } from '@/components/ui/ConduitLoader';
 import { useRaceStore } from '@/stores/raceStore';
 import { useWalletStore } from '@/stores/walletStore';
 import { api } from '@/lib/api';
@@ -167,84 +169,149 @@ export function Race() {
         </header>
 
         <div className="bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) overflow-hidden race-item">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-(--paper-edge) bg-(--paper-2)">
-                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium w-16">Rank</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium">Participant</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium">Manager</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">TVL</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">APY</th>
-                  <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">24h Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && leaderboard.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 px-6 text-center text-(--ink-3) font-secondary text-[14px]">
-                      Loading leaderboard...
-                    </td>
-                  </tr>
-                )}
+          {loading && leaderboard.length === 0 ? (
+            <div className="p-16 flex justify-center">
+              <ConduitLoader />
+            </div>
+          ) : !loading && leaderboard.length === 0 ? (
+            <div className="p-12">
+              <EmptyState 
+                icon={Trophy}
+                title="No participants yet"
+                description="Be the first to join the yield race and secure your ranking."
+              />
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-(--paper-edge) bg-(--paper-2)">
+                      <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium w-16">Rank</th>
+                      <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium">Participant</th>
+                      <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium">Manager</th>
+                      <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">TVL</th>
+                      <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">APY</th>
+                      <th className="py-4 px-6 font-mono text-[11px] text-(--ink-4) uppercase tracking-wider font-medium text-right">24h Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((item) => (
+                      <tr 
+                        key={`${item.wallet}-${item.rank}`} 
+                        className="border-b border-(--paper-edge) last:border-0 hover:bg-(--paper-2) transition-colors group cursor-pointer race-item"
+                      >
+                        <td className="py-4 px-6">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-mono text-[12px] font-medium ${
+                            item.rank === 1 ? 'bg-(--amber-pale) text-(--amber) border border-(--amber-pale-2)' :
+                            item.rank === 2 ? 'bg-(--paper-3) text-(--ink-2) border border-(--paper-edge)' :
+                            item.rank === 3 ? 'bg-(--orange-pale) text-(--orange) border border-(--orange-pale-2)' :
+                            'text-(--ink-3)'
+                          }`}>
+                            {item.rank === 1 ? <Trophy size={14} /> : item.rank}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="font-display font-medium text-[15px] text-(--ink-1) group-hover:text-(--surge) transition-colors">
+                            {item.displayName}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="font-mono text-[13px] text-(--ink-3) bg-(--paper-3) px-2 py-1 rounded inline-block mb-1">
+                            {item.badge}
+                          </div>
+                          <div className="text-mono text-[10px] text-(--ink-4)">{item.copiedBy} copiers</div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="font-mono text-[14px] text-(--ink-1)">
+                            {formatMoney(item.tvl)}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="font-display font-medium text-[16px] text-(--surge)">
+                            {item.apy.toFixed(2)}%
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className={`flex items-center justify-end gap-1 font-mono text-[13px] mb-2 ${
+                            item.change24h >= 0 ? 'text-(--surge)' : 'text-(--rose)'
+                          }`}>
+                            {item.change24h >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                            {item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%
+                          </div>
+                          {isConnected && publicKey !== item.wallet && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); toggleCopy(item.wallet); }}
+                              disabled={copyingWallet === item.wallet}
+                              className="px-2 py-1 rounded-(--r-sm) text-mono text-[10px] border border-(--paper-edge) bg-(--paper-2) hover:bg-(--paper-3) disabled:opacity-50"
+                            >
+                              {copyingWallet === item.wallet
+                                ? 'Updating...'
+                                : following[item.wallet]
+                                  ? 'Following'
+                                  : 'Copy'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                {!loading && leaderboard.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 px-6 text-center text-(--ink-3) font-secondary text-[14px]">
-                      No race participants yet. Be the first to join.
-                    </td>
-                  </tr>
-                )}
-
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-(--paper-edge)">
                 {leaderboard.map((item) => (
-                  <tr 
-                    key={`${item.wallet}-${item.rank}`} 
-                    className="border-b border-(--paper-edge) last:border-0 hover:bg-(--paper-2) transition-colors group cursor-pointer race-item"
-                  >
-                    <td className="py-4 px-6">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-mono text-[12px] font-medium ${
-                        item.rank === 1 ? 'bg-(--amber-pale) text-(--amber) border border-(--amber-pale-2)' :
-                        item.rank === 2 ? 'bg-(--paper-3) text-(--ink-2) border border-(--paper-edge)' :
-                        item.rank === 3 ? 'bg-(--orange-pale) text-(--orange) border border-(--orange-pale-2)' :
-                        'text-(--ink-3)'
-                      }`}>
-                        {item.rank === 1 ? <Trophy size={14} /> : item.rank}
+                  <div key={`${item.wallet}-${item.rank}-mobile`} className="p-4 hover:bg-(--paper-2) transition-colors cursor-pointer group">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-mono text-[12px] font-medium shrink-0 ${
+                          item.rank === 1 ? 'bg-(--amber-pale) text-(--amber) border border-(--amber-pale-2)' :
+                          item.rank === 2 ? 'bg-(--paper-3) text-(--ink-2) border border-(--paper-edge)' :
+                          item.rank === 3 ? 'bg-(--orange-pale) text-(--orange) border border-(--orange-pale-2)' :
+                          'text-(--ink-3)'
+                        }`}>
+                          {item.rank === 1 ? <Trophy size={14} /> : item.rank}
+                        </div>
+                        <div>
+                          <div className="font-display font-medium text-[15px] text-(--ink-1) group-hover:text-(--surge) transition-colors">
+                            {item.displayName}
+                          </div>
+                          <div className="font-mono text-[10px] text-(--ink-4) mt-0.5">{item.copiedBy} copiers</div>
+                        </div>
                       </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="font-display font-medium text-[15px] text-(--ink-1) group-hover:text-(--surge) transition-colors">
-                        {item.displayName}
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="font-mono text-[13px] text-(--ink-3) bg-(--paper-3) px-2 py-1 rounded inline-block mb-1">
+                      <div className="font-mono text-[11px] text-(--ink-3) bg-(--paper-3) px-2 py-1 rounded">
                         {item.badge}
                       </div>
-                      <div className="text-mono text-[10px] text-(--ink-4)">{item.copiedBy} copiers</div>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="font-mono text-[14px] text-(--ink-1)">
-                        {formatMoney(item.tvl)}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-3 p-3 bg-(--paper-2) border border-(--paper-edge) rounded-(--r-md)">
+                      <div>
+                        <div className="text-mono text-[9px] text-(--ink-4) uppercase tracking-wider mb-1">TVL</div>
+                        <div className="font-mono text-[13px] text-(--ink-1)">{formatMoney(item.tvl)}</div>
                       </div>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="font-display font-medium text-[16px] text-(--surge)">
-                        {item.apy.toFixed(2)}%
+                      <div>
+                        <div className="text-mono text-[9px] text-(--ink-4) uppercase tracking-wider mb-1">APY</div>
+                        <div className="font-display font-medium text-[15px] text-(--surge)">{item.apy.toFixed(2)}%</div>
                       </div>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className={`flex items-center justify-end gap-1 font-mono text-[13px] mb-2 ${
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className={`flex items-center gap-1 font-mono text-[12px] ${
                         item.change24h >= 0 ? 'text-(--surge)' : 'text-(--rose)'
                       }`}>
                         {item.change24h >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                         {item.change24h >= 0 ? '+' : ''}{item.change24h.toFixed(2)}%
                       </div>
+                      
                       {isConnected && publicKey !== item.wallet && (
                         <button
                           type="button"
-                          onClick={() => toggleCopy(item.wallet)}
+                          onClick={(e) => { e.stopPropagation(); toggleCopy(item.wallet); }}
                           disabled={copyingWallet === item.wallet}
-                          className="px-2 py-1 rounded-(--r-sm) text-mono text-[10px] border border-(--paper-edge) bg-(--paper-2) hover:bg-(--paper-3) disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-(--r-sm) text-mono text-[10px] border border-(--paper-edge) bg-(--paper-2) hover:bg-(--paper-3) disabled:opacity-50 transition-colors"
                         >
                           {copyingWallet === item.wallet
                             ? 'Updating...'
@@ -253,12 +320,12 @@ export function Race() {
                               : 'Copy'}
                         </button>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mt-6 bg-(--paper-1) border border-(--paper-edge) rounded-(--r-xl) p-4 md:p-6 race-item">

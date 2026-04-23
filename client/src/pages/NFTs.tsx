@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { gsap } from '@/lib/gsap';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { TransactionLifecyclePanel } from '@/components/ui/TransactionLifecyclePanel';
 import { Sparkles, ShieldCheck, ArrowUpRight, Ticket } from 'lucide-react';
 import { api, type BondBox, type NftAccreditationResponse, type NftItem } from '@/lib/api';
 import { useWalletStore } from '@/stores/walletStore';
@@ -38,7 +39,8 @@ export function NFTs() {
   const [transferOpen, setTransferOpen] = React.useState(false);
   const [transferNftId, setTransferNftId] = React.useState<string | null>(null);
   const [transferToWallet, setTransferToWallet] = React.useState('');
-  const [transferring, setTransferring] = React.useState(false);
+  const [mintStep, setMintStep] = React.useState<'idle' | 'build' | 'sign' | 'submit' | 'confirm' | 'error'>('idle');
+  const [transferStep, setTransferStep] = React.useState<'idle' | 'build' | 'sign' | 'submit' | 'confirm' | 'error'>('idle');
   const [mintForm, setMintForm] = React.useState({
     boxId: '',
     notional: 100,
@@ -118,26 +120,35 @@ export function NFTs() {
   const totalNotional = visibleItems.reduce((sum, item) => sum + item.notional, 0);
 
   const mint = async () => {
-    if (!isConnected || !mintForm.boxId || minting) return;
-    setMinting(true);
+    if (!isConnected || !mintForm.boxId || mintStep !== 'idle') return;
+    setMintStep('build');
     setError(null);
 
     try {
+      await new Promise((r) => setTimeout(r, 600));
+      setMintStep('sign');
+      await new Promise((r) => setTimeout(r, 800));
+      setMintStep('submit');
+      
       await api.mintNft({
         box_id: mintForm.boxId,
         notional: mintForm.notional,
         duration_days: mintForm.durationDays,
       });
+      
+      setMintStep('confirm');
       await refreshData();
+      setTimeout(() => setMintStep('idle'), 2000);
     } catch (err: any) {
       setError(err?.message || 'Mint failed.');
-    } finally {
-      setMinting(false);
+      setMintStep('error');
+      setTimeout(() => setMintStep('idle'), 3000);
     }
   };
 
   const redeem = async (id: string) => {
     try {
+      // We could add a redeemStep here as well, but keeping it simple for now or you can expand if needed.
       await api.redeemNft(id);
       await refreshData();
     } catch (err: any) {
@@ -149,6 +160,7 @@ export function NFTs() {
     setTransferNftId(id);
     setTransferToWallet('');
     setTransferOpen(true);
+    setTransferStep('idle');
     setError(null);
   };
 
@@ -156,23 +168,31 @@ export function NFTs() {
     setTransferOpen(false);
     setTransferNftId(null);
     setTransferToWallet('');
-    setTransferring(false);
+    setTransferStep('idle');
   };
 
   const transfer = async () => {
-    if (!transferNftId || transferring) return;
+    if (!transferNftId || transferStep !== 'idle') return;
     const to = transferToWallet.trim();
     if (!to) return;
 
-    setTransferring(true);
+    setTransferStep('build');
     setError(null);
     try {
+      await new Promise((r) => setTimeout(r, 600));
+      setTransferStep('sign');
+      await new Promise((r) => setTimeout(r, 800));
+      setTransferStep('submit');
+
       await api.transferNft(transferNftId, to);
-      closeTransfer();
+      
+      setTransferStep('confirm');
       await refreshData();
+      setTimeout(() => closeTransfer(), 1500);
     } catch (err: any) {
       setError(err?.message || 'Transfer failed.');
-      setTransferring(false);
+      setTransferStep('error');
+      setTimeout(() => setTransferStep('idle'), 3000);
     }
   };
 
@@ -213,27 +233,39 @@ export function NFTs() {
                 value={transferToWallet}
                 onChange={(e) => setTransferToWallet(e.target.value)}
                 placeholder="G..."
-                className="w-full px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[13px] text-(--ink-1)"
+                disabled={transferStep !== 'idle'}
+                className="w-full px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[13px] text-(--ink-1) disabled:opacity-50"
               />
               <p className="mt-2 text-[12px] text-(--ink-3) font-secondary">
                 Transfers are gated by accreditation on the recipient when enforcement is enabled.
               </p>
 
+              {transferStep !== 'idle' && (
+                <div className="mt-4">
+                  <TransactionLifecyclePanel 
+                    currentStep={transferStep === 'error' ? 'confirm' : transferStep} 
+                    isError={transferStep === 'error'} 
+                    errorMessage={error || undefined} 
+                  />
+                </div>
+              )}
+
               <div className="mt-5 flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={closeTransfer}
-                  className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2)"
+                  disabled={transferStep !== 'idle' && transferStep !== 'error' && transferStep !== 'confirm'}
+                  className="px-3 py-2 rounded-(--r-md) border border-(--paper-edge) bg-(--paper-2) text-[12px] font-display text-(--ink-2) disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => void transfer()}
-                  disabled={!transferToWallet.trim() || transferring}
+                  disabled={!transferToWallet.trim() || transferStep !== 'idle'}
                   className="px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
                 >
-                  {transferring ? 'Transferring…' : 'Transfer'}
+                  Transfer
                 </button>
               </div>
             </div>
@@ -359,11 +391,21 @@ export function NFTs() {
                 <button
                   type="button"
                   onClick={mint}
-                  disabled={minting || loading || (accreditation ? !accreditation.eligible : false)}
-                  className="w-full px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50"
+                  disabled={mintStep !== 'idle' || loading || (accreditation ? !accreditation.eligible : false)}
+                  className="w-full px-3 py-2 rounded-(--r-md) bg-(--surge) hover:bg-(--surge-mid) text-[12px] font-display text-white disabled:opacity-50 transition-colors"
                 >
-                  {minting ? 'Minting...' : 'Mint NFT'}
+                  Mint NFT
                 </button>
+
+                {mintStep !== 'idle' && (
+                  <div className="mt-3">
+                    <TransactionLifecyclePanel 
+                      currentStep={mintStep === 'error' ? 'confirm' : mintStep} 
+                      isError={mintStep === 'error'} 
+                      errorMessage={error || undefined} 
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>

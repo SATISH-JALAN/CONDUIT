@@ -316,7 +316,7 @@ export function Dashboard() {
                           boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
                         }}
                         itemStyle={{ color: 'var(--ink-1)', fontFamily: 'var(--font-secondary)', fontSize: '13px' }}
-                        formatter={(value: number) => [`${value}%`, 'Allocation']}
+                        formatter={(value) => [`${Number(value ?? 0)}%`, 'Allocation']}
                       />
                     </PieChart>
                     {/* Inner circle for donut effect */}

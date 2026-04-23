@@ -12,7 +12,8 @@ import {
   Settings,
   Bell,
   Menu,
-  X
+  X,
+  ShieldCheck
 } from 'lucide-react';
 import { useWalletStore } from '@/stores/walletStore';
 import { usePortfolioStore } from '@/stores/portfolioStore';
@@ -72,6 +73,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <button
             className="lg:hidden text-(--ink-3) hover:text-(--ink-1)"
             onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
           >
             <X size={20} />
           </button>
@@ -121,6 +123,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <button
               className="lg:hidden text-(--ink-3) hover:text-(--ink-1) mr-2"
               onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Open menu"
             >
               <Menu size={24} />
             </button>
@@ -138,14 +141,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="dot-live"></span>
               <span className="font-display text-[11px] font-medium text-(--ink-2) hidden sm:inline">COND ACTIVE</span>
             </div>
-            <button className="text-(--ink-3) hover:text-(--ink-1) transition-colors">
+            <button className="text-(--ink-3) hover:text-(--ink-1) transition-colors" aria-label="Notifications">
               <Bell size={20} />
             </button>
           </div>
         </header>
 
-        <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
-          {children}
+        <div className="flex-1 p-4 md:p-8 overflow-x-hidden flex flex-col">
+          <div className="flex-1">
+            {children}
+          </div>
+          
+          <footer className="mt-12 pt-6 border-t border-(--paper-edge) flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-wider">
+              © {new Date().getFullYear()} Conduit Protocol
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-secondary text-[12px] text-(--ink-3)">
+              <span className="flex items-center gap-1"><ShieldCheck size={12} className="text-(--surge)" /> Non-custodial</span>
+              <span>Yield is variable</span>
+              <span>Smart contracts carry risk</span>
+            </div>
+          </footer>
         </div>
       </main>
     </div>

@@ -262,7 +262,11 @@ export function Bonds() {
                   return (
                     <div key={id} className="flex items-center gap-2 bg-(--paper-2) border border-(--paper-edge) rounded-full px-3 py-1.5 min-w-max">
                       <span className="text-[12px] font-medium text-(--ink-1)">{b.name}</span>
-                      <button onClick={() => setCompareList(prev => prev.filter(x => x !== id))} className="text-(--ink-4) hover:text-(--rose)">
+                      <button 
+                        onClick={() => setCompareList(prev => prev.filter(x => x !== id))} 
+                        className="text-(--ink-4) hover:text-(--rose)"
+                        aria-label={`Remove ${b.name} from comparison`}
+                      >
                         &times;
                       </button>
                     </div>

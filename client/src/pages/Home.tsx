@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { gsap, ScrollTrigger } from '@/lib/gsap';
 import { MagneticButton } from '@/components/ui/MagneticButton';
@@ -125,9 +125,9 @@ export function Home() {
               <SplitText className="block text-(--ink-1) pb-1">Your money.</SplitText>
               <div className="relative inline-block pb-4">
                 {/* Fixed the 'g' cutoff by adding bottom padding, leading adjustment, and a container */}
-                <SplitText className="block text-(--surge)" delay={0.1}>Streaming.</SplitText>
+                <SplitText className="block text-(--surge) relative z-10" delay={0.1}>Streaming.</SplitText>
                 {/* Underline swoosh graphic */}
-                <div className="absolute -bottom-1 left-0 w-full h-[6px] bg-(--surge-pale) rounded-full transform scale-x-0 origin-left animate-[scale-x_1s_ease-out_0.5s_forwards]" />
+                <div className="absolute -bottom-1 left-0 w-full h-[6px] bg-(--surge-pale) rounded-full transform scale-x-0 origin-left animate-[scale-x_1s_ease-out_0.5s_forwards] z-10" />
               </div>
             </h1>
 
@@ -201,9 +201,10 @@ export function Home() {
 
           {/* Right Column - Counter Card */}
           <div className="relative hero-counter-card">
-            <div className="counter-glow absolute inset-0 bg-(--surge-pale) rounded-full filter blur-[100px] opacity-50" />
+            {/* Subtle glow behind the card */}
+            <div className="absolute inset-2 bg-(--surge) rounded-[40px] filter blur-[80px] opacity-[0.40]" />
             
-            <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-7 relative z-10 overflow-hidden">
+            <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-7 md:p-9 relative z-10 overflow-hidden">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-6 md:mb-8">
                 <div className="text-mono text-[9px] md:text-[10px] text-(--ink-4)">DEMO - $10,000 AT 5.21% APY</div>
                 <div className="flex items-center gap-2 text-mono text-[9px] text-(--surge)">

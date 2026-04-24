@@ -39,21 +39,6 @@ export function Navbar() {
     return null;
   }
 
-  const links = [
-    { name: 'Bonds', path: '/bonds' },
-    { name: 'COND', path: '/agent' },
-    { name: 'Race', path: '/race' },
-    { name: 'Docs', path: '/docs' },
-  ];
-
-  const isLinkActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === path;
-    }
-
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
-
   return (
     <header
       ref={navRef}
@@ -67,22 +52,7 @@ export function Navbar() {
           <img src="/logo.png" alt="Conduit" className="h-35 w-auto object-contain -my-10 -ml-7" />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          {links.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className={cn(
-                'nav-link font-secondary text-[13px] font-normal pb-1',
-                isLinkActive(link.path)
-                  ? 'text-(--ink-1) active'
-                  : 'text-(--ink-3)'
-              )}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </nav>
+
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--paper-3) border border-(--surge-pale-2)">

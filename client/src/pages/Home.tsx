@@ -29,7 +29,7 @@ export function Home() {
       sync_ts: Date.now() / 1000,
       box_id: 'demo',
     };
-    
+
     let animationFrameId: number;
 
     const updateCounter = () => {
@@ -108,27 +108,23 @@ export function Home() {
         <div className="absolute inset-0 z-0 overflow-hidden" style={{ maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)' }}>
           <HeroParticles key="monochrome-grid-v2" />
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 md:px-14 grid lg:grid-cols-[1.2fr_1fr] gap-8 md:gap-12 items-center w-full relative z-10">
           {/* Left Column */}
           <div className="space-y-5 md:space-y-6 relative z-10">
 
 
             <div className="inline-block px-4 py-1.5 rounded-full bg-(--paper-3) border border-(--paper-edge)">
-              <ScrambleText 
-                text="REAL-TIME YIELD STREAMING" 
+              <ScrambleText
+                text="REAL-TIME YIELD STREAMING"
                 className="text-mono-caps text-[10px] text-(--ink-3)"
               />
             </div>
 
-            <h1 className="text-[clamp(42px,5vw,72px)] font-display font-bold leading-[1] tracking-[-0.04em] animate-weight relative">
-              <SplitText className="block text-(--ink-1) pb-1">Your money.</SplitText>
-              <div className="relative inline-block pb-4">
-                {/* Fixed the 'g' cutoff by adding bottom padding, leading adjustment, and a container */}
-                <SplitText className="block text-(--surge) relative z-10" delay={0.1}>Streaming.</SplitText>
-                {/* Underline swoosh graphic */}
-                <div className="absolute -bottom-1 left-0 w-full h-[6px] bg-(--surge-pale) rounded-full transform scale-x-0 origin-left animate-[scale-x_1s_ease-out_0.5s_forwards] z-10" />
-              </div>
+            <h1 className="font-display leading-none tracking-[-0.04em] animate-weight relative">
+              <SplitText className="block text-[clamp(48px,5.5vw,80px)] font-bold text-(--ink-1) pb-1">Your money.</SplitText>
+              <SplitText className="block text-[clamp(48px,5.5vw,80px)] font-bold text-(--surge) pb-4" delay={0.1}>Streaming.</SplitText>
+              <SplitText className="block text-[clamp(28px,3vw,46px)] font-light text-(--ink-3)" delay={0.2}>Real-time. Non-custodial. On Stellar.</SplitText>
             </h1>
 
             <p className="font-body text-[16px] font-light text-(--ink-2) leading-[1.7] max-w-110 md:text-[18px]">
@@ -145,7 +141,7 @@ export function Home() {
                 <MagneticButton className="w-full sm:w-auto justify-center bg-transparent border border-(--paper-edge) text-(--ink-2) font-display text-[16px] px-9 py-3.5 rounded-(--r-lg) hover:bg-(--paper-2) hover:text-(--surge) transition-all">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-(--surge-pale) flex items-center justify-center">
-                      <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-(--surge) border-b-[4px] border-b-transparent ml-0.5"></div>
+                      <div className="w-0 h-0 border-t-4 border-t-transparent border-l-[6px] border-l-(--surge) border-b-4 border-b-transparent ml-0.5"></div>
                     </div>
                     Watch Demo
                   </div>
@@ -156,7 +152,7 @@ export function Home() {
             {/* Trust Strip */}
             <div className="grid grid-cols-3 gap-4 md:gap-8 pt-6 border-t border-(--paper-edge) mt-6">
               <div className="relative group cursor-default">
-                <div className="absolute -inset-2 bg-gradient-to-r from-(--surge-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                <div className="absolute -inset-2 bg-linear-to-r from-(--surge-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
                 <div className="font-display text-[24px] text-(--surge) font-medium flex items-center gap-1">
                   <NumberFlow value={342} />+
                 </div>
@@ -165,7 +161,7 @@ export function Home() {
                 </div>
               </div>
               <div className="relative group cursor-default">
-                <div className="absolute -inset-2 bg-gradient-to-r from-(--violet-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                <div className="absolute -inset-2 bg-linear-to-r from-(--violet-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
                 <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--violet) transition-colors">
                   <NumberFlow value={12.4} format={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />k
                 </div>
@@ -174,7 +170,7 @@ export function Home() {
                 </div>
               </div>
               <div className="relative group cursor-default">
-                <div className="absolute -inset-2 bg-gradient-to-r from-(--amber-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
+                <div className="absolute -inset-2 bg-linear-to-r from-(--amber-pale) to-transparent opacity-0 group-hover:opacity-20 rounded-lg blur-md transition-opacity"></div>
                 <div className="font-display text-[24px] text-(--ink-1) font-medium flex items-center gap-1 group-hover:text-(--amber) transition-colors">
                   4.5% - 7.1%
                 </div>
@@ -203,7 +199,7 @@ export function Home() {
           <div className="relative hero-counter-card">
             {/* Subtle glow behind the card */}
             <div className="absolute inset-2 bg-(--surge) rounded-[40px] filter blur-[80px] opacity-[0.40]" />
-            
+
             <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-7 md:p-9 relative z-10 overflow-hidden">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-6 md:mb-8">
                 <div className="text-mono text-[9px] md:text-[10px] text-(--ink-4)">DEMO - $10,000 AT 5.21% APY</div>
@@ -216,7 +212,7 @@ export function Home() {
                 <span ref={counterIntRef} className="font-display text-[clamp(32px,4vw,52px)] font-bold text-(--ink-1) tabular-nums tracking-[-0.04em] leading-none">$10,000</span>
                 <span ref={counterDecRef} className="font-mono text-[clamp(20px,2.8vw,34px)] text-(--surge) tabular-nums leading-none">.000000</span>
               </div>
-              
+
               <div className="text-mono text-[12px] text-(--surge) opacity-70 mb-8">
                 +$0.000016 / second
               </div>
@@ -272,8 +268,9 @@ export function Home() {
       {/* START IN 60 SECONDS */}
       <section className="py-16 md:py-24 max-w-7xl mx-auto px-6 md:px-14 border-b border-(--paper-edge)">
         <div className="text-center mb-12">
-          <h2 className="text-[clamp(28px,3vw,42px)] font-display font-bold tracking-[-0.03em] text-(--ink-1) mb-4">
-            Start earning in <span className="text-(--surge)">60 seconds</span>.
+          <h2 className="font-display tracking-[-0.03em] mb-4">
+            <span className="block text-[clamp(32px,3.5vw,52px)] font-bold text-(--ink-1)">Start earning in</span>
+            <span className="block text-[clamp(32px,3.5vw,52px)] font-bold text-(--surge)">60 seconds.</span>
           </h2>
           <p className="font-secondary text-[16px] text-(--ink-3) max-w-lg mx-auto">
             From zero to streaming yield, completely non-custodial and secure.
@@ -281,8 +278,8 @@ export function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 relative">
-          <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-[1px] bg-(--paper-edge) -translate-y-1/2 -z-10" />
-          
+          <div className="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-px bg-(--paper-edge) -translate-y-1/2 -z-10" />
+
           {[
             { step: '01', title: 'Connect Wallet', desc: 'Securely link your Freighter wallet. No signups required.' },
             { step: '02', title: 'Choose Bond', desc: 'Select from curated RWA boxes like USDY or BENJI.' },
@@ -306,9 +303,10 @@ export function Home() {
             <div className="section-eyebrow inline-block px-3 py-1 rounded-full bg-(--paper-2) border border-(--paper-edge) mb-4">
               <ScrambleText text="HOW IT WORKS" className="text-mono-caps text-[10px] text-(--ink-3)" />
             </div>
-            <h2 className="heading text-[clamp(36px,4vw,64px)] font-display font-bold tracking-[-0.03em] leading-none">
-              <SplitText>The mechanics of</SplitText>
-              <SplitText className="text-(--surge)">continuous yield.</SplitText>
+            <h2 className="font-display tracking-[-0.03em] leading-none">
+              <SplitText className="block text-[clamp(36px,4vw,64px)] font-bold text-(--ink-1)">The mechanics of</SplitText>
+              <SplitText className="block text-[clamp(36px,4vw,64px)] font-light text-(--ink-3)">continuous</SplitText>
+              <SplitText className="block text-[clamp(36px,4vw,64px)] font-bold text-(--surge)">yield.</SplitText>
             </h2>
           </div>
           <p className="font-body text-[16px] font-light text-(--ink-3) leading-[1.7] max-w-100 md:justify-self-end">
@@ -367,9 +365,10 @@ export function Home() {
             <div className="inline-block px-3 py-1 rounded-full bg-(--paper-2) border border-(--paper-edge) mb-4">
               <ScrambleText text="BOND BOXES" className="text-mono-caps text-[10px] text-(--ink-3)" />
             </div>
-            <h2 className="text-[clamp(34px,4vw,62px)] font-display font-bold tracking-[-0.03em] leading-none">
-              Curated boxes for
-              <span className="block text-(--surge)">every market mood.</span>
+            <h2 className="font-display tracking-[-0.03em] leading-none">
+              <span className="block text-[clamp(34px,4vw,62px)] font-bold text-(--ink-1)">Curated boxes for</span>
+              <span className="block text-[clamp(34px,4vw,62px)] font-light text-(--ink-3)">every</span>
+              <span className="block text-[clamp(34px,4vw,62px)] font-bold text-(--amber)">market mood.</span>
             </h2>
           </div>
           <p className="font-body text-[16px] font-light text-(--ink-3) leading-[1.7] max-w-105 md:justify-self-end">
@@ -527,29 +526,146 @@ export function Home() {
       </section>
 
       {/* FOOTER CTA */}
-      <section className="py-14 md:py-19 border-t border-(--paper-edge) relative overflow-hidden">
+      <section className="py-20 md:py-28 border-t border-(--paper-edge) relative overflow-hidden">
         <div className="absolute inset-0 bg-(--paper-2) -z-20" />
         <div className="absolute left-1/2 top-[32%] -translate-x-1/2 w-90 h-60 md:w-150 md:h-100 bg-[radial-gradient(ellipse,rgba(0,122,94,0.04),transparent_70%)] pointer-events-none -z-10" />
-        
-        <div className="max-w-190 mx-auto px-4 md:px-6 text-center">
-          <h2 className="heading text-[clamp(30px,4.4vw,64px)] font-display font-bold tracking-[-0.04em] leading-none text-center mb-8 md:mb-10">
-            <SplitText className="block text-(--ink-1)">The bond market has</SplitText>
-            <SplitText className="block text-(--ink-4)">been</SplitText>
-            <SplitText className="block text-(--ink-1)">boring for 300 years.</SplitText>
-            <SplitText className="block text-[#007A5E]">Not anymore.</SplitText>
+
+        <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
+          <h2 className="font-display tracking-[-0.04em] text-center mb-10 md:mb-12" style={{ lineHeight: 1.15 }}>
+            <SplitText className="block text-[clamp(36px,5vw,72px)] font-bold text-(--ink-1)">The bond market has</SplitText>
+            <SplitText className="block text-[clamp(36px,5vw,72px)] font-light text-(--ink-3) pb-1">been boring for</SplitText>
+            <SplitText className="block text-[clamp(36px,5vw,72px)] font-bold text-(--ink-1)">300 years.</SplitText>
+            <SplitText className="block text-[clamp(36px,5vw,72px)] font-bold text-(--surge) pb-2">Not anymore.</SplitText>
           </h2>
 
           <Link to="/bonds" className="inline-flex justify-center">
-            <MagneticButton variant="primary" className="font-display text-[16px] md:text-[18px] px-9 md:px-12 py-3.5 md:py-4.5 rounded-(--r-full) hover:shadow-[0_0_24px_rgba(0,122,94,0.45)] hover:-translate-y-1 transition-all">
+            <MagneticButton variant="primary" className="font-display text-[16px] md:text-[18px] px-10 md:px-14 py-4 md:py-5 rounded-(--r-lg) hover:shadow-[0_0_24px_rgba(0,122,94,0.45)] hover:-translate-y-1 transition-all">
               Start Earning <ArrowRight className="inline-block ml-2" size={20} />
             </MagneticButton>
           </Link>
-          
-          <div className="mt-8 md:mt-10 text-mono-caps text-[10px] text-(--ink-4) tracking-[0.12em] leading-relaxed px-2">
-            Built on Stellar | Soroban Contracts | BENJI + USDY Live | Non-custodial
-          </div>
         </div>
       </section>
+
+      {/* FOOTER */}
+      <footer className="bg-(--paper-1) border-t border-(--paper-edge) relative overflow-hidden">
+        {/* Background texture — subtle dot grid */}
+        <div
+          className="absolute inset-0 opacity-[0.035] pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, var(--ink-1) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+          }}
+        />
+        {/* Ambient surge glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[radial-gradient(ellipse,rgba(0,122,94,0.06),transparent_70%)] pointer-events-none" />
+
+        {/* Decorative favicon — left */}
+        <img
+          src="/logofevicon.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-[-60px] top-1/2 -translate-y-1/2 w-[280px] md:w-[360px] opacity-[0.04] select-none pointer-events-none"
+        />
+        {/* Decorative favicon — right */}
+        <img
+          src="/logofevicon.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute right-[-60px] top-1/2 -translate-y-1/2 w-[280px] md:w-[360px] opacity-[0.04] select-none pointer-events-none"
+        />
+
+        <div className="relative max-w-7xl mx-auto px-6 md:px-14 py-12 md:py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-1">
+              <Link to="/">
+                <img src="/logo.png" alt="Conduit" className="h-28 w-auto object-contain -ml-5 -mt-4 mb-1" />
+              </Link>
+              <p className="font-secondary text-[13px] text-(--ink-3) leading-[1.6] max-w-52">
+                Real-time yield streaming on tokenized government bonds. Built on Stellar.
+              </p>
+              <div className="flex items-center gap-2 mt-4">
+                <span className="dot-live"></span>
+                <span className="font-display text-[11px] font-medium text-(--surge) uppercase tracking-wider">Testnet Live</span>
+              </div>
+            </div>
+
+            {/* Protocol */}
+            <div>
+              <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mb-4">Protocol</div>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Bond Boxes', to: '/bonds' },
+                  { label: 'Dashboard', to: '/dashboard' },
+                  { label: 'COND Agent', to: '/agent' },
+                  { label: 'Yield Race', to: '/race' },
+                ].map(({ label, to }) => (
+                  <li key={label}>
+                    <Link to={to} className="font-secondary text-[14px] text-(--ink-2) hover:text-(--surge) transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Developers */}
+            <div>
+              <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mb-4">Developers</div>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Docs', to: '/docs' },
+                  { label: 'Creators', to: '/creators' },
+                  { label: 'NFTs', to: '/nfts' },
+                  { label: 'GitHub', to: 'https://github.com', external: true },
+                ].map(({ label, to, external }) => (
+                  <li key={label}>
+                    {external ? (
+                      <a href={to} target="_blank" rel="noopener noreferrer" className="font-secondary text-[14px] text-(--ink-2) hover:text-(--surge) transition-colors">
+                        {label}
+                      </a>
+                    ) : (
+                      <Link to={to} className="font-secondary text-[14px] text-(--ink-2) hover:text-(--surge) transition-colors">
+                        {label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mb-4">Legal</div>
+              <ul className="space-y-3">
+                {['Terms of Service', 'Privacy Policy', 'Risk Disclosure', 'Cookie Policy'].map((label) => (
+                  <li key={label}>
+                    <a href="#" className="font-secondary text-[14px] text-(--ink-2) hover:text-(--surge) transition-colors">
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="pt-8 border-t border-(--paper-edge) flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="font-secondary text-[12px] text-(--ink-4)">
+              © {new Date().getFullYear()} Conduit Protocol. All rights reserved.
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-secondary text-[12px] text-(--ink-4)">
+              <span>Built on Stellar</span>
+              <span className="text-(--paper-edge)">|</span>
+              <span>Soroban Contracts</span>
+              <span className="text-(--paper-edge)">|</span>
+              <span>Non-custodial</span>
+              <span className="text-(--paper-edge)">|</span>
+              <span>Yield is variable. Smart contracts carry risk.</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

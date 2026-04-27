@@ -15,8 +15,8 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
     if (!containerRef.current) return;
 
     const chars = containerRef.current.querySelectorAll('.split-char');
-    
-    gsap.fromTo(chars, 
+
+    gsap.fromTo(chars,
       {
         y: 80,
         opacity: 0,
@@ -58,7 +58,7 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
   };
 
   return (
-    <div ref={containerRef} className={`overflow-hidden ${className}`} style={{ perspective: '1000px' }}>
+    <div ref={containerRef} className={`overflow-hidden pb-[0.2em] -mb-[0.2em] ${className}`} style={{ perspective: '1000px' }}>
       {renderSplitText()}
     </div>
   );

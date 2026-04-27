@@ -439,6 +439,16 @@ body::after {
   }
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-25%);
+  }
+}
+
 /* Scroll-driven underline */
 .nav-link {
   background: linear-gradient(var(--surge), var(--surge)) no-repeat left bottom;

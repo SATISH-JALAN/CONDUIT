@@ -1,12 +1,12 @@
-﻿import React, { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { gsap } from '@/lib/gsap';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import { TiltCard } from '@/components/ui/TiltCard';
 import { SpotlightCard } from '@/components/ui/SpotlightCard';
 import { SplitText } from '@/components/ui/SplitText';
 import { ScrambleText } from '@/components/ui/ScrambleText';
-import { ArrowRight, Zap, ShieldCheck, Activity } from 'lucide-react';
+import { ArrowRight, Zap, ShieldCheck, Activity, Plus, Minus } from 'lucide-react';
 import { calculateValue } from '@/lib/formula';
 import { useRaceStore } from '@/stores/raceStore';
 import { useWalletStore } from '@/stores/walletStore';
@@ -19,6 +19,7 @@ export function Home() {
   const pendingRef = useRef<HTMLSpanElement>(null);
   const { leaderboard, fetchLeaderboard, loading } = useRaceStore();
   const { isConnected } = useWalletStore();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     // Yield Counter Math using shared formula
@@ -102,129 +103,109 @@ export function Home() {
   return (
     <div className="min-h-screen overflow-x-hidden" ref={containerRef}>
       {/* HERO SECTION */}
-      <section className="min-h-screen pt-22 pb-8 md:pt-24 md:pb-0 relative flex items-center overflow-hidden">
+      <section className="min-h-screen pt-20 pb-16 md:pt-28 md:pb-20 relative flex flex-col justify-center overflow-hidden">
         {/* Ambient color pools */}
-        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(0,122,94,0.07),transparent_70%)] pointer-events-none -z-10" />
-        <div className="absolute top-[10%] right-[-10%] w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(180,83,9,0.05),transparent_70%)] pointer-events-none -z-10" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-[radial-gradient(ellipse,rgba(0,122,94,0.04),transparent_70%)] pointer-events-none -z-10" />
+        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(0,122,94,0.06),transparent_70%)] pointer-events-none -z-10" />
+        <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(180,83,9,0.04),transparent_70%)] pointer-events-none -z-10" />
 
         {/* INTERACTIVE ANTIGRAVITY PARTICLES */}
-        <div className="absolute inset-0 z-0 overflow-hidden" style={{ maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)' }}>
+        <div className="absolute inset-0 z-0 overflow-hidden" style={{ maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
           <HeroParticles key="monochrome-grid-v2" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 md:px-14 grid lg:grid-cols-[1.15fr_1fr] gap-8 md:gap-16 items-center w-full relative z-10">
-          {/* Left Column */}
-          <div className="space-y-5 md:space-y-7 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 md:px-14 w-full relative z-10">
 
-            {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-(--paper-3) border border-(--paper-edge) shadow-sm">
-              <span className="dot-live"></span>
-              <ScrambleText
-                text="REAL-TIME YIELD STREAMING"
-                className="text-mono-caps text-[10px] text-(--ink-3)"
-              />
-            </div>
-
-            <h1 className="font-display leading-none tracking-[-0.04em] animate-weight relative">
-              <SplitText className="block text-[clamp(48px,5.5vw,84px)] font-bold text-(--ink-1) pb-1">Your money.</SplitText>
-              <SplitText className="block text-[clamp(48px,5.5vw,84px)] font-bold text-(--surge) pb-3" delay={0.1}>Streaming.</SplitText>
-            </h1>
-
-            {/* Subtitle — separate from h1 so it doesn't collide */}
-            <p className="font-display text-[clamp(16px,1.6vw,22px)] font-light text-(--ink-3) tracking-[-0.01em] leading-snug">
-              Real-time. Non-custodial. On Stellar.
-            </p>
-
-            <p className="font-body text-[15px] md:text-[16px] font-light text-(--ink-2) leading-[1.8] max-w-sm border-l-2 border-(--surge-pale-2) pl-4">
-              Deposit into tokenized government bonds. Watch a live counter tick upward every second. Split your yield stream. COND manages it all.
-            </p>
-
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
-              <Link to={isConnected ? "/bonds" : "/onboarding"} className="w-full sm:w-auto">
-                <MagneticButton variant="primary" className="w-full sm:w-auto justify-center font-display text-[15px] font-semibold px-8 py-4 rounded-(--r-lg) hover:shadow-[0_0_28px_rgba(0,122,94,0.45)] transition-all">
-                  {isConnected ? "Start Earning" : "Connect Wallet"} <ArrowRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" size={16} />
-                </MagneticButton>
-              </Link>
-              <button onClick={() => window.open('https://youtube.com', '_blank')} className="w-full sm:w-auto">
-                <MagneticButton className="w-full sm:w-auto justify-center bg-transparent border border-(--paper-edge) text-(--ink-2) font-display text-[15px] px-8 py-4 rounded-(--r-lg) hover:bg-(--paper-2) hover:text-(--surge) hover:border-(--surge-pale-2) transition-all">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-(--surge-pale) flex items-center justify-center border border-(--surge-pale-2)">
-                      <div className="w-0 h-0 border-t-4 border-t-transparent border-l-[6px] border-l-(--surge) border-b-4 border-b-transparent ml-0.5"></div>
-                    </div>
-                    Watch Demo
-                  </div>
-                </MagneticButton>
-              </button>
-            </div>
-
-            {/* Trust Infrastructure Row */}
-            <div className="flex flex-wrap items-center gap-3 md:gap-5 opacity-50 hover:opacity-90 transition-opacity duration-300">
-              <div className="text-mono text-[9px] text-(--ink-4) tracking-widest uppercase">Powered By</div>
-              <div className="flex flex-wrap gap-2 md:gap-3 items-center font-display font-medium text-[12px] md:text-[13px] text-(--ink-3)">
-                <span>Stellar</span>
-                <span className="text-(--paper-edge)">·</span>
-                <span>Soroban</span>
-                <span className="text-(--paper-edge)">·</span>
-                <span>Franklin Templeton</span>
-                <span className="text-(--paper-edge)">·</span>
-                <span>Ondo</span>
-              </div>
-            </div>
+          {/* Eyebrow */}
+          <div className="flex items-center gap-3 mb-8 md:mb-10">
+            <span className="dot-live"></span>
+            <span className="text-mono text-[10px] text-(--ink-4) uppercase tracking-[0.18em]">The Protocol</span>
           </div>
 
-          {/* Right Column - Counter Card */}
-          <div className="relative hero-counter-card">
-            {/* Glow layers */}
-            <div className="absolute inset-4 bg-(--surge) rounded-[40px] filter blur-[90px] opacity-[0.22]" />
-            <div className="absolute inset-8 bg-(--amber) rounded-[40px] filter blur-[60px] opacity-[0.06]" />
+          {/* Side-by-side: heading left, card right */}
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 md:gap-16 items-center">
 
-            <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-7 md:p-9 relative z-10 overflow-hidden">
-              {/* Card inner glow */}
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[radial-gradient(circle,rgba(0,122,94,0.06),transparent_70%)] pointer-events-none" />
+            {/* Left: heading + body + buttons + partners */}
+            <div className="space-y-7 md:space-y-9">
+              <h1 className="font-display tracking-[-0.04em]" style={{ lineHeight: 1.0 }}>
+                <SplitText className="block text-[clamp(44px,6.5vw,96px)] font-bold text-(--ink-1)">Yield,</SplitText>
+                <SplitText className="block text-[clamp(44px,6.5vw,96px)] font-bold text-(--ink-1)" delay={0.04}>streaming.</SplitText>
+                <SplitText className="block text-[clamp(44px,6.5vw,96px)] font-bold text-(--surge)" delay={0.08}>Every second.</SplitText>
+              </h1>
 
-              <div className="flex flex-wrap justify-between items-center gap-2 mb-6 md:mb-8">
-                <div className="text-mono text-[9px] md:text-[10px] text-(--ink-4) tracking-wider">DEMO · $10,000 · 5.21% APY</div>
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-(--surge-pale) border border-(--surge-pale-2)">
-                  <span className="dot-live"></span>
-                  <span className="text-mono text-[9px] text-(--surge) font-medium">LIVE</span>
-                </div>
+              <p className="font-body text-[16px] md:text-[18px] font-light text-(--ink-2) leading-[1.75] max-w-md">
+                Deposit into tokenized government bonds. Watch a live counter tick upward every second. Built on Stellar — $0.00001 per transaction.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link to={isConnected ? "/bonds" : "/onboarding"}>
+                  <MagneticButton variant="primary" className="w-full sm:w-auto justify-center font-display text-[15px] font-semibold px-8 py-4 rounded-(--r-lg) hover:shadow-[0_0_28px_rgba(0,122,94,0.4)] transition-all">
+                    {isConnected ? "Start Earning" : "Connect Wallet"} <ArrowRight className="inline-block ml-2" size={16} />
+                  </MagneticButton>
+                </Link>
+                <Link to="/docs">
+                  <MagneticButton className="w-full sm:w-auto justify-center bg-transparent border border-(--paper-edge) text-(--ink-2) font-display text-[15px] px-8 py-4 rounded-(--r-lg) hover:bg-(--paper-2) hover:text-(--surge) hover:border-(--surge-pale-2) transition-all">
+                    Read the Docs
+                  </MagneticButton>
+                </Link>
               </div>
 
-              <div className="mb-1 flex items-baseline">
-                <span ref={counterIntRef} className="font-display text-[clamp(34px,4.5vw,56px)] font-bold text-(--ink-1) tabular-nums tracking-[-0.04em] leading-none">$10,000</span>
-                <span ref={counterDecRef} className="font-mono text-[clamp(20px,2.8vw,34px)] text-(--surge) tabular-nums leading-none font-medium">.000000</span>
+              {/* Partner logos */}
+              <div className="pt-6 border-t border-(--paper-edge)">
+                <div className="text-mono text-[9px] text-(--ink-4) uppercase tracking-[0.18em] mb-4">Partnered With</div>
+                <div className="flex flex-wrap items-center gap-5 md:gap-7">
+                  {['Stellar', 'Soroban', 'Franklin Templeton', 'Ondo Finance'].map((name) => (
+                    <span key={name} className="font-display font-semibold text-[13px] text-(--ink-3) hover:text-(--ink-1) transition-colors cursor-default">{name}</span>
+                  ))}
+                </div>
               </div>
+            </div>
 
-              <div className="text-mono text-[11px] text-(--surge) opacity-60 mb-8 tracking-wider">
-                +$0.000016 / second
-              </div>
+            {/* Right: Counter Card */}
+            <div className="relative hero-counter-card">
+              <div className="absolute inset-4 bg-(--surge) rounded-[40px] filter blur-[80px] opacity-[0.18]" />
+              <TiltCard className="chrome-border chrome-spinning paper-card-elevated p-6 md:p-8 relative z-10 overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[radial-gradient(circle,rgba(0,122,94,0.06),transparent_70%)] pointer-events-none" />
 
-              <div className="mb-8">
-                <div className="flex justify-between text-mono text-[10px] text-(--ink-4) mb-2.5 uppercase tracking-wider">
-                  <span>Streaming</span>
-                  <span ref={pendingRef} className="text-(--surge)">+$0.0000</span>
+                <div className="flex justify-between items-center mb-5 md:mb-7">
+                  <div className="text-mono text-[9px] text-(--ink-4) tracking-wider uppercase">Demo · $10,000 · 5.21% APY</div>
+                  <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-(--surge-pale) border border-(--surge-pale-2)">
+                    <span className="dot-live"></span>
+                    <span className="text-mono text-[9px] text-(--surge) font-medium">LIVE</span>
+                  </div>
                 </div>
-                <div className="h-1 bg-(--paper-3) rounded-full overflow-hidden">
-                  <div className="stream-bar-fill"></div>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-3 md:gap-4 border-t border-(--paper-edge) pt-6">
-                <div className="border-r border-(--paper-edge)">
-                  <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1.5 tracking-wider">Pending</div>
-                  <div className="font-display text-[17px] md:text-[19px] text-(--ink-1) font-semibold">$14.20</div>
+                <div className="mb-1 flex items-baseline">
+                  <span ref={counterIntRef} className="font-display text-[clamp(30px,4vw,52px)] font-bold text-(--ink-1) tabular-nums tracking-[-0.04em] leading-none">$10,000</span>
+                  <span ref={counterDecRef} className="font-mono text-[clamp(18px,2.5vw,30px)] text-(--surge) tabular-nums leading-none font-medium">.000000</span>
                 </div>
-                <div className="border-r border-(--paper-edge) pl-4">
-                  <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1.5 tracking-wider">APY</div>
-                  <div className="font-display text-[17px] md:text-[19px] text-(--surge) font-semibold">5.21%</div>
+                <div className="text-mono text-[10px] text-(--surge) opacity-60 mb-6 tracking-wider">+$0.000016 / second</div>
+
+                <div className="mb-6">
+                  <div className="flex justify-between text-mono text-[10px] text-(--ink-4) mb-2 uppercase tracking-wider">
+                    <span>Streaming</span>
+                    <span ref={pendingRef} className="text-(--surge)">+$0.0000</span>
+                  </div>
+                  <div className="h-1 bg-(--paper-3) rounded-full overflow-hidden">
+                    <div className="stream-bar-fill"></div>
+                  </div>
                 </div>
-                <div className="pl-4">
-                  <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1.5 tracking-wider">Daily</div>
-                  <div className="font-display text-[17px] md:text-[19px] text-(--ink-1) font-semibold">$1.42</div>
+
+                <div className="grid grid-cols-3 gap-px bg-(--paper-edge) rounded-lg overflow-hidden">
+                  <div className="bg-(--paper-1) p-3 md:p-4">
+                    <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 tracking-wider">Pending</div>
+                    <div className="font-display text-[16px] md:text-[18px] text-(--ink-1) font-semibold">$14.20</div>
+                  </div>
+                  <div className="bg-(--paper-1) p-3 md:p-4">
+                    <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 tracking-wider">APY</div>
+                    <div className="font-display text-[16px] md:text-[18px] text-(--surge) font-semibold">5.21%</div>
+                  </div>
+                  <div className="bg-(--paper-1) p-3 md:p-4">
+                    <div className="text-mono text-[9px] text-(--ink-4) uppercase mb-1 tracking-wider">Daily</div>
+                    <div className="font-display text-[16px] md:text-[18px] text-(--ink-1) font-semibold">$1.42</div>
+                  </div>
                 </div>
-              </div>
-            </TiltCard>
+              </TiltCard>
+            </div>
           </div>
         </div>
       </section>
@@ -249,9 +230,9 @@ export function Home() {
       <section className="py-16 md:py-24 relative overflow-hidden border-b border-(--paper-edge)">
         <div className="max-w-7xl mx-auto px-6 md:px-14">
           <div className="text-center mb-12">
-            <h2 className="font-display tracking-[-0.03em] mb-4">
-              <span className="block text-[clamp(32px,3.5vw,52px)] font-bold text-(--ink-1)">Start earning in</span>
-              <span className="block text-[clamp(32px,3.5vw,52px)] font-bold text-(--surge)">60 seconds.</span>
+            <h2 className="font-display tracking-[-0.03em] mb-5">
+              <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">Start earning in</span>
+              <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--surge)">60 seconds.</span>
             </h2>
             <p className="font-secondary text-[16px] text-(--ink-3) max-w-lg mx-auto">
               From zero to streaming yield, completely non-custodial and secure.
@@ -283,13 +264,13 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-6 md:px-14">
           <div className="grid md:grid-cols-2 gap-8 items-end mb-16">
             <div>
-              <div className="section-eyebrow inline-block px-3 py-1 rounded-full bg-(--paper-2) border border-(--paper-edge) mb-4">
-                <ScrambleText text="HOW IT WORKS" className="text-mono-caps text-[10px] text-(--ink-3)" />
+              <div className="section-eyebrow inline-block mb-5">
+                <span className="text-mono text-[10px] text-(--ink-4) uppercase tracking-[0.18em]">How It Works</span>
               </div>
-              <h2 className="font-display tracking-[-0.03em] leading-none">
-                <SplitText className="block text-[clamp(36px,4vw,64px)] font-bold text-(--ink-1)">The mechanics of</SplitText>
-                <SplitText className="block text-[clamp(36px,4vw,64px)] font-light text-(--ink-3)">continuous</SplitText>
-                <SplitText className="block text-[clamp(36px,4vw,64px)] font-bold text-(--surge)">yield.</SplitText>
+              <h2 className="font-display tracking-[-0.03em]" style={{ lineHeight: 1.05 }}>
+                <SplitText className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">The mechanics of</SplitText>
+                <SplitText className="block text-[clamp(40px,5vw,72px)] font-light text-(--ink-3)">continuous</SplitText>
+                <SplitText className="block text-[clamp(40px,5vw,72px)] font-bold text-(--surge)">yield.</SplitText>
               </h2>
             </div>
             <p className="font-body text-[16px] font-light text-(--ink-3) leading-[1.7] max-w-100 md:justify-self-end">
@@ -347,13 +328,13 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-5 md:px-14">
           <div className="grid md:grid-cols-2 gap-8 items-end mb-14">
             <div>
-              <div className="inline-block px-3 py-1 rounded-full bg-(--paper-2) border border-(--paper-edge) mb-4">
-                <ScrambleText text="BOND BOXES" className="text-mono-caps text-[10px] text-(--ink-3)" />
+              <div className="inline-block mb-5">
+                <span className="text-mono text-[10px] text-(--ink-4) uppercase tracking-[0.18em]">Bond Boxes</span>
               </div>
-              <h2 className="font-display tracking-[-0.03em] leading-none">
-                <span className="block text-[clamp(34px,4vw,62px)] font-bold text-(--ink-1)">Curated boxes for</span>
-                <span className="block text-[clamp(34px,4vw,62px)] font-light text-(--ink-3)">every</span>
-                <span className="block text-[clamp(34px,4vw,62px)] font-bold text-(--amber)">market mood.</span>
+              <h2 className="font-display tracking-[-0.03em]" style={{ lineHeight: 1.05 }}>
+                <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">Curated boxes for</span>
+                <span className="block text-[clamp(40px,5vw,72px)] font-light text-(--ink-3)">every</span>
+                <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--amber)">market mood.</span>
               </h2>
             </div>
             <p className="font-body text-[16px] font-light text-(--ink-3) leading-[1.7] max-w-105 md:justify-self-end">
@@ -362,43 +343,53 @@ export function Home() {
           </div>
 
           <div className="grid md:grid-cols-3 md:grid-rows-2 gap-6 bento-grid">
-            <SpotlightCard className="bento-card paper-card-elevated md:row-span-2 p-8 border-t-2 border-(--surge) flex flex-col justify-between">
-              <div>
-                <div className="text-mono text-[10px] tracking-[0.12em] text-(--ink-4) mb-5 uppercase">Featured</div>
-                <h3 className="font-display text-[34px] tracking-[-0.03em] leading-none text-(--ink-1) mb-4">All Weather</h3>
-                <p className="font-secondary text-[15px] text-(--ink-2) leading-[1.65] max-w-90">
-                  Balanced duration and issuer mix designed to stay steady through rate pivots and volatility.
-                </p>
-              </div>
-              <div className="pt-8 border-t border-(--paper-edge)">
-                <div className="font-display text-[72px] leading-[0.9] tracking-[-0.04em] text-(--surge)">5.6%</div>
-                <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mt-2">Current APY</div>
-              </div>
-            </SpotlightCard>
+            <Link to="/bonds" className="bento-card md:row-span-2 block">
+              <SpotlightCard className="paper-card-elevated h-full p-8 border-t-2 border-(--surge) flex flex-col justify-between cursor-pointer hover:shadow-[0_12px_32px_var(--paper-shadow)] transition-shadow duration-300">
+                <div>
+                  <div className="text-mono text-[10px] tracking-[0.12em] text-(--ink-4) mb-5 uppercase">Featured</div>
+                  <h3 className="font-display text-[34px] tracking-[-0.03em] leading-none text-(--ink-1) mb-4">All Weather</h3>
+                  <p className="font-secondary text-[15px] text-(--ink-2) leading-[1.65] max-w-90">
+                    Balanced duration and issuer mix designed to stay steady through rate pivots and volatility.
+                  </p>
+                </div>
+                <div className="pt-8 border-t border-(--paper-edge)">
+                  <div className="font-display text-[72px] leading-[0.9] tracking-[-0.04em] text-(--surge)">5.6%</div>
+                  <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-(--ink-4) mt-2">Current APY</div>
+                </div>
+              </SpotlightCard>
+            </Link>
 
-            <SpotlightCard className="bento-card paper-card p-6 border-t-2 border-(--sky)">
-              <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">Safe Harbor</h3>
-              <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Short duration, lower volatility exposure.</p>
-              <div className="font-display text-[38px] tracking-[-0.03em] text-(--sky)">4.8%</div>
-            </SpotlightCard>
+            <Link to="/bonds" className="bento-card block">
+              <SpotlightCard className="paper-card h-full p-6 border-t-2 border-(--sky) cursor-pointer hover:shadow-[0_8px_16px_var(--paper-shadow)] transition-shadow duration-300">
+                <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">Safe Harbor</h3>
+                <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Short duration, lower volatility exposure.</p>
+                <div className="font-display text-[38px] tracking-[-0.03em] text-(--sky)">4.8%</div>
+              </SpotlightCard>
+            </Link>
 
-            <SpotlightCard className="bento-card paper-card p-6 border-t-2 border-(--amber)">
-              <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">Yield Max</h3>
-              <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Higher duration for stronger carry potential.</p>
-              <div className="font-display text-[38px] tracking-[-0.03em] text-(--amber)">7.1%</div>
-            </SpotlightCard>
+            <Link to="/bonds" className="bento-card block">
+              <SpotlightCard className="paper-card h-full p-6 border-t-2 border-(--amber) cursor-pointer hover:shadow-[0_8px_16px_var(--paper-shadow)] transition-shadow duration-300">
+                <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">Yield Max</h3>
+                <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Higher duration for stronger carry potential.</p>
+                <div className="font-display text-[38px] tracking-[-0.03em] text-(--amber)">7.1%</div>
+              </SpotlightCard>
+            </Link>
 
-            <SpotlightCard className="bento-card paper-card p-6 border-t-2 border-(--violet)">
-              <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">COND Custom</h3>
-              <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Agent-generated allocation and timing.</p>
-              <div className="font-display text-[34px] tracking-[-0.03em] text-(--violet)">Variable</div>
-            </SpotlightCard>
+            <Link to="/bonds" className="bento-card block">
+              <SpotlightCard className="paper-card h-full p-6 border-t-2 border-(--violet) cursor-pointer hover:shadow-[0_8px_16px_var(--paper-shadow)] transition-shadow duration-300">
+                <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">COND Custom</h3>
+                <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Agent-generated allocation and timing.</p>
+                <div className="font-display text-[34px] tracking-[-0.03em] text-(--violet)">Variable</div>
+              </SpotlightCard>
+            </Link>
 
-            <SpotlightCard className="bento-card paper-card p-6 border-t-2 border-(--rose)">
-              <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">Fixed Lock</h3>
-              <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Term-based vault with protected payout profile.</p>
-              <div className="font-display text-[34px] tracking-[-0.03em] text-(--rose)">Guaranteed</div>
-            </SpotlightCard>
+            <Link to="/bonds" className="bento-card block">
+              <SpotlightCard className="paper-card h-full p-6 border-t-2 border-(--rose) cursor-pointer hover:shadow-[0_8px_16px_var(--paper-shadow)] transition-shadow duration-300">
+                <h3 className="font-display text-[24px] tracking-[-0.02em] text-(--ink-1) mb-2">Fixed Lock</h3>
+                <p className="font-secondary text-[14px] text-(--ink-3) mb-6">Term-based vault with protected payout profile.</p>
+                <div className="font-display text-[34px] tracking-[-0.03em] text-(--rose)">Guaranteed</div>
+              </SpotlightCard>
+            </Link>
           </div>
         </div>
       </section>
@@ -520,10 +511,98 @@ export function Home() {
                 <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">42</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Min</div></div>
                 <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">09</div><div className="text-mono text-[9px] text-(--ink-4) uppercase mt-1">Sec</div></div>
               </div>
-              <MagneticButton variant="primary" className="w-full justify-center font-display text-[16px] py-3.5 rounded-(--r-md)">
-                Join Race
-              </MagneticButton>
+              <Link to="/race" className="block">
+                <MagneticButton variant="primary" className="w-full justify-center font-display text-[16px] py-3.5 rounded-(--r-md)">
+                  Join Race
+                </MagneticButton>
+              </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* THE NUMBERS */}
+      <section className="py-20 md:py-28 border-t border-(--paper-edge)">
+        <div className="max-w-7xl mx-auto px-6 md:px-14">
+          <div className="mb-14">
+            <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-[0.18em] mb-6">The Numbers</div>
+            <h2 className="font-display tracking-[-0.04em]" style={{ lineHeight: 1.05 }}>
+              <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">What the protocol</span>
+              <span className="block text-[clamp(40px,5vw,72px)] font-light text-(--ink-3)">actually returns.</span>
+            </h2>
+          </div>
+
+          {/* Kimia-style flat bordered grid — no cards, just borders */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border border-(--paper-edge)">
+            {[
+              { num: '01', label: 'Baseline APY', value: '4.5–5.6%', sub: 'Calm markets. Steady yield.', color: 'text-(--surge)', link: '/bonds' },
+              { num: '02', label: 'Max APY', value: '7.1%', sub: 'Higher duration carry potential.', color: 'text-(--amber)', link: '/bonds' },
+              { num: '03', label: 'Tx Cost', value: '$0.00001', sub: 'Per transaction on Stellar.', color: 'text-(--sky)', link: '/docs' },
+              { num: '04', label: 'Stream Interval', value: '5 sec', sub: 'Yield hits your wallet live.', color: 'text-(--violet)', link: '/docs' },
+            ].map(({ num, label, value, sub, color, link }, i) => (
+              <Link
+                key={num}
+                to={link}
+                className={`p-8 md:p-10 group hover:bg-(--paper-2) transition-colors duration-200 ${i < 3 ? 'border-b md:border-b-0 md:border-r border-(--paper-edge)' : ''}`}
+              >
+                <div className="flex items-start justify-between mb-8">
+                  <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-[0.12em]">{num}</div>
+                  <div className="text-mono text-[10px] text-(--ink-4) uppercase tracking-[0.12em]">{label}</div>
+                </div>
+                <div className={`font-display text-[clamp(36px,3.5vw,52px)] font-bold tracking-[-0.03em] leading-none mb-4 ${color}`}>{value}</div>
+                <div className="font-secondary text-[13px] text-(--ink-3) leading-relaxed">{sub}</div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Footnote — kimia style */}
+          <div className="mt-8 pt-6 border-t border-(--paper-edge)">
+            <div className="text-mono text-[9px] text-(--ink-4) uppercase tracking-[0.12em] mb-2">Footnote</div>
+            <p className="font-secondary text-[13px] text-(--ink-3) leading-relaxed max-w-2xl">
+              Yield rates are variable and depend on market conditions. Principal is secured by audited Soroban smart contracts and real-world custodians. Non-custodial at all times.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 md:py-28 border-t border-(--paper-edge)">
+        <div className="max-w-7xl mx-auto px-6 md:px-14">
+          <div className="mb-16">
+            <h2 className="font-display tracking-[-0.04em]" style={{ lineHeight: 1.05 }}>
+              <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">Got questions?</span>
+              <span className="block text-[clamp(40px,5vw,72px)] font-bold text-(--surge)">Find answers.</span>
+            </h2>
+          </div>
+
+          <div className="border-t border-(--paper-edge)">
+            {[
+              { q: 'Where does the yield come from?', a: 'Yield is generated from tokenized real-world assets — specifically US Treasury bills and government bonds issued by Franklin Templeton (BENJI) and Ondo (USDY). These are held by regulated custodians and the interest accrues continuously on-chain.' },
+              { q: 'Is my principal safe?', a: 'Your principal is secured by audited Soroban smart contracts on Stellar and backed by real-world custodians. The protocol is non-custodial — you retain full control of your assets at all times.' },
+              { q: 'How do I withdraw my funds?', a: 'You can withdraw at any time with no lockups or penalties. Simply connect your Freighter wallet, navigate to your position, and claim your principal plus any accrued yield.' },
+              { q: 'What is the COND agent?', a: 'COND is an AI-powered yield optimization agent that monitors rates, liquidity, and market conditions in real-time. It proposes rebalancing moves with transparent reasoning and executes them on Stellar — with a kill switch you control.' },
+              { q: 'What wallets are supported?', a: 'Currently Freighter wallet is supported. Albedo support is coming soon. Any Stellar-compatible wallet will be supported in future releases.' },
+            ].map(({ q, a }, i) => (
+              <div key={i} className="border-b border-(--paper-edge)">
+                <button
+                  className="w-full flex items-start gap-6 py-7 text-left group"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                >
+                  <span className="text-mono text-[11px] text-(--ink-4) tracking-[0.12em] pt-1 shrink-0 w-6">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="flex-1 font-display text-[clamp(16px,1.8vw,22px)] font-medium text-(--ink-1) group-hover:text-(--surge) transition-colors tracking-[-0.02em]">
+                    {q}
+                  </span>
+                  <span className="shrink-0 text-(--ink-4) group-hover:text-(--surge) transition-colors pt-1">
+                    {openFaq === i ? <Minus size={18} /> : <Plus size={18} />}
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <div className="pl-12 pb-7">
+                    <p className="font-secondary text-[15px] text-(--ink-2) leading-[1.8] max-w-2xl">{a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -545,11 +624,11 @@ export function Home() {
 
         <div className="max-w-7xl mx-auto px-6 md:px-14">
           <div className="max-w-2xl">
-            <h2 className="font-display tracking-[-0.04em] mb-10 md:mb-12" style={{ lineHeight: 1.15 }}>
-              <SplitText className="block text-[clamp(36px,5vw,72px)] font-bold text-(--ink-1)">The bond market has</SplitText>
-              <SplitText className="block text-[clamp(36px,5vw,72px)] font-light text-(--ink-3) pb-1">been boring for</SplitText>
-              <SplitText className="block text-[clamp(36px,5vw,72px)] font-bold text-(--ink-1)">300 years.</SplitText>
-              <SplitText className="block text-[clamp(36px,5vw,72px)] font-bold text-(--surge) pb-2">Not anymore.</SplitText>
+            <h2 className="font-display tracking-[-0.04em] mb-10 md:mb-12" style={{ lineHeight: 1.05 }}>
+              <SplitText className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">The bond market has</SplitText>
+              <SplitText className="block text-[clamp(40px,5vw,72px)] font-light text-(--ink-3) pb-1">been boring for</SplitText>
+              <SplitText className="block text-[clamp(40px,5vw,72px)] font-bold text-(--ink-1)">300 years.</SplitText>
+              <SplitText className="block text-[clamp(40px,5vw,72px)] font-bold text-(--surge) pb-2">Not anymore.</SplitText>
             </h2>
 
             <Link to="/bonds" className="inline-flex">

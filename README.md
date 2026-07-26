@@ -1,15 +1,20 @@
-# CONDUIT
-
-[![CI/CD](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml)
-
 <div align="center">
 
-<h3>Real-Time Yield Streaming Protocol on Stellar</h3>
+# ⚡ CONDUIT
+
+### Real-Time Yield Streaming Protocol on Stellar
 
 **Your money. Streaming.**
 
-Conduit transforms fixed-income from static payouts into a live, mobile-first income stream.
-Users deposit into curated portfolios of tokenized government bonds and watch earnings accrue every second through a real-time counter — all powered by Stellar + Soroban.
+[![CI/CD](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/SATISH-JALAN/CONDUIT/actions/workflows/ci-cd.yml)
+[![Stellar](https://img.shields.io/badge/Network-Stellar%20Testnet-custom?style=for-the-badge&logo=stellar&color=14151a&logoColor=white)](https://stellar.org)
+[![Soroban](https://img.shields.io/badge/Smart%20Contracts-Soroban%20Rust-purple?style=for-the-badge&logo=rust&logoColor=white)](https://soroban.stellar.org)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Bun](https://img.shields.io/badge/Runtime-Bun-black?style=for-the-badge&logo=bun&logoColor=white)](https://bun.sh)
+[![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white)](https://ai.google.dev)
+
+Conduit transforms fixed-income from static payouts into a live, mobile-first income stream.  
+Users deposit into curated portfolios of tokenized government bonds and watch earnings accrue every second through a real-time counter — all powered by **Stellar + Soroban**.
 
 🔗 **[Live Demo](https://conduit-client.vercel.app)** · 📄 **[System Architecture](docs/systemarch.md)** · 📄 **[Backend Architecture](docs/backendarch.md)**
 
@@ -33,9 +38,9 @@ Users deposit into curated portfolios of tokenized government bonds and watch ea
 
 ---
 
-## Level 6 — Black Belt Submission
+## 🥋 Level 6 — Black Belt Submission
 
-### 🥋 Black Belt Overview
+### Black Belt Overview
 
 Conduit has been scaled to production readiness with complete security checks, production monitoring, data indexing, and advanced features — ready for Demo Day.
 
@@ -43,20 +48,22 @@ Conduit has been scaled to production readiness with complete security checks, p
 
 ### 📊 User Onboarding & Feedback
 
-- **Google Form**: [Conduit User Onboarding Form](https://forms.gle/FCAkEKcW1UETJeYY7)
-- **User Responses Excel Sheet**: [Black Belt User Data (Google Sheets)](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
+- 📝 **Google Form**: [Conduit User Onboarding Form](https://forms.gle/FCAkEKcW1UETJeYY7)
+- 📊 **User Responses Excel Sheet**: [Black Belt User Data (Google Sheets)](https://docs.google.com/spreadsheets/d/12xyoZ8JYZ-SK-yx-nJIVeBjEvcA9j7fXxJRJUaZnX2Y/edit?usp=sharing)
 
-> Fields collected: Name, Email, Stellar Testnet Wallet Address, Product Rating, Feature Usage, Onboarding Ease, NPS Score, Bug Reports, Trust Rating, Feature Requests
+> [!INFO] **Fields Collected**  
+> Name, Email, Stellar Testnet Wallet Address, Product Rating, Feature Usage, Onboarding Ease, NPS Score, Bug Reports, Trust Rating, Feature Requests
 
 ---
 
 ### 📜 Smart Contract Addresses (Stellar Testnet)
 
 | Contract | Contract ID | Explorer Link |
-|---|---|---|
+|:---|:---|:---|
 | **Stream Router** | `CDEHCFTEWP2XRT7W5QVBOSMUY6BJAJ7ATF6DFHWZYVA33TB7UHQLXMSD` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDEHCFTEWP2XRT7W5QVBOSMUY6BJAJ7ATF6DFHWZYVA33TB7UHQLXMSD) |
 | **Compliance** | `CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6) |
 
+> [!NOTE]  
 > Deployed to Stellar Testnet using `conduit-operational` identity (`GALAHKCLSOZZRVVEU64UUUXZGDMYXVXJV2LMO4DXFQ7M7JCZE2TOJM6H`).
 
 ---
@@ -64,13 +71,13 @@ Conduit has been scaled to production readiness with complete security checks, p
 ### 📋 Black Belt Requirements Status
 
 | # | Requirement | Status | Evidence |
-|---|---|---|---|
+|:---:|:---|:---:|:---|
 | 1 | Verified active users | ✅ Done | Excel sheet |
 | 2 | Metrics dashboard live | ✅ Done | [Metrics Dashboard Screenshot](#-metrics-dashboard) |
 | 3 | Security checklist completed | ✅ Done | [Security Checklist](#-security-checklist) |
 | 4 | Monitoring active | ✅ Done | [Monitoring Dashboard](#-production-monitoring) |
 | 5 | Data indexing implemented | ✅ Done | [Data Indexing](#-data-indexing) |
-| 6 | Full documentation | ✅ Done | This README + `docs/systemarch.md` + `docs/backendarch.md` |
+| 6 | Full documentation | ✅ Done | This README + [`docs/systemarch.md`](docs/systemarch.md) + [`docs/backendarch.md`](docs/backendarch.md) |
 | 7 | 1 community contribution | ✅ Done | [Twitter Post](#-community-contribution) |
 | 8 | 1 advanced feature implemented | ✅ Done | [Account Abstraction (COND Agent)](#-advanced-feature--cond-ai-agent-account-abstraction) |
 | 9 | 15+ meaningful commits | ✅ Done | 43 commits — [View commit history](https://github.com/SATISH-JALAN/Conduit/commits/main) |
@@ -83,7 +90,7 @@ Conduit has been scaled to production readiness with complete security checks, p
 The Conduit backend exposes internal metrics for tracking user engagement:
 
 | Metric | Description | How Tracked |
-|---|---|---|
+|:---|:---|:---|
 | **DAU (Daily Active Users)** | Unique wallets that authenticated via JWT within 24h | `users` table + `positions` `updatedAt` |
 | **Total Transactions** | Deposit + Harvest operations submitted to Stellar | `harvests` + `positions` tables |
 | **Retention** | Users returning within 7d of first deposit | `positions.createdAt` vs `harvests.harvestedAt` |
@@ -91,8 +98,9 @@ The Conduit backend exposes internal metrics for tracking user engagement:
 | **Active Positions** | Number of open yield-streaming positions | `positions` where `active = true` |
 | **Agent Proposals** | AI-generated portfolio actions pending review | `cond_proposals` table |
 
-**Dashboard Endpoint**: `GET /api/health` returns live DB + Redis + connection status.
+- **Dashboard Endpoint**: `GET /api/health` returns live DB + Redis + connection status.
 
+> [!NOTE]  
 > 📸 _Screenshot: See `client/public/metrics.png` for the metrics dashboard._
 
 ---
@@ -100,7 +108,7 @@ The Conduit backend exposes internal metrics for tracking user engagement:
 ## 🔒 Security Checklist
 
 | # | Check | Status | Details |
-|---|---|---|---|
+|:---:|:---|:---:|:---|
 | 1 | JWT authentication on all protected routes | ✅ | `jose` library with access + refresh token rotation |
 | 2 | CORS origin allowlist | ✅ | Only configured `CLIENT_URL` origins + Vercel previews |
 | 3 | HMAC-signed internal API (COND agent) | ✅ | SHA-256 HMAC on every `/api/internal/*` call with nonce replay protection |
@@ -122,7 +130,7 @@ The Conduit backend exposes internal metrics for tracking user engagement:
 ## 📡 Production Monitoring
 
 | Component | Tool | What It Monitors |
-|---|---|---|
+|:---|:---|:---|
 | **Server health** | `GET /api/health` | DB connection, Redis connectivity, uptime |
 | **Structured logging** | Pino (JSON) | Request/response logs, errors, WS connections |
 | **CI/CD pipeline** | GitHub Actions | Build, typecheck, tests, contract tests on every push |
@@ -130,6 +138,7 @@ The Conduit backend exposes internal metrics for tracking user engagement:
 | **WebSocket heartbeat** | `PING/PONG` | Client-side keepalive for live yield streaming |
 | **Agent health** | `GET /health` (cond-agent sidecar) | COND agent sidecar availability |
 
+> [!NOTE]  
 > 📸 _Screenshot: See `client/public/monitoring.png` for the monitoring dashboard._
 
 ---
@@ -139,7 +148,7 @@ The Conduit backend exposes internal metrics for tracking user engagement:
 Conduit indexes on-chain and off-chain data for fast query performance:
 
 | Data Source | Index Strategy | Storage |
-|---|---|---|
+|:---|:---|:---|
 | **Positions** | Indexed by `wallet` + `box_id` with `active` filter | PostgreSQL |
 | **Harvest history** | Indexed by `wallet` + `harvested_at` (time-series ready) | PostgreSQL (TimescaleDB-compatible) |
 | **APY history** | Indexed by `box_id` + `recorded_at` for time-series queries | PostgreSQL |
@@ -151,7 +160,8 @@ Conduit indexes on-chain and off-chain data for fast query performance:
 | **Anchor state** | On-chain `DataKey::Anchor(Address)` in Soroban persistent storage | Stellar Testnet |
 | **Redis cache** | Wallet event pub/sub for real-time yield push | Redis (Upstash) |
 
-**Indexed API Endpoints:**
+### Indexed API Endpoints
+
 - `GET /api/leaderboard?period=7d&limit=50` — Pre-computed leaderboard
 - `GET /api/position/:wallet` — Aggregated position with live yield calculation
 - `GET /api/nfts/market?limit=20` — Active NFT marketplace listing
@@ -161,9 +171,9 @@ Conduit indexes on-chain and off-chain data for fast query performance:
 
 ## 🐦 Community Contribution
 
-> 📣 **Twitter post about Conduit:**
-> [View Tweet](https://twitter.com/YOUR_HANDLE/status/YOUR_TWEET_ID)
->
+> 📣 **Twitter post about Conduit:**  
+> [View Tweet](https://twitter.com/YOUR_HANDLE/status/YOUR_TWEET_ID)  
+>  
 > _Replace with your actual tweet URL sharing Conduit with the Stellar community._
 
 ---
@@ -189,7 +199,7 @@ flowchart TD
 ### Architecture
 
 | Component | Role |
-|---|---|
+|:---|:---|
 | **Mandate system** | User-configurable risk tolerance, auto-compound rules, credit rating floors |
 | **COND v1 (rule engine)** | Server-side evaluation: threshold checks, harvest triggers |
 | **COND v2 (Gemini AI)** | Python sidecar using `google-genai` SDK for structured JSON proposals |
@@ -230,65 +240,63 @@ Based on collected user feedback from the Google Form and Excel sheet, the follo
 
 ### Planned Improvements (Next Phase)
 
-1. **Guided onboarding walkthrough** — Step-by-step first-time user experience with tooltips
-   - Commit: _In progress_
-2. **Historical yield charts** — APY over time visualization using `apy_history` table data
-   - Commit: _In progress_
-3. **Push notifications** — WebSocket-based alerts for harvest readiness and agent proposals
-   - Commit: _In progress_
-4. **Multi-language support** — i18n for broader accessibility
-   - Commit: _Planned_
+1. **Guided onboarding walkthrough** — Step-by-step first-time user experience with tooltips  
+   - Status: _In progress_
+2. **Historical yield charts** — APY over time visualization using `apy_history` table data  
+   - Status: _In progress_
+3. **Push notifications** — WebSocket-based alerts for harvest readiness and agent proposals  
+   - Status: _In progress_
+4. **Multi-language support** — i18n for broader accessibility  
+   - Status: _Planned_
 
 ---
 
-## Overview
+## 💡 Overview
 
-Conduit is a mobile-first decentralized finance application designed to open the global bond market to everyone.
+Conduit is a mobile-first decentralized finance application designed to open the global bond market to everyone.  
 It reimagines traditional fixed income as a real-time yield experience: users deposit into curated portfolios of tokenized government bonds and watch earnings accrue every second through a live counter.
 
 The protocol is built for accessibility, transparency, and retail-scale efficiency on Stellar.
 
-### Streaming Yield Formula
+### 🧮 Streaming Yield Formula
 
 Conduit computes continuous accrual client-side using:
 
-```
-V(t) = P × e^(r × Δt)
-```
+$$V(t) = P \times e^{r \times \Delta t}$$
 
 Where:
 - `P` = principal deposited
 - `r` = annualized rate (continuous)
 - `Δt` = elapsed time since last sync
 
-This enables a smooth live counter with **zero blockchain calls during streaming**.
+This enables a smooth live counter with **zero blockchain calls during streaming**.  
 Settlement to Stellar occurs lazily when users choose to harvest.
 
 ---
 
-## Why Stellar
+## 🌟 Why Stellar
 
-- **~$0.00001 transaction fees** — makes micro-accrual economically viable
-- High-throughput, low-latency settlement (5s finality)
-- Native RWA ecosystem (BENJI, USDY already on Stellar)
-- Soroban smart contracts for on-chain yield logic
+- ⚡ **~$0.00001 transaction fees** — makes micro-accrual economically viable
+- 🚀 **High-throughput, low-latency settlement** (5s finality)
+- 🏦 **Native RWA ecosystem** (BENJI, USDY already on Stellar)
+- 🔒 **Soroban smart contracts** for on-chain yield logic
 
 ---
 
-## Core Features
+## ✨ Core Features
 
-### Bond Boxes
+### 🏦 Bond Boxes
 Five curated yield strategies abstracted into simple selection cards:
 
-| Box | Strategy | APY | Risk |
-|---|---|---|---|
-| **Safe Harbor** | AAA-oriented, low volatility | ~4.8% | Low |
-| **All Weather** | Balanced duration/risk | ~5.5% | Medium |
-| **Yield Max** | Higher carry target | ~7.1% | High |
-| **Fixed Lock** | Term-based predictable profile | ~6.0% | Medium |
-| **COND Custom** | AI-managed dynamic strategy | Variable | Variable |
+| Box | Strategy | APY | Risk Level |
+|:---|:---|:---:|:---:|
+| **Safe Harbor** | AAA-oriented, low volatility | ~4.8% | 🟢 Low |
+| **All Weather** | Balanced duration/risk | ~5.5% | 🟡 Medium |
+| **Yield Max** | Higher carry target | ~7.1% | 🔴 High |
+| **Fixed Lock** | Term-based predictable profile | ~6.0% | 🟡 Medium |
+| **COND Custom** | AI-managed dynamic strategy | Variable | 🟣 Variable |
 
-### Protocol Extensions
+### ⚡ Protocol Extensions
 
 - **Stream Splitting** — Route yield to multiple wallets simultaneously
 - **Yield NFTs** — Package future yield as tradable NFTs (accredited investors)
@@ -298,10 +306,10 @@ Five curated yield strategies abstracted into simple selection cards:
 
 ---
 
-## Tech Stack
+## 🛠 Tech Stack
 
 | Layer | Technology |
-|---|---|
+|:---|:---|
 | **Smart Contracts** | Rust → WASM on Soroban (Stellar) |
 | **Backend** | Bun + Hono + TypeScript |
 | **Database** | PostgreSQL 16 (TimescaleDB) + Drizzle ORM |
@@ -313,7 +321,7 @@ Five curated yield strategies abstracted into simple selection cards:
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 CONDUIT/
@@ -344,12 +352,12 @@ CONDUIT/
 
 ---
 
-## Database Schema
+## 🗄 Database Schema
 
 15 tables managed via Drizzle ORM:
 
 | Table | Purpose |
-|---|---|
+|:---|:---|
 | `users` | Wallet addresses + KYC status |
 | `bond_boxes` | Curated yield strategies with Soroban contract IDs |
 | `positions` | User holdings (principal, APY, sync timestamp) |
@@ -369,14 +377,14 @@ CONDUIT/
 
 ---
 
-## Smart Contracts
+## 📜 Smart Contracts
 
 ### Stream Router (`contracts/stream_router/`)
 
 Core yield accrual and harvest logic deployed on Soroban:
 
 | Function | Description |
-|---|---|
+|:---|:---|
 | `deposit(wallet, amount, apy_bps)` | Create or add to a yield position |
 | `get_anchor(wallet)` | Read current position state |
 | `get_accrued(wallet)` | Calculate pending yield at current timestamp |
@@ -389,7 +397,7 @@ Core yield accrual and harvest logic deployed on Soroban:
 KYC, sanctions, and accreditation guards:
 
 | Function | Description |
-|---|---|
+|:---|:---|
 | `set_admin(admin)` | One-time admin initialization |
 | `rotate_admin(new_admin)` | Admin rotation with dual auth |
 | `verify_kyc(wallet, hash)` | Store KYC attestation hash |
@@ -399,28 +407,28 @@ KYC, sanctions, and accreditation guards:
 
 ---
 
-## API Endpoints
+## 🔌 API Endpoints
 
 ### Public
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/health` | Server health + DB/Redis status |
 
 ### Auth
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `POST` | `/api/auth/connect` | Connect wallet → returns JWT pair |
 | `POST` | `/api/auth/refresh` | Refresh access token |
 
 ### Bond Boxes
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/boxes` | List all bond boxes |
 | `GET` | `/api/boxes/:id` | Get box details + contract ID |
 
 ### Positions & Transactions
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/position/:wallet` | Aggregated portfolio with live yield |
 | `POST` | `/api/deposit/build` | Build unsigned deposit XDR |
 | `POST` | `/api/deposit/submit` | Submit signed deposit |
@@ -429,20 +437,20 @@ KYC, sanctions, and accreditation guards:
 
 ### Yield Split
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/split/:wallet` | Get split configuration |
 | `POST` | `/api/split` | Save split config |
 
 ### Leaderboard & Races
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/leaderboard` | Get ranked leaderboard |
 | `GET` | `/api/race/active` | Get active race |
 | `POST` | `/api/race/join` | Join active race |
 
 ### COND Agent
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/agent/status` | Agent status + mandate |
 | `PATCH` | `/api/agent/mandate` | Update agent preferences |
 | `POST` | `/api/agent/kill-switch` | Pause/resume agent |
@@ -454,7 +462,7 @@ KYC, sanctions, and accreditation guards:
 
 ### NFTs
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/nfts/market` | Browse marketplace |
 | `GET` | `/api/nfts` | Get my NFTs |
 | `POST` | `/api/nfts/mint` | Mint yield NFT |
@@ -463,7 +471,7 @@ KYC, sanctions, and accreditation guards:
 
 ### Social & Creators
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|:---|:---|
 | `GET` | `/api/social/copying` | Get copy-portfolio leaders |
 | `POST` | `/api/social/copy` | Follow a leader |
 | `GET` | `/api/creators/pools` | List creator pools |
@@ -471,10 +479,10 @@ KYC, sanctions, and accreditation guards:
 
 ---
 
-## Frontend Routes
+## 💻 Frontend Routes
 
 | Route | Page | Description |
-|---|---|---|
+|:---|:---|:---|
 | `/` | Home | Landing page with live demo yield counter |
 | `/dashboard` | Dashboard | Yield counter, split config, portfolio holdings |
 | `/bonds` | Bond Market | Browse and filter bond boxes |
@@ -489,10 +497,10 @@ KYC, sanctions, and accreditation guards:
 
 ---
 
-## Prerequisites
+## ⚡ Prerequisites
 
 | Tool | Version | Purpose |
-|---|---|---|
+|:---|:---:|:---|
 | **Node.js** | 20+ | Client dev server |
 | **pnpm** | 9+ | Package manager |
 | **Bun** | 1.x | Server runtime |
@@ -503,7 +511,7 @@ KYC, sanctions, and accreditation guards:
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### 1. Clone and install
 
@@ -565,7 +573,7 @@ curl http://localhost:5000/api/health
 
 ---
 
-## Common Commands
+## ⚙️ Common Commands
 
 ```bash
 # ── Development ──
@@ -595,7 +603,7 @@ docker compose down                # Stop all services
 
 ---
 
-## COND Agent Sidecar (Optional)
+## 🐍 COND Agent Sidecar (Optional)
 
 ```bash
 cd agent
@@ -607,7 +615,7 @@ uvicorn main:app --reload --port 8088
 
 ---
 
-## CI/CD Pipeline
+## 🔄 CI/CD Pipeline
 
 Workflow: [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml)
 
@@ -625,7 +633,7 @@ Workflow: [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml)
 
 ---
 
-## Validation Flow
+## 🔄 Validation Flow
 
 ```mermaid
 flowchart TD

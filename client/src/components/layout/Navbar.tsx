@@ -49,7 +49,7 @@ export function Navbar() {
     >
       <div className="w-full max-w-[1600px] mx-auto px-4 md:px-14 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center group">
-          <img src="/logo.png" alt="Conduit" className="h-20 sm:h-24 w-auto object-contain -my-4 -ml-3" />
+          <img src="/logo.png" alt="Conduit" className="h-32 sm:h-40 w-auto object-contain -my-8 -ml-3 transition-transform group-hover:scale-105" />
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">

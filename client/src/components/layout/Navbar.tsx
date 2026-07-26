@@ -47,7 +47,7 @@ export function Navbar() {
         scrolled ? 'frosted-heavy shadow-[0_4px_20px_var(--paper-shadow)]' : 'bg-transparent'
       )}
     >
-      <div className="w-full max-w-7xl mx-auto px-4 md:px-14 flex items-center justify-between gap-4">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-14 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center group">
           <img src="/logo.png" alt="Conduit" className="h-20 sm:h-24 w-auto object-contain -my-4 -ml-3" />
         </Link>

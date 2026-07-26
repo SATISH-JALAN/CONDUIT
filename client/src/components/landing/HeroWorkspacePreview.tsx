@@ -32,7 +32,7 @@ export function HeroWorkspacePreview({
   onSelectStrategy,
 }: HeroWorkspacePreviewProps) {
   return (
-    <div className="relative hero-counter-card w-full max-w-3xl mx-auto">
+    <div className="relative hero-counter-card w-full max-w-4xl lg:max-w-5xl mx-auto">
       {/* Soft ambient glow behind dashboard */}
       <div className="absolute inset-4 bg-[var(--surge)] rounded-[32px] filter blur-[40px] opacity-[0.12] pointer-events-none" />
 

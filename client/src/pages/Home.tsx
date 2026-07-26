@@ -243,10 +243,10 @@ export function Home() {
     <div className="min-h-screen overflow-x-hidden" ref={containerRef}>
 
       {/* ════════════════ SEC 1 · MONETRA FRAMED HERO CONTAINER ════════════════ */}
-      <section className="pt-24 sm:pt-26 pb-8 px-3 sm:px-6 md:px-8 max-w-7xl mx-auto relative z-10">
+      <section className="pt-24 sm:pt-26 pb-8 px-3 sm:px-6 md:px-10 max-w-[1600px] mx-auto relative z-10">
 
         {/* Framed Architectural Hero Box (Starts BELOW Navbar) */}
-        <div className="hero-monetra-container relative p-6 sm:p-10 md:p-12 text-center overflow-hidden">
+        <div className="hero-monetra-container relative p-6 sm:p-10 md:p-14 text-center overflow-hidden">
 
           {/* Floating Glowing Ambient Light Orbs Moving Inside Hero Box (No Dot Matrix) */}
           <div className="hero-orb-1" />
@@ -254,7 +254,7 @@ export function Home() {
           <div className="hero-orb-3" />
 
           {/* Content Wrapper */}
-          <div className="relative z-10 max-w-5xl mx-auto">
+          <div className="relative z-10 max-w-6xl mx-auto">
 
             {/* Centered Sleek Eyebrow Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[var(--paper-0)] border border-[var(--paper-edge)] mb-4 shadow-sm">
@@ -338,7 +338,7 @@ export function Home() {
 
       {/* ════════════════ SEC 3 · ASYMMETRIC BENTO GRID ════════════════ */}
       <section className="py-20 md:py-30 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-14">
           <div className="grid md:grid-cols-2 gap-8 items-end mb-16">
             <div>
               <div className="section-eyebrow inline-block mb-5">
@@ -436,7 +436,7 @@ export function Home() {
 
       {/* ════════════════ SEC 4 · BOND BOXES ════════════════ */}
       <section className="py-10 md:py-20 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-5 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-5 md:px-14">
           <div className="grid md:grid-cols-2 gap-8 items-end mb-14">
             <div>
               <div className="inline-block mb-5">
@@ -507,7 +507,7 @@ export function Home() {
 
       {/* ════════════════ SEC 5 · COND AGENT ════════════════ */}
       <section className="py-10 md:py-[90px] relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-14">
           <div className="mb-14">
             <div className="inline-block mb-5">
               <span className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-[0.18em]">AI Yield Agent</span>
@@ -607,7 +607,7 @@ export function Home() {
           style={{ backgroundImage: 'radial-gradient(circle, var(--ink-1) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
         />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-14">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-block mb-5">
@@ -641,7 +641,7 @@ export function Home() {
           className="absolute right-0 top-1/2 -translate-y-1/2 w-[400px] md:w-[520px] opacity-[0.08] pointer-events-none select-none -z-10"
         />
 
-        <div className="max-w-7xl mx-auto px-5 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-5 md:px-14">
           <div className="grid lg:grid-cols-[1.35fr_1fr] gap-8 items-start min-w-0">
             <div className="paper-card-elevated p-6 md:p-8 min-w-0">
               <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-[var(--ink-4)] mb-6">Yield Race Leaderboard</div>
@@ -707,7 +707,7 @@ export function Home() {
 
       {/* ════════════════ SEC 8 · THE NUMBERS ════════════════ */}
       <section className="py-20 md:py-28 border-t border-[var(--paper-edge)]" ref={numbersRef}>
-        <div className="max-w-7xl mx-auto px-6 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-14">
           <div className="mb-14">
             <div className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-[0.18em] mb-6">The Numbers</div>
             <h2 className="font-display tracking-[-0.04em]" style={{ lineHeight: 1.05 }}>
@@ -750,7 +750,7 @@ export function Home() {
 
       {/* ════════════════ SEC 9 · FAQ ════════════════ */}
       <section className="py-20 md:py-28 border-t border-[var(--paper-edge)]">
-        <div className="max-w-7xl mx-auto px-6 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-14">
           <div className="mb-16">
             <h2 className="font-display tracking-[-0.04em]" style={{ lineHeight: 1.05 }}>
               <span className="block text-[clamp(40px,5vw,72px)] font-bold text-[var(--ink-1)]">Got questions?</span>
@@ -801,7 +801,7 @@ export function Home() {
           className="absolute right-[-40px] top-1/2 -translate-y-1/2 w-[380px] md:w-[500px] opacity-[0.15] pointer-events-none select-none -z-10"
         />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-14">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-14">
           <div className="max-w-2xl">
             <h2 className="font-display tracking-[-0.04em] mb-10 md:mb-12" style={{ lineHeight: 1.05 }}>
               <SplitText className="block text-[clamp(40px,5vw,72px)] font-bold text-[var(--ink-1)]">The bond market has</SplitText>
@@ -832,7 +832,7 @@ export function Home() {
         <img src="/logofevicon.png" alt="" aria-hidden="true" className="absolute left-[-60px] top-1/2 -translate-y-1/2 w-[280px] md:w-[360px] opacity-[0.04] select-none pointer-events-none" />
         <img src="/logofevicon.png" alt="" aria-hidden="true" className="absolute right-[-60px] top-1/2 -translate-y-1/2 w-[280px] md:w-[360px] opacity-[0.04] select-none pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-6 md:px-14 py-12 md:py-16">
+        <div className="relative max-w-[1600px] mx-auto px-6 md:px-14 py-12 md:py-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">

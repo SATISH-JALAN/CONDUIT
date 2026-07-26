@@ -43,21 +43,19 @@ export function Navbar() {
     <header
       ref={navRef}
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 h-18 transition-all duration-300 flex items-center overflow-hidden',
+        'fixed top-0 left-0 right-0 z-50 h-20 transition-all duration-300 flex items-center',
         scrolled ? 'frosted-heavy shadow-[0_4px_20px_var(--paper-shadow)]' : 'bg-transparent'
       )}
     >
-      <div className="w-full max-w-7xl mx-auto px-4 md:px-14 flex items-center justify-between gap-2">
+      <div className="w-full max-w-7xl mx-auto px-4 md:px-14 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center group">
-          <img src="/logo.png" alt="Conduit" className="h-35 w-auto object-contain -my-10 -ml-7" />
+          <img src="/logo.png" alt="Conduit" className="h-20 sm:h-24 w-auto object-contain -my-4 -ml-3" />
         </Link>
 
-
-
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--paper-3) border border-(--surge-pale-2)">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--paper-3)] border border-[var(--surge-pale-2)]">
             <span className="dot-live"></span>
-            <span className="font-display text-[11px] font-medium text-(--surge) uppercase tracking-wider">Testnet Live</span>
+            <span className="font-display text-[11px] font-medium text-[var(--surge)] uppercase tracking-wider">Testnet Live</span>
           </div>
           
           {isConnected && publicKey ? (

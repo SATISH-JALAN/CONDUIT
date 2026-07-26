@@ -644,3 +644,182 @@ body::after {
     0 24px 48px rgba(0, 0, 0, 0.08),
     0 8px 16px rgba(0, 122, 94, 0.04);
 }
+
+/* ── MONETRA AESTHETIC HERO CONTAINER & FLOATING LIGHT ORBS ── */
+.hero-monetra-container {
+  background:
+    linear-gradient(180deg, #F0F8F4 0%, #F6FAF7 35%, #FAFAF7 75%, #FAFAF7 100%);
+  position: relative;
+  border: 1px solid rgba(0, 122, 94, 0.09);
+  border-radius: 32px;
+  box-shadow: 0 10px 40px rgba(0, 122, 94, 0.03), inset 0 0 40px rgba(255, 255, 255, 0.8);
+}
+
+@media (min-width: 768px) {
+  .hero-monetra-container {
+    border-radius: 40px;
+  }
+}
+
+/* Floating Ambient Orbs (Soft & Airy) */
+.hero-orb-1 {
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  top: -100px;
+  left: 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 122, 94, 0.09) 0%, rgba(0, 122, 94, 0) 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 1;
+  animation: floatOrb1 18s ease-in-out infinite alternate;
+}
+
+.hero-orb-2 {
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  top: 15%;
+  right: 5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(180, 83, 9, 0.05) 0%, rgba(180, 83, 9, 0) 70%);
+  filter: blur(55px);
+  pointer-events: none;
+  z-index: 1;
+  animation: floatOrb2 22s ease-in-out infinite alternate;
+}
+
+.hero-orb-3 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  bottom: -50px;
+  left: 5%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, rgba(14, 165, 233, 0) 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 1;
+  animation: floatOrb3 24s ease-in-out infinite alternate;
+}
+
+@keyframes floatOrb1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, 40px) scale(1.15); }
+  100% { transform: translate(-40px, 80px) scale(0.95); }
+}
+
+@keyframes floatOrb2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-70px, 50px) scale(1.1); }
+  100% { transform: translate(30px, -60px) scale(0.9); }
+}
+
+@keyframes floatOrb3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, -40px) scale(1.08); }
+  100% { transform: translate(-30px, 30px) scale(1.12); }
+}
+
+.hero-[mask-fade] {
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+/* ── ORBIT WHEEL ── */
+.orbit-node-inner {
+  /* Counter-rotates so labels stay upright while parent spins */
+  animation: counter-spin 30s linear infinite;
+}
+
+@keyframes counter-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+/* ── GSAP MARQUEE ── */
+.gsap-marquee-track {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.gsap-marquee-set {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* ── FAQ SMOOTH HEIGHT ── */
+.faq-answer {
+  overflow: hidden;
+  will-change: height, opacity;
+}
+
+.faq-answer-inner {
+  padding-left: 3rem;
+  padding-bottom: 1.75rem;
+}
+
+/* ── RANGE INPUT STYLING ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surge);
+  cursor: pointer;
+  border: 2px solid var(--paper-0);
+  box-shadow: 0 2px 6px rgba(0, 122, 94, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 10px rgba(0, 122, 94, 0.45);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surge);
+  cursor: pointer;
+  border: 2px solid var(--paper-0);
+  box-shadow: 0 2px 6px rgba(0, 122, 94, 0.3);
+}
+
+/* ── TERMINAL TYPING CURSOR ── */
+.terminal-cursor::after {
+  content: '▋';
+  animation: blink-cursor 1s step-end infinite;
+  color: var(--surge);
+  margin-left: 2px;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── SECTION ENTRANCE ANIMATION CLASSES ── */
+.section-fade-up {
+  opacity: 0;
+  transform: translateY(32px);
+}
+
+.section-fade-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo);
+}

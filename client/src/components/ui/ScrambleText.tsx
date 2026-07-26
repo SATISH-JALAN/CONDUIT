@@ -46,7 +46,7 @@ export function ScrambleText({ text, className = '', duration = 700 }: ScrambleT
 
     ScrollTrigger.create({
       trigger: el,
-      start: 'top 80%',
+      start: 'top 92%',
       onEnter: () => scramble()
     });
 

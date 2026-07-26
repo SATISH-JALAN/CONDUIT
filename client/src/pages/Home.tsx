@@ -117,18 +117,18 @@ export function Home() {
       /* Bento card entrance */
       gsap.fromTo(
         '.bento-card',
-        { y: 40, opacity: 0, scale: 0.97 },
+        { y: 30, opacity: 0, scale: 0.98 },
         {
           y: 0,
           opacity: 1,
           scale: 1,
-          duration: 0.7,
-          stagger: 0.12,
-          ease: 'power3.out',
+          duration: 0.55,
+          stagger: 0.08,
+          ease: 'power2.out',
           clearProps: 'opacity,transform,visibility',
           scrollTrigger: {
             trigger: '.bento-grid',
-            start: 'top 85%',
+            start: 'top 93%',
             toggleActions: 'play none none reverse',
           },
         }
@@ -137,17 +137,17 @@ export function Home() {
       /* Bond box entrance */
       gsap.fromTo(
         '.bond-card',
-        { y: 40, opacity: 0 },
+        { y: 30, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.6,
-          stagger: 0.12,
-          ease: 'power3.out',
+          duration: 0.5,
+          stagger: 0.08,
+          ease: 'power2.out',
           clearProps: 'all',
           scrollTrigger: {
             trigger: '.bond-grid',
-            start: 'top 85%',
+            start: 'top 93%',
             toggleActions: 'play none none reverse',
           },
         }
@@ -158,17 +158,17 @@ export function Home() {
         const numEls = numbersRef.current.querySelectorAll('.stat-number');
         gsap.fromTo(
           numEls,
-          { y: 24, opacity: 0 },
+          { y: 20, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            duration: 0.7,
-            stagger: 0.1,
-            ease: 'power3.out',
+            duration: 0.5,
+            stagger: 0.08,
+            ease: 'power2.out',
             clearProps: 'all',
             scrollTrigger: {
               trigger: numbersRef.current,
-              start: 'top 80%',
+              start: 'top 90%',
               toggleActions: 'play none none reverse',
             },
           }
@@ -195,10 +195,10 @@ export function Home() {
       /* Terminal typing effect */
       ScrollTrigger.create({
         trigger: '.cond-terminal',
-        start: 'top 80%',
+        start: 'top 90%',
         onEnter: () => {
           TERMINAL_LINES.forEach((_, i) => {
-            setTimeout(() => setVisibleLines(i + 1), i * 350);
+            setTimeout(() => setVisibleLines(i + 1), i * 280);
           });
         },
         once: true,

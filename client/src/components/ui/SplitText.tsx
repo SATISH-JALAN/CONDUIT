@@ -26,14 +26,14 @@ export function SplitText({ children, className = '', type = 'chars', delay = 0 
         y: 0,
         opacity: 1,
         rotationX: 0,
-        stagger: 0.022,
-        duration: 0.7,
-        ease: 'back.out(1.4)',
+        stagger: 0.018,
+        duration: 0.55,
+        ease: 'power2.out',
         transformOrigin: '0% 50% -50',
         delay: delay,
         scrollTrigger: {
           trigger: containerRef.current,
-          start: 'top 85%',
+          start: 'top 93%',
           toggleActions: 'play none none none'
         }
       }

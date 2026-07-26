@@ -9,7 +9,6 @@ import { YieldCalculatorWidget } from '@/components/landing/YieldCalculatorWidge
 import { OrbitWheel } from '@/components/landing/OrbitWheel';
 import { ArrowRight, Zap, ShieldCheck, Activity, Plus, Minus, Eye, Brain, Play, ShieldAlert, Sparkles, Lock, Radio } from 'lucide-react';
 import { calculateValue } from '@/lib/formula';
-import { useRaceStore } from '@/stores/raceStore';
 import { useWalletStore } from '@/stores/walletStore';
 
 /* ───────────────────────── Hero Strategy Options ───────────────────────── */
@@ -60,7 +59,6 @@ export function Home() {
   const marqueeTrackRef = useRef<HTMLDivElement>(null);
   const faqRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const { leaderboard, fetchLeaderboard, loading } = useRaceStore();
   const { isConnected } = useWalletStore();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -185,11 +183,6 @@ export function Home() {
 
     return () => ctx.revert();
   }, []);
-
-  /* ── Leaderboard fetch ── */
-  useEffect(() => {
-    void fetchLeaderboard('7d', 5);
-  }, [fetchLeaderboard]);
 
   /* ── FAQ toggle with GSAP height animation ── */
   const toggleFaq = useCallback((idx: number) => {
@@ -599,85 +592,6 @@ export function Home() {
               </p>
             </div>
             <OrbitWheel />
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════ SEC 7 · LEADERBOARD ════════════════ */}
-      <section className="py-10 md:py-[90px] relative overflow-hidden border-b border-[var(--paper-edge)]">
-        {/* Background texture */}
-        <div className="absolute inset-0 bg-[var(--paper-2)] -z-20" />
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none -z-10"
-          style={{ backgroundImage: 'radial-gradient(circle, var(--ink-1) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-        />
-        {/* Large favicon — right side */}
-        <img
-          src="/logofevicon.png"
-          aria-hidden="true"
-          className="absolute right-0 top-1/2 -translate-y-1/2 w-[400px] md:w-[520px] opacity-[0.08] pointer-events-none select-none -z-10"
-        />
-
-        <div className="max-w-[1600px] mx-auto px-5 md:px-14">
-          <div className="grid lg:grid-cols-[1.35fr_1fr] gap-8 items-start min-w-0">
-            <div className="paper-card-elevated p-6 md:p-8 min-w-0">
-              <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-[var(--ink-4)] mb-6">Yield Race Leaderboard</div>
-              <div className="overflow-x-auto max-w-full rounded-[var(--r-md)] border border-[var(--paper-edge)]">
-                <table className="w-full min-w-[560px] text-left">
-                  <thead className="bg-[var(--paper-2)]">
-                    <tr className="text-mono text-[10px] uppercase tracking-[0.08em] text-[var(--ink-4)]">
-                      <th className="px-4 py-3">Rank</th>
-                      <th className="px-4 py-3">Handle</th>
-                      <th className="px-4 py-3">Box</th>
-                      <th className="px-4 py-3 text-right">APY</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-secondary text-[14px] text-[var(--ink-2)]">
-                    {loading && leaderboard.length === 0 && (
-                      <tr className="border-t border-[var(--paper-edge)]">
-                        <td colSpan={4} className="px-4 py-4 text-center text-[var(--ink-3)]">Loading leaderboard...</td>
-                      </tr>
-                    )}
-
-                    {!loading && leaderboard.length === 0 && (
-                      <tr className="border-t border-[var(--paper-edge)]">
-                        <td colSpan={4} className="px-4 py-4 text-center text-[var(--ink-3)]">No leaderboard data yet. Start the first race from the dashboard.</td>
-                      </tr>
-                    )}
-
-                    {leaderboard.map((entry) => (
-                      <tr key={`${entry.wallet}-${entry.rank}`} className="border-t border-[var(--paper-edge)]">
-                        <td className="px-4 py-3">
-                          {entry.rank === 1 ? '1st' : entry.rank === 2 ? '2nd' : entry.rank === 3 ? '3rd' : entry.rank}
-                        </td>
-                        <td className="px-4 py-3">{entry.displayName}</td>
-                        <td className="px-4 py-3">TVL ${entry.tvl.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                        <td className={`px-4 py-3 text-right ${entry.rank <= 2 ? 'text-[var(--amber)]' : 'text-[var(--surge)]'}`}>
-                          {entry.apy.toFixed(2)}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="paper-card-elevated p-6 md:p-8 border-t-2 border-t-[var(--rose)] min-w-0 overflow-hidden">
-              <div className="text-mono text-[10px] uppercase tracking-[0.12em] text-[var(--ink-4)] mb-4">Weekend Race</div>
-              <div className="font-display text-[46px] md:text-[56px] leading-[0.9] tracking-[-0.03em] text-[var(--ink-1)] mb-2">$4,200</div>
-              <div className="font-secondary text-[14px] text-[var(--ink-3)] mb-8">Prize pool for highest streamed yield this round.</div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 min-w-0">
-                <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">02</div><div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mt-1">Days</div></div>
-                <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">18</div><div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mt-1">Hrs</div></div>
-                <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">42</div><div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mt-1">Min</div></div>
-                <div className="paper-card p-3 text-center"><div className="font-display text-[28px] leading-none">09</div><div className="text-mono text-[9px] text-[var(--ink-4)] uppercase mt-1">Sec</div></div>
-              </div>
-              <Link to="/race" className="block">
-                <MagneticButton variant="primary" className="w-full justify-center font-display text-[16px] py-3.5 rounded-[var(--r-md)]">
-                  Join Race
-                </MagneticButton>
-              </Link>
-            </div>
           </div>
         </div>
       </section>

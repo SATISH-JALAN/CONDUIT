@@ -58,7 +58,6 @@ export function Home() {
   const counterDecRef = useRef<HTMLSpanElement>(null);
   const pendingRef = useRef<HTMLSpanElement>(null);
   const marqueeTrackRef = useRef<HTMLDivElement>(null);
-  const numbersRef = useRef<HTMLDivElement>(null);
   const faqRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const { leaderboard, fetchLeaderboard, loading } = useRaceStore();
@@ -152,28 +151,6 @@ export function Home() {
           },
         }
       );
-
-      /* Numbers counter animation */
-      if (numbersRef.current) {
-        const numEls = numbersRef.current.querySelectorAll('.stat-number');
-        gsap.fromTo(
-          numEls,
-          { y: 20, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.5,
-            stagger: 0.08,
-            ease: 'power2.out',
-            clearProps: 'all',
-            scrollTrigger: {
-              trigger: numbersRef.current,
-              start: 'top 90%',
-              toggleActions: 'play none none reverse',
-            },
-          }
-        );
-      }
 
       /* GSAP-powered marquee */
       if (marqueeTrackRef.current) {
@@ -701,49 +678,6 @@ export function Home() {
                 </MagneticButton>
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════ SEC 8 · THE NUMBERS ════════════════ */}
-      <section className="py-20 md:py-28 border-t border-[var(--paper-edge)]" ref={numbersRef}>
-        <div className="max-w-[1600px] mx-auto px-6 md:px-14">
-          <div className="mb-14">
-            <div className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-[0.18em] mb-6">The Numbers</div>
-            <h2 className="font-display tracking-[-0.04em]" style={{ lineHeight: 1.05 }}>
-              <span className="block text-[clamp(40px,5vw,72px)] font-bold text-[var(--ink-1)]">What the protocol</span>
-              <span className="block text-[clamp(40px,5vw,72px)] font-light text-[var(--ink-3)]">actually returns.</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border border-[var(--paper-edge)]">
-            {[
-              { num: '01', label: 'Baseline APY', value: '4.5–5.6%', sub: 'Calm markets. Steady yield.', color: 'text-[var(--surge)]', link: '/bonds' },
-              { num: '02', label: 'Max APY', value: '7.1%', sub: 'Higher duration carry potential.', color: 'text-[var(--amber)]', link: '/bonds' },
-              { num: '03', label: 'Tx Cost', value: '$0.00001', sub: 'Per transaction on Stellar.', color: 'text-[var(--sky)]', link: '/docs' },
-              { num: '04', label: 'Stream Interval', value: '5 sec', sub: 'Yield hits your wallet live.', color: 'text-[var(--violet)]', link: '/docs' },
-            ].map(({ num, label, value, sub, color, link }, i) => (
-              <Link
-                key={num}
-                to={link}
-                className={`p-8 md:p-10 group hover:bg-[var(--paper-2)] transition-colors duration-200 ${i < 3 ? 'border-b md:border-b-0 md:border-r border-[var(--paper-edge)]' : ''}`}
-              >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-[0.12em]">{num}</div>
-                  <div className="text-mono text-[10px] text-[var(--ink-4)] uppercase tracking-[0.12em]">{label}</div>
-                </div>
-                <div className={`stat-number font-display text-[clamp(36px,3.5vw,52px)] font-bold tracking-[-0.03em] leading-none mb-4 ${color}`}>{value}</div>
-                <div className="font-secondary text-[13px] text-[var(--ink-3)] leading-relaxed">{sub}</div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Footnote */}
-          <div className="mt-8 pt-6 border-t border-[var(--paper-edge)]">
-            <div className="text-mono text-[9px] text-[var(--ink-4)] uppercase tracking-[0.12em] mb-2">Footnote</div>
-            <p className="font-secondary text-[13px] text-[var(--ink-3)] leading-relaxed max-w-2xl">
-              Yield rates are variable and depend on market conditions. Principal is secured by audited Soroban smart contracts and real-world custodians. Non-custodial at all times.
-            </p>
           </div>
         </div>
       </section>

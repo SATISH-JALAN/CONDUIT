@@ -2,92 +2,104 @@ import React, { useEffect, useState, useRef } from 'react';
 import { gsap } from '@/lib/gsap';
 
 export function Preloader() {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(true);
+  const [percent, setPercent] = useState(0);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLImageElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Only check sessionStorage once on mount
-    const hasSeen = sessionStorage.getItem('conduit_preloader');
-    
-    if (!hasSeen) {
-      setShow(true);
-      // Disable scrolling on body while preloader is active
-      document.body.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
 
-      const ctx = gsap.context(() => {
-        const tl = gsap.timeline({
-          onComplete: () => {
-            sessionStorage.setItem('conduit_preloader', 'true');
-            // Animate out the preloader (slide up)
-            gsap.to(containerRef.current, {
-              yPercent: -100,
-              duration: 0.9,
-              ease: 'power4.inOut',
-              onComplete: () => {
-                setShow(false);
-                document.body.style.overflow = '';
-              }
-            });
+    const ctx = gsap.context(() => {
+      const counterObj = { val: 0 };
+      const tl = gsap.timeline({
+        onComplete: () => {
+          gsap.to(containerRef.current, {
+            yPercent: -100,
+            duration: 0.8,
+            ease: 'power4.inOut',
+            onComplete: () => {
+              setShow(false);
+              document.body.style.overflow = '';
+            }
+          });
+        }
+      });
+
+      // 1. Minimal logo reveal
+      tl.fromTo(
+        logoRef.current,
+        { y: 15, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
+      )
+      // 2. Track & Counter reveal
+      .fromTo(
+        [trackRef.current, counterRef.current],
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
+        '-=0.4'
+      )
+      // 3. Progress fill + counter tick
+      .to(
+        counterObj,
+        {
+          val: 100,
+          duration: 1.2,
+          ease: 'power2.inOut',
+          onUpdate: () => {
+            setPercent(Math.floor(counterObj.val));
           }
-        });
+        },
+        '-=0.2'
+      )
+      .fromTo(
+        barRef.current,
+        { width: '0%' },
+        { width: '100%', duration: 1.2, ease: 'power2.inOut' },
+        '<'
+      )
+      .to({}, { duration: 0.15 });
 
-        // 1. Initial wait & Logo fade in + drift up
-        tl.fromTo(logoRef.current, 
-          { y: 30, opacity: 0, filter: 'blur(10px)' },
-          { y: 0, opacity: 1, filter: 'blur(0px)', duration: 1.2, ease: 'power3.out' },
-          "+=0.2" // slight delay before starting to make it feel deliberate
-        )
-        // 2. Text fade in
-        .fromTo(textRef.current, 
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' },
-          "-=0.6"
-        )
-        // 3. Loading bar fill mimicking connection establishment
-        // A staggered fake "loading" progress
-        .fromTo(barRef.current, 
-          { width: '0%' },
-          { width: '25%', duration: 0.4, ease: 'power1.out' },
-          "-=0.3"
-        )
-        .to(barRef.current, { width: '80%', duration: 0.8, ease: 'power2.inOut' })
-        .to(barRef.current, { width: '100%', duration: 0.3, ease: 'power1.inOut' });
-        
-      }, containerRef);
+    }, containerRef);
 
-      return () => {
-        ctx.revert();
-        document.body.style.overflow = '';
-      };
-    }
+    return () => {
+      ctx.revert();
+      document.body.style.overflow = '';
+    };
   }, []);
 
   if (!show) return null;
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className="fixed inset-0 z-50 bg-(--paper-1) flex flex-col items-center justify-center p-6"
+      className="fixed inset-0 z-[100] bg-[var(--paper-1)] flex flex-col items-center justify-center p-6 select-none"
     >
-      <div className="relative z-10 flex flex-col items-center mt-[-10vh]">
-        <img 
+      <div className="flex flex-col items-center max-w-[260px] w-full mt-[-4vh]">
+        {/* Logo */}
+        <img
           ref={logoRef}
-          src="/logo.png" 
-          alt="Conduit Logo" 
-          className="h-28 sm:h-35 mb-10 object-contain"
-          style={{ willChange: 'transform, opacity, filter' }}
+          src="/logo.png"
+          alt="Conduit"
+          className="h-28 sm:h-32 w-auto object-contain mb-8"
         />
-        
-        <div ref={textRef} className="flex flex-col items-center w-full max-w-[240px]">
-          <div className="text-mono text-[10px] sm:text-[11px] text-(--surge) uppercase tracking-[0.25em] mb-4 text-center font-medium">
-            Establishing Secured Stream
-          </div>
-          <div className="w-full h-[2px] bg-(--paper-edge) rounded-full overflow-hidden">
-            <div ref={barRef} className="h-full bg-(--surge) rounded-full shadow-[0_0_8px_var(--surge-pale)]"></div>
-          </div>
+
+        {/* Minimal Progress Track */}
+        <div ref={trackRef} className="w-full h-[2px] bg-[var(--paper-edge)] rounded-full overflow-hidden mb-3">
+          <div
+            ref={barRef}
+            className="h-full bg-[var(--surge)] rounded-full"
+          />
+        </div>
+
+        {/* Counter */}
+        <div ref={counterRef} className="w-full flex items-center justify-between font-mono text-[11px] text-[var(--ink-3)] tracking-widest uppercase">
+          <span>CONDUIT</span>
+          <span>{String(percent).padStart(2, '0')}%</span>
         </div>
       </div>
     </div>

@@ -85,7 +85,31 @@ APY is no longer chosen by the depositor. The `rate_oracle` contract stores the
 authorized APY (bps) per box, writable only by the oracle admin. At deposit time
 `stream_router` reads the rate via a cross-contract call keyed by `box_id`, so a
 user cannot pick their own yield rate. `deploy-testnet.sh` seeds the initial box
-rates; the keeper (next phase) takes over live updates.
+rates; the rate keeper (below) then keeps them live.
+
+## Rate keeper (live on-chain rates)
+
+The rate keeper publishes each active box's current APY to the oracle on a
+schedule and records it in `apy_history`. It is the only place the **server**
+signs a transaction — with the oracle admin (operator) key.
+
+```bash
+# From the server directory, with these env vars set:
+#   SOROBAN_ENABLED=true
+#   RATE_ORACLE_CONTRACT_ID=<deployed oracle>
+#   STELLAR_OPERATIONAL_SECRET=<oracle admin secret key>   # server-side only
+#   SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+#   DATABASE_URL=<postgres>
+pnpm --filter server cron:rates-keeper
+```
+
+- Rate model: `server/src/keeper/rates.ts` derives each box's APY from its
+  reference rate plus a small bounded drift (`RATE_DRIFT_BPS`). Swap the source
+  (treasury/Benji/Reflector feed) by changing `computeRate` only.
+- Run it on a scheduler (Render Cron / GitHub Actions) for continuous updates.
+- **Proven:** a server-signed write set `keeper-proof → 777` on-chain
+  ([tx `09eab54a…`](https://stellar.expert/explorer/testnet/tx/09eab54a7616c44b3c979e34085c3def6438b065724a5c987b0a2501b77be353)),
+  confirmed by reading `get_rate` back as `777`.
 
 ## Deployed instance (testnet)
 

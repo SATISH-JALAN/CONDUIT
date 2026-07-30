@@ -14,7 +14,11 @@ const SOROBAN_RPC_ALLOW_HTTP =
   SOROBAN_RPC_URL.startsWith("http://127.0.0.1") ||
   SOROBAN_RPC_URL.startsWith("http://localhost");
 const STREAM_ROUTER_CONTRACT_ID = process.env.STREAM_ROUTER_CONTRACT_ID;
+const RATE_ORACLE_CONTRACT_ID = process.env.RATE_ORACLE_CONTRACT_ID;
 const COMPLIANCE_CONTRACT_ID = process.env.COMPLIANCE_CONTRACT_ID;
+// Secret key of the oracle admin / operator. Only the keeper (server-side) uses
+// it to sign authorized rate writes — never exposed to clients.
+const STELLAR_OPERATIONAL_SECRET = process.env.STELLAR_OPERATIONAL_SECRET;
 const SOROBAN_ENABLED = process.env.SOROBAN_ENABLED === "true";
 const SOROBAN_READ_TIMEOUT_MS = parseInt(
   process.env.SOROBAN_READ_TIMEOUT_MS || "1500",
@@ -327,6 +331,57 @@ async function submitSorobanTx(
 
   logger.info({ hash }, "Soroban transaction applied");
   return { txHash: hash };
+}
+
+/**
+ * True when the server can publish oracle rates (Soroban on, oracle deployed,
+ * operator secret configured).
+ */
+export function isRateKeeperEnabled(): boolean {
+  return !!(
+    SOROBAN_ENABLED &&
+    RATE_ORACLE_CONTRACT_ID &&
+    STELLAR_OPERATIONAL_SECRET
+  );
+}
+
+/**
+ * Publish an authorized APY for a box to the rate oracle. Signed server-side
+ * with the operator (oracle admin) key — this is the only place the server
+ * signs a transaction. Used by the rate keeper.
+ */
+export async function setOracleRate(
+  boxId: string,
+  apyBps: number,
+): Promise<{ txHash: string }> {
+  if (!RATE_ORACLE_CONTRACT_ID) {
+    throw new Error("RATE_ORACLE_CONTRACT_ID is not configured");
+  }
+  if (!STELLAR_OPERATIONAL_SECRET) {
+    throw new Error("STELLAR_OPERATIONAL_SECRET is not configured");
+  }
+
+  const operator = StellarSdk.Keypair.fromSecret(STELLAR_OPERATIONAL_SECRET);
+  const source = await sorobanRpc.getAccount(operator.publicKey());
+  const contract = new StellarSdk.Contract(RATE_ORACLE_CONTRACT_ID);
+
+  const tx = new StellarSdk.TransactionBuilder(source, {
+    fee: SOROBAN_INCLUSION_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "set_rate",
+        StellarSdk.nativeToScVal(boxId, { type: "string" }),
+        StellarSdk.nativeToScVal(apyBps, { type: "u32" }),
+      ),
+    )
+    .setTimeout(120)
+    .build();
+
+  const prepared = await sorobanRpc.prepareTransaction(tx);
+  prepared.sign(operator);
+  return submitSorobanTx(prepared);
 }
 
 /**

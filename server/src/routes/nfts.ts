@@ -11,7 +11,14 @@ import {
 } from "../shared/types.js";
 import { bondBoxes, users, yieldNfts } from "../db/schema.js";
 import { logger } from "../shared/logger.js";
-import { readWalletAccreditationStatus } from "../shared/stellar.js";
+import {
+  readWalletAccreditationStatus,
+  isYieldNftEnabled,
+  buildMintNftTx,
+  buildTransferNftTx,
+  buildRedeemNftTx,
+  submitSignedTx,
+} from "../shared/stellar.js";
 
 const app = new Hono();
 
@@ -302,6 +309,95 @@ app.post("/transfer", zValidator("json", nftTransferSchema), async (c) => {
   } catch (err: any) {
     logger.error({ err: err.message, wallet }, "NFT transfer failed");
     return c.json({ error: err.message || "Failed to transfer NFT" }, 500);
+  }
+});
+
+// ── On-chain yield NFTs (build unsigned txs for the user to sign) ────────────
+
+// POST /api/nfts/mint/build — lock principal and mint a yield NFT on-chain.
+app.post("/mint/build", authMiddleware, async (c) => {
+  try {
+    if (!isYieldNftEnabled()) {
+      return c.json({ error: "On-chain yield NFTs are not enabled" }, 400);
+    }
+    const wallet = c.get("wallet");
+    const { box_id, principal, term_seconds } = await c.req.json();
+    if (!box_id || !principal || !term_seconds) {
+      return c.json(
+        { error: "Missing required fields: box_id, principal, term_seconds" },
+        400,
+      );
+    }
+    const { xdr, networkPassphrase } = await buildMintNftTx(
+      wallet,
+      Number(principal),
+      box_id,
+      Number(term_seconds),
+    );
+    return c.json({ xdr, networkPassphrase });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "NFT mint build failed");
+    return c.json({ error: err.message || "Failed to build mint" }, 500);
+  }
+});
+
+// POST /api/nfts/transfer/build — transfer a yield NFT on-chain.
+app.post("/transfer/build", authMiddleware, async (c) => {
+  try {
+    if (!isYieldNftEnabled()) {
+      return c.json({ error: "On-chain yield NFTs are not enabled" }, 400);
+    }
+    const wallet = c.get("wallet");
+    const { id, to } = await c.req.json();
+    if (id === undefined || !to) {
+      return c.json({ error: "Missing required fields: id, to" }, 400);
+    }
+    const { xdr, networkPassphrase } = await buildTransferNftTx(
+      wallet,
+      Number(id),
+      to,
+    );
+    return c.json({ xdr, networkPassphrase });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "NFT transfer build failed");
+    return c.json({ error: err.message || "Failed to build transfer" }, 500);
+  }
+});
+
+// POST /api/nfts/redeem/build — redeem a matured yield NFT on-chain.
+app.post("/redeem/build", authMiddleware, async (c) => {
+  try {
+    if (!isYieldNftEnabled()) {
+      return c.json({ error: "On-chain yield NFTs are not enabled" }, 400);
+    }
+    const wallet = c.get("wallet");
+    const { id } = await c.req.json();
+    if (id === undefined) {
+      return c.json({ error: "Missing required field: id" }, 400);
+    }
+    const { xdr, networkPassphrase } = await buildRedeemNftTx(
+      wallet,
+      Number(id),
+    );
+    return c.json({ xdr, networkPassphrase });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "NFT redeem build failed");
+    return c.json({ error: err.message || "Failed to build redeem" }, 500);
+  }
+});
+
+// POST /api/nfts/submit — submit a signed yield-NFT transaction.
+app.post("/submit", authMiddleware, async (c) => {
+  try {
+    const { signedXdr } = await c.req.json();
+    if (!signedXdr) {
+      return c.json({ error: "Missing required field: signedXdr" }, 400);
+    }
+    const { txHash } = await submitSignedTx(signedXdr);
+    return c.json({ ok: true, txHash });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "NFT submit failed");
+    return c.json({ error: "Transaction rejected: " + err.message }, 400);
   }
 });
 

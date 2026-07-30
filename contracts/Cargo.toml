@@ -4,6 +4,7 @@ members = [
   "compliance",
   "rate_oracle",
   "stream_router",
+  "yield_nft",
 ]
 
 [workspace.package]

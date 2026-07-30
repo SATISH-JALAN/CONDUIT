@@ -15,6 +15,7 @@ const SOROBAN_RPC_ALLOW_HTTP =
   SOROBAN_RPC_URL.startsWith("http://localhost");
 const STREAM_ROUTER_CONTRACT_ID = process.env.STREAM_ROUTER_CONTRACT_ID;
 const RATE_ORACLE_CONTRACT_ID = process.env.RATE_ORACLE_CONTRACT_ID;
+const YIELD_NFT_CONTRACT_ID = process.env.YIELD_NFT_CONTRACT_ID;
 const COMPLIANCE_CONTRACT_ID = process.env.COMPLIANCE_CONTRACT_ID;
 // Secret key of the oracle admin / operator. Only the keeper (server-side) uses
 // it to sign authorized rate writes — never exposed to clients.
@@ -130,6 +131,73 @@ async function buildStreamRouterInvokeTx(
 
   const prepared = await sorobanRpc.prepareTransaction(tx);
   return { xdr: prepared.toXDR(), networkPassphrase: NETWORK_PASSPHRASE };
+}
+
+export function isYieldNftEnabled(): boolean {
+  return !!(SOROBAN_ENABLED && YIELD_NFT_CONTRACT_ID);
+}
+
+/** Build an unsigned yield_nft contract invocation (prepared via RPC). */
+async function buildYieldNftInvokeTx(
+  sourceWallet: string,
+  method: string,
+  args: StellarSdk.xdr.ScVal[],
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  if (!YIELD_NFT_CONTRACT_ID) {
+    throw new Error("YIELD_NFT_CONTRACT_ID is not configured");
+  }
+  const source = await loadOrFundSource(sourceWallet);
+  const contract = new StellarSdk.Contract(YIELD_NFT_CONTRACT_ID);
+  const tx = new StellarSdk.TransactionBuilder(source, {
+    fee: SOROBAN_INCLUSION_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(120)
+    .build();
+  const prepared = await sorobanRpc.prepareTransaction(tx);
+  return { xdr: prepared.toXDR(), networkPassphrase: NETWORK_PASSPHRASE };
+}
+
+/**
+ * Build an unsigned mint transaction for a yield NFT. Locks `principal` of the
+ * yield asset; the term's APY is read on-chain from the oracle for `boxId`.
+ */
+export async function buildMintNftTx(
+  sourceWallet: string,
+  principal: number,
+  boxId: string,
+  termSeconds: number,
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  const args = [
+    StellarSdk.Address.fromString(sourceWallet).toScVal(),
+    toI128ScVal(principal),
+    StellarSdk.nativeToScVal(boxId, { type: "string" }),
+    StellarSdk.nativeToScVal(termSeconds, { type: "u64" }),
+  ];
+  return buildYieldNftInvokeTx(sourceWallet, "mint", args);
+}
+
+/** Build an unsigned transfer of yield NFT `id` from the owner to `to`. */
+export async function buildTransferNftTx(
+  sourceWallet: string,
+  id: number,
+  to: string,
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  const args = [
+    StellarSdk.nativeToScVal(id, { type: "u64" }),
+    StellarSdk.Address.fromString(to).toScVal(),
+  ];
+  return buildYieldNftInvokeTx(sourceWallet, "transfer", args);
+}
+
+/** Build an unsigned redeem of a matured yield NFT `id`. */
+export async function buildRedeemNftTx(
+  sourceWallet: string,
+  id: number,
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  const args = [StellarSdk.nativeToScVal(id, { type: "u64" })];
+  return buildYieldNftInvokeTx(sourceWallet, "redeem", args);
 }
 
 /**

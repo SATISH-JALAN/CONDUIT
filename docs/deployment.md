@@ -77,6 +77,7 @@ pnpm faucet               # generate + fund a fresh identity
 | `scripts/deploy-testnet.sh` | Deploy + initialize + seed reserve |
 | `scripts/proof-e2e.sh` | Real on-chain deposit/harvest proof |
 | `scripts/proof-split.sh` | Trustless on-chain yield-splitting proof |
+| `scripts/proof-nft.sh` | Tokenized yield NFT mint/transfer/redeem proof |
 | `scripts/faucet.sh` | Fund testnet wallets with the yield asset |
 | `.env.deploy` | Generated env block (gitignored) |
 
@@ -118,11 +119,12 @@ The token-backed, oracle-priced protocol is live on Stellar testnet:
 
 | Item | Value |
 |:---|:---|
-| **stream_router** | `CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO` |
-| **rate_oracle** | `CCJ2625UWY2BJCFX7YR2M6VBGEKMTNYBBFLRVG6IPF7TVHVY7QPXMQFP` |
+| **stream_router** | `CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6` |
+| **rate_oracle** | `CBM6WE3EWRWEBCV6WM7HC7HLKRM7DRJWA3XLKMJGFV26PRSZOOYCQSJS` |
+| **yield_nft** | `CB3S6CXTWJA6ECA5SCSZONOHJW5QJRHO467Q5EWG7NQUSS5UGJBSWWWI` |
 | **Yield asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
 | **Operator/admin** | `GALAHKCLSOZZRVVEU64UUUXZGDMYXVXJV2LMO4DXFQ7M7JCZE2TOJM6H` |
-| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO) |
+| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6) |
 
 ### Proofs (run against the deployed instance)
 
@@ -135,7 +137,11 @@ Two scripts produce verifiable on-chain transactions:
   then a single `harvest` routes the accrued yield to both destinations **inside the
   contract** (two transfer events in one tx), e.g. `59` base units → `41` (70%) + `18`
   (30%): [tx `6dd34ee8…`](https://stellar.expert/explorer/testnet/tx/6dd34ee85c0c5119ef773af9cb5cc176100d6763482b5d59a2872e332a00b808).
+- **`pnpm proof:nft`** — tokenized yield NFTs. Accredits a minter, mints a yield NFT
+  (locking principal, term APY from the oracle), transfers it to a second holder,
+  then after maturity the holder redeems it for principal + term yield and the NFT is
+  burned — all real on-chain token movements.
 
 This confirms Conduit is no longer a simulation: deposits custody real tokens, the
-APY is authorized on-chain by the oracle, harvest settles real yield, and split
-routing is enforced by the contract — not the server.
+APY is authorized on-chain by the oracle, harvest settles real yield, split routing
+is enforced by the contract, and future yield is a real transferable NFT.

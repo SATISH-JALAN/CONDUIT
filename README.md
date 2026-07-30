@@ -60,8 +60,9 @@ Conduit has been scaled to production readiness with complete security checks, p
 
 | Contract | Contract ID | Explorer Link |
 |:---|:---|:---|
-| **Stream Router** (token-backed) | `CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO) |
-| **Rate Oracle** (authorized APY) | `CCJ2625UWY2BJCFX7YR2M6VBGEKMTNYBBFLRVG6IPF7TVHVY7QPXMQFP` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCJ2625UWY2BJCFX7YR2M6VBGEKMTNYBBFLRVG6IPF7TVHVY7QPXMQFP) |
+| **Stream Router** (token-backed) | `CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6) |
+| **Rate Oracle** (authorized APY) | `CBM6WE3EWRWEBCV6WM7HC7HLKRM7DRJWA3XLKMJGFV26PRSZOOYCQSJS` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBM6WE3EWRWEBCV6WM7HC7HLKRM7DRJWA3XLKMJGFV26PRSZOOYCQSJS) |
+| **Yield NFT** (tokenized future yield) | `CB3S6CXTWJA6ECA5SCSZONOHJW5QJRHO467Q5EWG7NQUSS5UGJBSWWWI` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CB3S6CXTWJA6ECA5SCSZONOHJW5QJRHO467Q5EWG7NQUSS5UGJBSWWWI) |
 | **Yield Asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC) |
 | **Compliance** | `CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6) |
 

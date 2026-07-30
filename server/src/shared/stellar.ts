@@ -133,6 +133,55 @@ async function buildStreamRouterInvokeTx(
 }
 
 /**
+ * Build an unsigned set_split transaction. The user signs it to configure how
+ * harvested yield is routed on-chain. Percentages must sum to 100; the last
+ * destination absorbs any rounding so weights sum to exactly 10000 bps.
+ */
+export async function buildSetSplitTx(
+  sourceWallet: string,
+  splits: Array<{ destination: string; percentage: number }>,
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  if (!STREAM_ROUTER_INVOKE_ENABLED) {
+    throw new Error(
+      "On-chain splits require SOROBAN_ENABLED and a deployed stream_router",
+    );
+  }
+  if (splits.length === 0) {
+    throw new Error("At least one split destination is required");
+  }
+  const total = splits.reduce((s, x) => s + x.percentage, 0);
+  if (Math.round(total) !== 100) {
+    throw new Error("Split percentages must sum to 100");
+  }
+
+  let assigned = 0;
+  const entries = splits.map((s, i) => {
+    const bps =
+      i === splits.length - 1
+        ? 10_000 - assigned
+        : Math.round(s.percentage * 100);
+    assigned += bps;
+    // Soroban struct = ScMap with keys sorted ascending ("bps" < "dest").
+    return StellarSdk.xdr.ScVal.scvMap([
+      new StellarSdk.xdr.ScMapEntry({
+        key: StellarSdk.nativeToScVal("bps", { type: "symbol" }),
+        val: StellarSdk.nativeToScVal(bps, { type: "u32" }),
+      }),
+      new StellarSdk.xdr.ScMapEntry({
+        key: StellarSdk.nativeToScVal("dest", { type: "symbol" }),
+        val: StellarSdk.Address.fromString(s.destination).toScVal(),
+      }),
+    ]);
+  });
+
+  const args = [
+    StellarSdk.Address.fromString(sourceWallet).toScVal(),
+    StellarSdk.xdr.ScVal.scvVec(entries),
+  ];
+  return buildStreamRouterInvokeTx(sourceWallet, "set_split", args);
+}
+
+/**
  * Build an unsigned deposit transaction.
  * The user signs this client-side with Freighter, then sends back the signed XDR.
  *

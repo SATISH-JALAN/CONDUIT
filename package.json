@@ -11,6 +11,7 @@
     "contracts:test": "cargo test --manifest-path contracts/Cargo.toml",
     "deploy:testnet": "bash scripts/deploy-testnet.sh",
     "faucet": "bash scripts/faucet.sh",
-    "proof:e2e": "bash scripts/proof-e2e.sh"
+    "proof:e2e": "bash scripts/proof-e2e.sh",
+    "proof:split": "bash scripts/proof-split.sh"
   }
 }

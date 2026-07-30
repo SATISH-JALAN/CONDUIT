@@ -17,6 +17,14 @@ pub struct Anchor {
     pub sync_ts: u64,
 }
 
+/// One destination of a harvest yield split, weighted in basis points.
+#[contracttype]
+#[derive(Clone)]
+pub struct SplitEntry {
+    pub dest: Address,
+    pub bps: u32,
+}
+
 #[contracttype]
 #[derive(Clone)]
 pub enum DataKey {
@@ -28,6 +36,8 @@ pub enum DataKey {
     Oracle,
     /// Per-wallet streaming anchor.
     Anchor(Address),
+    /// Per-wallet harvest split routing (destinations + weights).
+    Split(Address),
 }
 
 #[contracterror]
@@ -40,6 +50,7 @@ pub enum StreamRouterError {
     AmountExceedsAvailableBalance = 4,
     AlreadyInitialized = 5,
     NotInitialized = 6,
+    InvalidSplit = 7,
 }
 
 #[contract]
@@ -80,6 +91,13 @@ fn load_oracle(env: &Env) -> Address {
         Some(oracle) => oracle,
         None => panic_with_error!(env, StreamRouterError::NotInitialized),
     }
+}
+
+fn load_split(env: &Env, wallet: &Address) -> Vec<SplitEntry> {
+    env.storage()
+        .persistent()
+        .get(&DataKey::Split(wallet.clone()))
+        .unwrap_or_else(|| Vec::new(env))
 }
 
 /// Token client for the configured yield asset, used to move real tokens
@@ -209,10 +227,34 @@ impl StreamRouterContract {
         current.sync_ts = ts;
         save_anchor(&env, &wallet, &current);
 
-        // Real settlement: pay accrued yield out of the vault's reserve to the
-        // user. The vault must hold enough of the yield asset (seeded reserve).
+        // Real settlement: pay accrued yield out of the vault's reserve. If the
+        // user configured a split, route it atomically across destinations
+        // inside the contract (trustless); otherwise pay it all to the user.
         if pending > 0 {
-            token_client(&env).transfer(&env.current_contract_address(), &wallet, &pending);
+            let splits = load_split(&env, &wallet);
+            let client = token_client(&env);
+            let vault = env.current_contract_address();
+
+            if splits.is_empty() {
+                client.transfer(&vault, &wallet, &pending);
+            } else {
+                let n = splits.len();
+                let mut distributed: i128 = 0;
+                for i in 0..n {
+                    let entry = splits.get(i).unwrap();
+                    // Last destination absorbs the rounding remainder so the
+                    // full accrued amount is always paid out exactly.
+                    let amount = if i == n - 1 {
+                        pending - distributed
+                    } else {
+                        pending.saturating_mul(entry.bps as i128) / BPS_SCALE
+                    };
+                    distributed = distributed.saturating_add(amount);
+                    if amount > 0 {
+                        client.transfer(&vault, &entry.dest, &amount);
+                    }
+                }
+            }
         }
 
         env.events().publish(
@@ -258,6 +300,48 @@ impl StreamRouterContract {
         current
     }
 
+    /// Configure how harvested yield is routed. Weights are basis points and
+    /// must sum to exactly 10000 (100%). Requires the wallet's authorization.
+    pub fn set_split(env: Env, wallet: Address, splits: Vec<SplitEntry>) {
+        wallet.require_auth();
+
+        let n = splits.len();
+        if n == 0 {
+            panic_with_error!(&env, StreamRouterError::InvalidSplit);
+        }
+
+        let mut total: u32 = 0;
+        for i in 0..n {
+            let entry = splits.get(i).unwrap();
+            if entry.bps == 0 {
+                panic_with_error!(&env, StreamRouterError::InvalidSplit);
+            }
+            total = total.saturating_add(entry.bps);
+        }
+        if total != 10_000 {
+            panic_with_error!(&env, StreamRouterError::InvalidSplit);
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Split(wallet.clone()), &splits);
+        env.events().publish(
+            (symbol_short!("srt_v1"), symbol_short!("split_set"), wallet),
+            n,
+        );
+    }
+
+    /// Read a wallet's harvest split (empty = pay 100% to the wallet).
+    pub fn get_split(env: Env, wallet: Address) -> Vec<SplitEntry> {
+        load_split(&env, &wallet)
+    }
+
+    /// Remove a wallet's split so harvest pays it directly again.
+    pub fn clear_split(env: Env, wallet: Address) {
+        wallet.require_auth();
+        env.storage().persistent().remove(&DataKey::Split(wallet));
+    }
+
     /// Re-price a position to the box's current oracle rate, settling accrued
     /// yield into principal first. Operator/keeper only — this is how oracle
     /// rate changes propagate to open positions. The depositor cannot call it.
@@ -294,7 +378,7 @@ mod tests {
     use super::*;
     use soroban_sdk::testutils::{Address as _, Ledger};
     use soroban_sdk::token::StellarAssetClient;
-    use soroban_sdk::{contract, contractimpl};
+    use soroban_sdk::{contract, contractimpl, vec};
 
     // Minimal in-test oracle returning a fixed rate, so the stream_router tests
     // can exercise the cross-contract read without depending on the oracle crate.
@@ -436,6 +520,59 @@ mod tests {
         let client = StreamRouterContractClient::new(&env, &id);
         client.initialize(&admin, &token_address, &bad_oracle);
         client.deposit(&wallet, &1_000_000, &String::from_str(&env, "any-box"));
+    }
+
+    #[test]
+    fn harvest_distributes_across_split() {
+        let h = setup();
+        let d0 = Address::generate(&h.env);
+        let d1 = Address::generate(&h.env);
+        let splits = vec![
+            &h.env,
+            SplitEntry { dest: d0.clone(), bps: 6000 },
+            SplitEntry { dest: d1.clone(), bps: 4000 },
+        ];
+        h.client.set_split(&h.wallet, &splits);
+
+        h.env.ledger().with_mut(|l| l.timestamp = 1);
+        h.client.deposit(&h.wallet, &100_000_000, &h.box_id);
+        h.env.ledger().with_mut(|l| l.timestamp = 31_536_001);
+
+        // 100_000_000 @ 500 bps for one year = 5_000_000 accrued, split 60/40.
+        let harvested = h.client.harvest(&h.wallet);
+        assert_eq!(harvested, 5_000_000);
+        assert_eq!(h.token.balance(&d0), 3_000_000);
+        assert_eq!(h.token.balance(&d1), 2_000_000);
+    }
+
+    #[test]
+    #[should_panic]
+    fn set_split_rejects_bad_total() {
+        let h = setup();
+        let d0 = Address::generate(&h.env);
+        // Only 50% allocated → must reject.
+        let splits = vec![&h.env, SplitEntry { dest: d0, bps: 5000 }];
+        h.client.set_split(&h.wallet, &splits);
+    }
+
+    #[test]
+    fn clear_split_reverts_to_direct_payout() {
+        let h = setup();
+        let d0 = Address::generate(&h.env);
+        let splits = vec![&h.env, SplitEntry { dest: d0, bps: 10_000 }];
+        h.client.set_split(&h.wallet, &splits);
+        assert_eq!(h.client.get_split(&h.wallet).len(), 1);
+
+        h.client.clear_split(&h.wallet);
+        assert_eq!(h.client.get_split(&h.wallet).len(), 0);
+
+        // With no split, harvest pays the wallet directly again.
+        h.env.ledger().with_mut(|l| l.timestamp = 1);
+        h.client.deposit(&h.wallet, &50_000_000, &h.box_id);
+        h.env.ledger().with_mut(|l| l.timestamp = 31_536_001);
+        let before = h.token.balance(&h.wallet);
+        let harvested = h.client.harvest(&h.wallet);
+        assert_eq!(h.token.balance(&h.wallet), before + harvested);
     }
 
     #[test]

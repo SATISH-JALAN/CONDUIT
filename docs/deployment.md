@@ -76,6 +76,7 @@ pnpm faucet               # generate + fund a fresh identity
 |:---|:---|
 | `scripts/deploy-testnet.sh` | Deploy + initialize + seed reserve |
 | `scripts/proof-e2e.sh` | Real on-chain deposit/harvest proof |
+| `scripts/proof-split.sh` | Trustless on-chain yield-splitting proof |
 | `scripts/faucet.sh` | Fund testnet wallets with the yield asset |
 | `.env.deploy` | Generated env block (gitignored) |
 
@@ -117,21 +118,24 @@ The token-backed, oracle-priced protocol is live on Stellar testnet:
 
 | Item | Value |
 |:---|:---|
-| **stream_router** | `CAJ7MVNYW5WEYVVHHPIGLLP726O3F3DV5RRSDG536QWO2XJGPVKEV57P` |
-| **rate_oracle** | `CA6GAYOHCSN27U7E4HKU7G2BNDA4M7GSQY4VD6NBADP3ZNJY4XVK4SH5` |
+| **stream_router** | `CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO` |
+| **rate_oracle** | `CCJ2625UWY2BJCFX7YR2M6VBGEKMTNYBBFLRVG6IPF7TVHVY7QPXMQFP` |
 | **Yield asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
 | **Operator/admin** | `GALAHKCLSOZZRVVEU64UUUXZGDMYXVXJV2LMO4DXFQ7M7JCZE2TOJM6H` |
-| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CAJ7MVNYW5WEYVVHHPIGLLP726O3F3DV5RRSDG536QWO2XJGPVKEV57P) |
+| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO) |
 
-### End-to-end proof (real on-chain token movement + oracle-sourced APY)
+### Proofs (run against the deployed instance)
 
-Running `pnpm proof:e2e` produced verifiable transactions. The deposit passed **no
-APY** — the contract read `420` bps from the oracle for `us-treasury-10y`:
+Two scripts produce verifiable on-chain transactions:
 
-| Action | Effect | Tx |
-|:---|:---|:---|
-| deposit 25 XLM into `us-treasury-10y` | user → vault `250000000`; anchor `apy_bps=420` **from oracle** | [`e27fc18e…`](https://stellar.expert/explorer/testnet/tx/e27fc18ef05f5a6be20f079ffc680a4d6098e3557a60105d1631abd668275e66) |
-| harvest | vault → user accrued yield; balances update on-chain | [`bbb29513…`](https://stellar.expert/explorer/testnet/tx/bbb29513b94dc333c8d7a646b384553ddbb2d65f139bb6e0cfce952dd5252c5b) |
+- **`pnpm proof:e2e`** — deposit → accrue → harvest. The deposit passes **no APY**;
+  the contract reads it from the oracle (e.g. `420` bps for `us-treasury-10y`), then
+  harvest settles real yield from the vault back to the user.
+- **`pnpm proof:split`** — trustless on-chain yield splitting. A 70/30 split is set,
+  then a single `harvest` routes the accrued yield to both destinations **inside the
+  contract** (two transfer events in one tx), e.g. `59` base units → `41` (70%) + `18`
+  (30%): [tx `6dd34ee8…`](https://stellar.expert/explorer/testnet/tx/6dd34ee85c0c5119ef773af9cb5cc176100d6763482b5d59a2872e332a00b808).
 
-This confirms Conduit is no longer a simulation: deposits custody real tokens,
-the APY is authorized on-chain by the oracle, and harvest settles real yield.
+This confirms Conduit is no longer a simulation: deposits custody real tokens, the
+APY is authorized on-chain by the oracle, harvest settles real yield, and split
+routing is enforced by the contract — not the server.

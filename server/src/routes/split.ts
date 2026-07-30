@@ -7,12 +7,27 @@ import {
   stellarAddressSchema,
 } from "../shared/types.js";
 import { authMiddleware } from "../shared/auth.js";
+import { buildSetSplitTx, submitSignedTx } from "../shared/stellar.js";
 import { eq } from "drizzle-orm";
 
 const app = new Hono();
 
 function defaultSplit(wallet: string) {
   return [{ destination: wallet, percentage: 100, label: "Wallet" }];
+}
+
+async function mirrorSplitToDb(
+  wallet: string,
+  splits: (typeof splitConfigs.$inferInsert)["splits"],
+): Promise<void> {
+  await db.insert(users).values({ wallet }).onConflictDoNothing();
+  await db
+    .insert(splitConfigs)
+    .values({ wallet, splits, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: splitConfigs.wallet,
+      set: { splits, updatedAt: new Date() },
+    });
 }
 
 // GET /api/split/:wallet
@@ -58,22 +73,7 @@ app.post("/", authMiddleware, async (c) => {
 
     const splits = parsed.data.splits;
 
-    await db.insert(users).values({ wallet }).onConflictDoNothing();
-
-    await db
-      .insert(splitConfigs)
-      .values({
-        wallet,
-        splits,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: splitConfigs.wallet,
-        set: {
-          splits,
-          updatedAt: new Date(),
-        },
-      });
+    await mirrorSplitToDb(wallet, splits);
 
     logger.info({ wallet, splitCount: splits.length }, "Split config saved");
 
@@ -85,6 +85,69 @@ app.post("/", authMiddleware, async (c) => {
   } catch (err: any) {
     logger.error({ err: err.message }, "Split config save failed");
     return c.json({ error: err.message || "Failed to save split config" }, 500);
+  }
+});
+
+// POST /api/split/build — build an unsigned on-chain set_split for the user to sign.
+app.post("/build", authMiddleware, async (c) => {
+  try {
+    const body = await c.req.json();
+    const parsed = saveSplitConfigSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: parsed.error.issues[0].message }, 400);
+    }
+
+    const wallet = c.get("wallet");
+    if (parsed.data.wallet && parsed.data.wallet !== wallet) {
+      return c.json({ error: "Wallet mismatch with authenticated user" }, 403);
+    }
+
+    const { xdr, networkPassphrase } = await buildSetSplitTx(
+      wallet,
+      parsed.data.splits,
+    );
+    return c.json({ xdr, networkPassphrase });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "Split build failed");
+    return c.json(
+      { error: err.message || "Failed to build split transaction" },
+      500,
+    );
+  }
+});
+
+// POST /api/split/submit — submit the signed set_split and mirror it to the DB.
+app.post("/submit", authMiddleware, async (c) => {
+  try {
+    const body = await c.req.json();
+    const wallet = c.get("wallet");
+    const { signedXdr, splits } = body;
+
+    if (!signedXdr) {
+      return c.json({ error: "Missing required field: signedXdr" }, 400);
+    }
+
+    let txHash: string;
+    try {
+      ({ txHash } = await submitSignedTx(signedXdr));
+    } catch (stellarErr: any) {
+      logger.error({ err: stellarErr.message }, "Split submit rejected");
+      return c.json(
+        { error: "Transaction rejected: " + stellarErr.message },
+        400,
+      );
+    }
+
+    // Mirror the on-chain config to Postgres for fast reads.
+    if (Array.isArray(splits)) {
+      await mirrorSplitToDb(wallet, splits);
+    }
+
+    logger.info({ wallet, txHash }, "On-chain split configured");
+    return c.json({ ok: true, txHash });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "Split submit failed");
+    return c.json({ error: err.message || "Failed to submit split" }, 500);
   }
 });
 

@@ -60,8 +60,8 @@ Conduit has been scaled to production readiness with complete security checks, p
 
 | Contract | Contract ID | Explorer Link |
 |:---|:---|:---|
-| **Stream Router** (token-backed) | `CAJ7MVNYW5WEYVVHHPIGLLP726O3F3DV5RRSDG536QWO2XJGPVKEV57P` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAJ7MVNYW5WEYVVHHPIGLLP726O3F3DV5RRSDG536QWO2XJGPVKEV57P) |
-| **Rate Oracle** (authorized APY) | `CA6GAYOHCSN27U7E4HKU7G2BNDA4M7GSQY4VD6NBADP3ZNJY4XVK4SH5` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CA6GAYOHCSN27U7E4HKU7G2BNDA4M7GSQY4VD6NBADP3ZNJY4XVK4SH5) |
+| **Stream Router** (token-backed) | `CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCRCY3HA5JKQWH4KJEYHNKR7TUGG33WTQGW5SLQQ5QINOUIGYVR6PQFO) |
+| **Rate Oracle** (authorized APY) | `CCJ2625UWY2BJCFX7YR2M6VBGEKMTNYBBFLRVG6IPF7TVHVY7QPXMQFP` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCJ2625UWY2BJCFX7YR2M6VBGEKMTNYBBFLRVG6IPF7TVHVY7QPXMQFP) |
 | **Yield Asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC) |
 | **Compliance** | `CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6) |
 

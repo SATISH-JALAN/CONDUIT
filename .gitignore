@@ -32,10 +32,15 @@ server/drizzle/meta/
 # Docker
 docker-compose.override.yml
 
-# Project docs
-docs/
+# IDE workspace files
+*.code-workspace
 
 # Rust / Soroban contracts
 contracts/target/
 contracts/.soroban/
 contracts/**/*.wasm
+
+# Soroban deploy keys / secrets (never commit signing keys)
+contracts/.stellar/
+*.stellar-secret
+**/secret-key*.txt

@@ -1,8 +1,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, Address,
-    Env,
+    contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, token,
+    Address, Env,
 };
 
 const BPS_SCALE: i128 = 10_000;
@@ -20,6 +20,11 @@ pub struct Anchor {
 #[contracttype]
 #[derive(Clone)]
 pub enum DataKey {
+    /// One-time admin/operator that initializes the vault.
+    Admin,
+    /// Address of the yield asset (a Stellar Asset Contract / SAC token).
+    Token,
+    /// Per-wallet streaming anchor.
     Anchor(Address),
 }
 
@@ -31,6 +36,8 @@ pub enum StreamRouterError {
     ApyOutOfRange = 2,
     NoActivePosition = 3,
     AmountExceedsAvailableBalance = 4,
+    AlreadyInitialized = 5,
+    NotInitialized = 6,
 }
 
 #[contract]
@@ -50,6 +57,19 @@ fn save_anchor(env: &Env, wallet: &Address, anchor: &Anchor) {
     env.storage()
         .persistent()
         .set(&DataKey::Anchor(wallet.clone()), anchor);
+}
+
+fn load_token(env: &Env) -> Address {
+    match env.storage().instance().get(&DataKey::Token) {
+        Some(token) => token,
+        None => panic_with_error!(env, StreamRouterError::NotInitialized),
+    }
+}
+
+/// Token client for the configured yield asset, used to move real tokens
+/// between the user and this contract's own address.
+fn token_client(env: &Env) -> token::TokenClient<'_> {
+    token::TokenClient::new(env, &load_token(env))
 }
 
 fn accrued(anchor: &Anchor, ts: u64) -> i128 {
@@ -74,6 +94,22 @@ fn validate_apy(env: &Env, apy_bps: u32) {
 
 #[contractimpl]
 impl StreamRouterContract {
+    /// One-time setup: records the operator and the yield asset (SAC token)
+    /// the vault custodies. Must be called before any deposit.
+    pub fn initialize(env: Env, admin: Address, token: Address) {
+        if env.storage().instance().has(&DataKey::Admin) {
+            panic_with_error!(&env, StreamRouterError::AlreadyInitialized);
+        }
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::Token, &token);
+    }
+
+    /// The asset this vault custodies.
+    pub fn get_token(env: Env) -> Address {
+        load_token(&env)
+    }
+
     pub fn deposit(env: Env, wallet: Address, amount: i128, apy_bps: u32) -> Anchor {
         wallet.require_auth();
 
@@ -81,6 +117,10 @@ impl StreamRouterContract {
             panic_with_error!(&env, StreamRouterError::AmountMustBePositive);
         }
         validate_apy(&env, apy_bps);
+
+        // Real custody: pull `amount` of the yield asset from the user into the
+        // vault. This is the transfer that was missing — deposits now move tokens.
+        token_client(&env).transfer(&wallet, &env.current_contract_address(), &amount);
 
         let ts = now(&env);
         let key_wallet = wallet.clone();
@@ -134,6 +174,12 @@ impl StreamRouterContract {
         current.sync_ts = ts;
         save_anchor(&env, &wallet, &current);
 
+        // Real settlement: pay accrued yield out of the vault's reserve to the
+        // user. The vault must hold enough of the yield asset (seeded reserve).
+        if pending > 0 {
+            token_client(&env).transfer(&env.current_contract_address(), &wallet, &pending);
+        }
+
         env.events().publish(
             (symbol_short!("srt_v1"), symbol_short!("harvest"), wallet),
             (pending, ts),
@@ -164,6 +210,10 @@ impl StreamRouterContract {
         current.principal = total.saturating_sub(amount);
         current.sync_ts = ts;
         save_anchor(&env, &wallet, &current);
+
+        // Real settlement: return withdrawn principal (+ any harvested yield in
+        // the requested amount) from the vault to the user.
+        token_client(&env).transfer(&env.current_contract_address(), &wallet, &amount);
 
         env.events().publish(
             (symbol_short!("srt_v1"), symbol_short!("withdraw"), wallet),
@@ -203,98 +253,136 @@ impl StreamRouterContract {
 mod tests {
     use super::*;
     use soroban_sdk::testutils::{Address as _, Ledger};
+    use soroban_sdk::token::StellarAssetClient;
 
-    #[test]
-    fn accrual_increases_over_time() {
+    /// Test harness: deploys the vault + a fresh SAC token, funds a user and the
+    /// vault reserve, and returns clients for driving real token flows.
+    struct Harness<'a> {
+        env: Env,
+        client: StreamRouterContractClient<'a>,
+        token: token::TokenClient<'a>,
+        vault: Address,
+        wallet: Address,
+    }
+
+    fn setup<'a>() -> Harness<'a> {
         let env = Env::default();
         env.mock_all_auths();
 
-        let contract_id = env.register(StreamRouterContract, ());
-        let client = StreamRouterContractClient::new(&env, &contract_id);
+        let admin = Address::generate(&env);
         let wallet = Address::generate(&env);
 
-        env.ledger().with_mut(|ledger| {
-            ledger.timestamp = 1;
-        });
+        // Deploy a Stellar Asset Contract to act as the yield asset.
+        let sac = env.register_stellar_asset_contract_v2(admin.clone());
+        let token_address = sac.address();
+        let sac_admin = StellarAssetClient::new(&env, &token_address);
+        let token = token::TokenClient::new(&env, &token_address);
 
-        let deposited = client.deposit(&wallet, &100_000_000, &1000);
-        assert_eq!(deposited.principal, 100_000_000);
+        // Deploy + initialize the vault.
+        let contract_id = env.register(StreamRouterContract, ());
+        let client = StreamRouterContractClient::new(&env, &contract_id);
+        client.initialize(&admin, &token_address);
 
-        env.ledger().with_mut(|ledger| {
-            ledger.timestamp = 31_536_001;
-        });
+        // Fund the user (to deposit) and the vault reserve (to pay yield).
+        sac_admin.mint(&wallet, &1_000_000_000);
+        sac_admin.mint(&contract_id, &1_000_000_000);
 
-        let pending = client.get_accrued(&wallet);
-        assert_eq!(pending, 10_000_000);
+        Harness {
+            env,
+            client,
+            token,
+            vault: contract_id,
+            wallet,
+        }
     }
 
     #[test]
-    fn harvest_resets_pending_yield() {
-        let env = Env::default();
-        env.mock_all_auths();
+    fn deposit_moves_tokens_into_vault() {
+        let h = setup();
+        let user_before = h.token.balance(&h.wallet);
+        let vault_before = h.token.balance(&h.vault);
 
-        let contract_id = env.register(StreamRouterContract, ());
-        let client = StreamRouterContractClient::new(&env, &contract_id);
-        let wallet = Address::generate(&env);
+        h.env.ledger().with_mut(|l| l.timestamp = 1);
+        let anchor = h.client.deposit(&h.wallet, &100_000_000, &1000);
 
-        env.ledger().with_mut(|ledger| {
-            ledger.timestamp = 10;
-        });
+        assert_eq!(anchor.principal, 100_000_000);
+        // User balance decreased, vault balance increased by exactly the deposit.
+        assert_eq!(h.token.balance(&h.wallet), user_before - 100_000_000);
+        assert_eq!(h.token.balance(&h.vault), vault_before + 100_000_000);
+    }
 
-        client.deposit(&wallet, &50_000_000, &500);
+    #[test]
+    fn accrual_increases_over_time() {
+        let h = setup();
+        h.env.ledger().with_mut(|l| l.timestamp = 1);
+        h.client.deposit(&h.wallet, &100_000_000, &1000);
 
-        env.ledger().with_mut(|ledger| {
-            ledger.timestamp = 31_536_010;
-        });
+        h.env.ledger().with_mut(|l| l.timestamp = 31_536_001);
+        assert_eq!(h.client.get_accrued(&h.wallet), 10_000_000);
+    }
 
-        let harvested = client.harvest(&wallet);
+    #[test]
+    fn harvest_pays_real_tokens_and_resets_yield() {
+        let h = setup();
+        h.env.ledger().with_mut(|l| l.timestamp = 10);
+        h.client.deposit(&h.wallet, &50_000_000, &500);
+
+        let after_deposit = h.token.balance(&h.wallet);
+
+        h.env.ledger().with_mut(|l| l.timestamp = 31_536_010);
+        let harvested = h.client.harvest(&h.wallet);
         assert!(harvested > 0);
 
-        let pending_after = client.get_accrued(&wallet);
-        assert_eq!(pending_after, 0);
+        // The harvested yield actually landed in the user's wallet.
+        assert_eq!(h.token.balance(&h.wallet), after_deposit + harvested);
+        // Pending resets after harvest.
+        assert_eq!(h.client.get_accrued(&h.wallet), 0);
+    }
+
+    #[test]
+    fn withdraw_returns_tokens_to_user() {
+        let h = setup();
+        h.env.ledger().with_mut(|l| l.timestamp = 100);
+        h.client.deposit(&h.wallet, &10_000_000, &500);
+
+        let after_deposit = h.token.balance(&h.wallet);
+        h.client.withdraw(&h.wallet, &4_000_000);
+
+        assert_eq!(h.token.balance(&h.wallet), after_deposit + 4_000_000);
     }
 
     #[test]
     #[should_panic]
     fn deposit_rejects_zero_apy() {
-        let env = Env::default();
-        env.mock_all_auths();
-
-        let contract_id = env.register(StreamRouterContract, ());
-        let client = StreamRouterContractClient::new(&env, &contract_id);
-        let wallet = Address::generate(&env);
-
-        client.deposit(&wallet, &100_000, &0);
+        let h = setup();
+        h.client.deposit(&h.wallet, &100_000, &0);
     }
 
     #[test]
     #[should_panic]
     fn deposit_rejects_apy_above_limit() {
-        let env = Env::default();
-        env.mock_all_auths();
-
-        let contract_id = env.register(StreamRouterContract, ());
-        let client = StreamRouterContractClient::new(&env, &contract_id);
-        let wallet = Address::generate(&env);
-
-        client.deposit(&wallet, &100_000, &(MAX_APY_BPS + 1));
+        let h = setup();
+        h.client.deposit(&h.wallet, &100_000, &(MAX_APY_BPS + 1));
     }
 
     #[test]
     #[should_panic]
     fn withdraw_rejects_amount_above_total() {
+        let h = setup();
+        h.env.ledger().with_mut(|l| l.timestamp = 100);
+        h.client.deposit(&h.wallet, &1_000_000, &500);
+        h.client.withdraw(&h.wallet, &9_999_999);
+    }
+
+    #[test]
+    #[should_panic]
+    fn deposit_before_initialize_fails() {
         let env = Env::default();
         env.mock_all_auths();
-
         let contract_id = env.register(StreamRouterContract, ());
         let client = StreamRouterContractClient::new(&env, &contract_id);
         let wallet = Address::generate(&env);
-
-        env.ledger().with_mut(|ledger| {
-            ledger.timestamp = 100;
-        });
-        client.deposit(&wallet, &1_000_000, &500);
-
-        client.withdraw(&wallet, &9_999_999);
+        // No initialize(), no token configured → NotInitialized.
+        client.deposit(&wallet, &100_000, &500);
     }
 }

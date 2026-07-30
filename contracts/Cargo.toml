@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "compliance",
+  "cond_executor",
   "rate_oracle",
   "stream_router",
   "yield_nft",

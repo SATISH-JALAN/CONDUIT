@@ -12,6 +12,13 @@ import { condDecisions, mandates, positions, users } from "../db/schema.js";
 import { logger } from "../shared/logger.js";
 import { submitCondAction, runCondEvaluateForWallet } from "../shared/condEvaluate.js";
 import { condProposals } from "../db/schema.js";
+import {
+  isCondExecutorEnabled,
+  buildSetMandateTx,
+  buildKillSwitchTx,
+  executeCondAction,
+  submitSignedTx,
+} from "../shared/stellar.js";
 
 const app = new Hono();
 
@@ -432,6 +439,96 @@ app.post("/chat", zValidator("json", agentChatSchema), async (c) => {
     return c.json(
       { error: err.message || "Failed to process agent chat" },
       500,
+    );
+  }
+});
+
+// ── On-chain COND: bounded mandate + auditable execution ─────────────────────
+
+// POST /api/agent/mandate/build — user sets on-chain APY bounds (min/max bps).
+app.post("/mandate/build", authMiddleware, async (c) => {
+  try {
+    if (!isCondExecutorEnabled()) {
+      return c.json({ error: "On-chain COND executor is not enabled" }, 400);
+    }
+    const wallet = c.get("wallet");
+    const { min_apy_bps, max_apy_bps } = await c.req.json();
+    if (min_apy_bps === undefined || max_apy_bps === undefined) {
+      return c.json(
+        { error: "Missing required fields: min_apy_bps, max_apy_bps" },
+        400,
+      );
+    }
+    const { xdr, networkPassphrase } = await buildSetMandateTx(
+      wallet,
+      Number(min_apy_bps),
+      Number(max_apy_bps),
+    );
+    return c.json({ xdr, networkPassphrase });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "Mandate build failed");
+    return c.json({ error: err.message || "Failed to build mandate" }, 500);
+  }
+});
+
+// POST /api/agent/kill-switch/build — user pauses/resumes agent activity on-chain.
+app.post("/kill-switch/build", authMiddleware, async (c) => {
+  try {
+    if (!isCondExecutorEnabled()) {
+      return c.json({ error: "On-chain COND executor is not enabled" }, 400);
+    }
+    const wallet = c.get("wallet");
+    const { engaged } = await c.req.json();
+    const { xdr, networkPassphrase } = await buildKillSwitchTx(
+      wallet,
+      Boolean(engaged),
+    );
+    return c.json({ xdr, networkPassphrase });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "Kill-switch build failed");
+    return c.json({ error: err.message || "Failed to build kill switch" }, 500);
+  }
+});
+
+// POST /api/agent/onchain/submit — submit a signed mandate/kill-switch tx.
+app.post("/onchain/submit", authMiddleware, async (c) => {
+  try {
+    const { signedXdr } = await c.req.json();
+    if (!signedXdr) {
+      return c.json({ error: "Missing required field: signedXdr" }, 400);
+    }
+    const { txHash } = await submitSignedTx(signedXdr);
+    return c.json({ ok: true, txHash });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "Agent on-chain submit failed");
+    return c.json({ error: "Transaction rejected: " + err.message }, 400);
+  }
+});
+
+// POST /api/agent/execute — operator executes a mandate-checked action on-chain
+// for the caller. Reverts on-chain if outside mandate or kill switch is engaged.
+app.post("/execute", authMiddleware, async (c) => {
+  try {
+    if (!isCondExecutorEnabled()) {
+      return c.json({ error: "On-chain COND executor is not enabled" }, 400);
+    }
+    const wallet = c.get("wallet");
+    const { box_id, reason, confidence } = await c.req.json();
+    if (!box_id) {
+      return c.json({ error: "Missing required field: box_id" }, 400);
+    }
+    const { txHash } = await executeCondAction(
+      wallet,
+      box_id,
+      reason ?? "agent action",
+      Number(confidence ?? 0),
+    );
+    return c.json({ ok: true, txHash });
+  } catch (err: any) {
+    logger.error({ err: err.message }, "On-chain COND execute failed");
+    return c.json(
+      { error: err.message || "Execution rejected (mandate / kill switch)" },
+      400,
     );
   }
 });

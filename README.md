@@ -60,9 +60,10 @@ Conduit has been scaled to production readiness with complete security checks, p
 
 | Contract | Contract ID | Explorer Link |
 |:---|:---|:---|
-| **Stream Router** (token-backed) | `CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6) |
-| **Rate Oracle** (authorized APY) | `CBM6WE3EWRWEBCV6WM7HC7HLKRM7DRJWA3XLKMJGFV26PRSZOOYCQSJS` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBM6WE3EWRWEBCV6WM7HC7HLKRM7DRJWA3XLKMJGFV26PRSZOOYCQSJS) |
-| **Yield NFT** (tokenized future yield) | `CB3S6CXTWJA6ECA5SCSZONOHJW5QJRHO467Q5EWG7NQUSS5UGJBSWWWI` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CB3S6CXTWJA6ECA5SCSZONOHJW5QJRHO467Q5EWG7NQUSS5UGJBSWWWI) |
+| **Stream Router** (token-backed) | `CBU6UNNYGCXLNQ2LOD6BLZCKRIRT327N2DJKTOFSFAUHKNKADPNDS73O` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBU6UNNYGCXLNQ2LOD6BLZCKRIRT327N2DJKTOFSFAUHKNKADPNDS73O) |
+| **Rate Oracle** (authorized APY) | `CBNILPZZ67LKO6NLOPTAUFHUHI5M42FLBS3OAELZQICD3B6XPMN26MXH` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBNILPZZ67LKO6NLOPTAUFHUHI5M42FLBS3OAELZQICD3B6XPMN26MXH) |
+| **Yield NFT** (tokenized future yield) | `CBIJSJ2Y4RBJFP2UZ47WR63RGGO2SACZQ3MBO4ORR5AG3QM7IVHNN5PV` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBIJSJ2Y4RBJFP2UZ47WR63RGGO2SACZQ3MBO4ORR5AG3QM7IVHNN5PV) |
+| **COND Executor** (bounded AI agent) | `CDR4OZ5HFY47NLUNU27NW3OZ6PBIHW3MXR3HZXOWOFIT22BEHOBNUQXF` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDR4OZ5HFY47NLUNU27NW3OZ6PBIHW3MXR3HZXOWOFIT22BEHOBNUQXF) |
 | **Yield Asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC) |
 | **Compliance** | `CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6) |
 

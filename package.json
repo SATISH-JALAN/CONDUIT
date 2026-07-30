@@ -13,6 +13,7 @@
     "faucet": "bash scripts/faucet.sh",
     "proof:e2e": "bash scripts/proof-e2e.sh",
     "proof:split": "bash scripts/proof-split.sh",
-    "proof:nft": "bash scripts/proof-nft.sh"
+    "proof:nft": "bash scripts/proof-nft.sh",
+    "proof:cond": "bash scripts/proof-cond.sh"
   }
 }

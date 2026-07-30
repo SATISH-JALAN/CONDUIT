@@ -78,6 +78,7 @@ pnpm faucet               # generate + fund a fresh identity
 | `scripts/proof-e2e.sh` | Real on-chain deposit/harvest proof |
 | `scripts/proof-split.sh` | Trustless on-chain yield-splitting proof |
 | `scripts/proof-nft.sh` | Tokenized yield NFT mint/transfer/redeem proof |
+| `scripts/proof-cond.sh` | Bounded on-chain COND agent execution proof |
 | `scripts/faucet.sh` | Fund testnet wallets with the yield asset |
 | `.env.deploy` | Generated env block (gitignored) |
 
@@ -119,12 +120,13 @@ The token-backed, oracle-priced protocol is live on Stellar testnet:
 
 | Item | Value |
 |:---|:---|
-| **stream_router** | `CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6` |
-| **rate_oracle** | `CBM6WE3EWRWEBCV6WM7HC7HLKRM7DRJWA3XLKMJGFV26PRSZOOYCQSJS` |
-| **yield_nft** | `CB3S6CXTWJA6ECA5SCSZONOHJW5QJRHO467Q5EWG7NQUSS5UGJBSWWWI` |
+| **stream_router** | `CBU6UNNYGCXLNQ2LOD6BLZCKRIRT327N2DJKTOFSFAUHKNKADPNDS73O` |
+| **rate_oracle** | `CBNILPZZ67LKO6NLOPTAUFHUHI5M42FLBS3OAELZQICD3B6XPMN26MXH` |
+| **yield_nft** | `CBIJSJ2Y4RBJFP2UZ47WR63RGGO2SACZQ3MBO4ORR5AG3QM7IVHNN5PV` |
+| **cond_executor** | `CDR4OZ5HFY47NLUNU27NW3OZ6PBIHW3MXR3HZXOWOFIT22BEHOBNUQXF` |
 | **Yield asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
 | **Operator/admin** | `GALAHKCLSOZZRVVEU64UUUXZGDMYXVXJV2LMO4DXFQ7M7JCZE2TOJM6H` |
-| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CAVEU4LV3YYPD7QHGZVHP426TY7LEWNJVSEQ5QQD7IL6A6KSKZEMZHR6) |
+| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CBU6UNNYGCXLNQ2LOD6BLZCKRIRT327N2DJKTOFSFAUHKNKADPNDS73O) |
 
 ### Proofs (run against the deployed instance)
 
@@ -141,7 +143,12 @@ Two scripts produce verifiable on-chain transactions:
   (locking principal, term APY from the oracle), transfers it to a second holder,
   then after maturity the holder redeems it for principal + term yield and the NFT is
   burned — all real on-chain token movements.
+- **`pnpm proof:cond`** — bounded on-chain agent execution. A user sets a mandate +
+  kill switch on-chain; the operator can reprice the position **only** within those
+  bounds (emitting a chain-of-thought event), and execution **reverts** when the kill
+  switch is engaged or the box rate is outside the mandate.
 
 This confirms Conduit is no longer a simulation: deposits custody real tokens, the
 APY is authorized on-chain by the oracle, harvest settles real yield, split routing
-is enforced by the contract, and future yield is a real transferable NFT.
+is enforced by the contract, future yield is a real transferable NFT, and the AI
+agent's actions are bounded and audited on-chain by each user's mandate.

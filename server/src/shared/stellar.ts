@@ -16,6 +16,7 @@ const SOROBAN_RPC_ALLOW_HTTP =
 const STREAM_ROUTER_CONTRACT_ID = process.env.STREAM_ROUTER_CONTRACT_ID;
 const RATE_ORACLE_CONTRACT_ID = process.env.RATE_ORACLE_CONTRACT_ID;
 const YIELD_NFT_CONTRACT_ID = process.env.YIELD_NFT_CONTRACT_ID;
+const COND_EXECUTOR_CONTRACT_ID = process.env.COND_EXECUTOR_CONTRACT_ID;
 const COMPLIANCE_CONTRACT_ID = process.env.COMPLIANCE_CONTRACT_ID;
 // Secret key of the oracle admin / operator. Only the keeper (server-side) uses
 // it to sign authorized rate writes — never exposed to clients.
@@ -491,6 +492,101 @@ export async function setOracleRate(
         "set_rate",
         StellarSdk.nativeToScVal(boxId, { type: "string" }),
         StellarSdk.nativeToScVal(apyBps, { type: "u32" }),
+      ),
+    )
+    .setTimeout(120)
+    .build();
+
+  const prepared = await sorobanRpc.prepareTransaction(tx);
+  prepared.sign(operator);
+  return submitSorobanTx(prepared);
+}
+
+export function isCondExecutorEnabled(): boolean {
+  return !!(SOROBAN_ENABLED && COND_EXECUTOR_CONTRACT_ID);
+}
+
+/** Build an unsigned cond_executor invocation (prepared via RPC). */
+async function buildCondInvokeTx(
+  sourceWallet: string,
+  method: string,
+  args: StellarSdk.xdr.ScVal[],
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  if (!COND_EXECUTOR_CONTRACT_ID) {
+    throw new Error("COND_EXECUTOR_CONTRACT_ID is not configured");
+  }
+  const source = await loadOrFundSource(sourceWallet);
+  const contract = new StellarSdk.Contract(COND_EXECUTOR_CONTRACT_ID);
+  const tx = new StellarSdk.TransactionBuilder(source, {
+    fee: SOROBAN_INCLUSION_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(120)
+    .build();
+  const prepared = await sorobanRpc.prepareTransaction(tx);
+  return { xdr: prepared.toXDR(), networkPassphrase: NETWORK_PASSPHRASE };
+}
+
+/** Build an unsigned set_mandate tx (user sets their on-chain APY bounds). */
+export async function buildSetMandateTx(
+  sourceWallet: string,
+  minApyBps: number,
+  maxApyBps: number,
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  const args = [
+    StellarSdk.Address.fromString(sourceWallet).toScVal(),
+    StellarSdk.nativeToScVal(minApyBps, { type: "u32" }),
+    StellarSdk.nativeToScVal(maxApyBps, { type: "u32" }),
+  ];
+  return buildCondInvokeTx(sourceWallet, "set_mandate", args);
+}
+
+/** Build an unsigned set_kill_switch tx (user pauses/resumes agent activity). */
+export async function buildKillSwitchTx(
+  sourceWallet: string,
+  engaged: boolean,
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  const args = [
+    StellarSdk.Address.fromString(sourceWallet).toScVal(),
+    StellarSdk.nativeToScVal(engaged), // boolean → scvBool
+  ];
+  return buildCondInvokeTx(sourceWallet, "set_kill_switch", args);
+}
+
+/**
+ * Operator-signed: execute a bounded agent action for a wallet. Reverts on-chain
+ * if the box's oracle rate is outside the wallet's mandate or the kill switch is
+ * engaged. Emits a chain-of-thought event and reprices via the stream router.
+ */
+export async function executeCondAction(
+  wallet: string,
+  boxId: string,
+  reason: string,
+  confidence: number,
+): Promise<{ txHash: string }> {
+  if (!COND_EXECUTOR_CONTRACT_ID) {
+    throw new Error("COND_EXECUTOR_CONTRACT_ID is not configured");
+  }
+  if (!STELLAR_OPERATIONAL_SECRET) {
+    throw new Error("STELLAR_OPERATIONAL_SECRET is not configured");
+  }
+
+  const operator = StellarSdk.Keypair.fromSecret(STELLAR_OPERATIONAL_SECRET);
+  const source = await sorobanRpc.getAccount(operator.publicKey());
+  const contract = new StellarSdk.Contract(COND_EXECUTOR_CONTRACT_ID);
+
+  const tx = new StellarSdk.TransactionBuilder(source, {
+    fee: SOROBAN_INCLUSION_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "execute_action",
+        StellarSdk.Address.fromString(wallet).toScVal(),
+        StellarSdk.nativeToScVal(boxId, { type: "string" }),
+        StellarSdk.nativeToScVal(reason, { type: "string" }),
+        StellarSdk.nativeToScVal(confidence, { type: "u32" }),
       ),
     )
     .setTimeout(120)

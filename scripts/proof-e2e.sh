@@ -20,8 +20,8 @@ cd "$ROOT_DIR"
 
 NETWORK="${STELLAR_NETWORK:-testnet}"
 DEPOSIT_XLM="${DEPOSIT_XLM:-25}"
-APY_BPS="${APY_BPS:-500}"
-ACCRUE_WAIT="${ACCRUE_WAIT:-20}"   # seconds to let yield accrue before harvest
+BOX_ID="${BOX_ID:-us-treasury-10y}"   # rate is set on-chain by the oracle
+ACCRUE_WAIT="${ACCRUE_WAIT:-20}"      # seconds to let yield accrue before harvest
 
 # Load deployment output if present.
 if [ -f .env.deploy ]; then
@@ -67,10 +67,10 @@ sleep 5
 echo "  user balance before : $(balance "$USER_ADDR") base units"
 echo "  vault balance before: $(balance "$CONTRACT") base units"
 
-# ── Deposit (moves real tokens into the vault) ───────────────────────────────
-say "deposit($DEPOSIT_XLM XLM @ ${APY_BPS}bps) — tokens move user → vault"
+# ── Deposit (moves real tokens into the vault; APY read from oracle) ──────────
+say "deposit($DEPOSIT_XLM XLM into '$BOX_ID') — tokens move user → vault, APY from oracle"
 stellar contract invoke --id "$CONTRACT" --source "$USER_ID" "${NET[@]}" -- \
-  deposit --wallet "$USER_ADDR" --amount "$DEPOSIT_STROOPS" --apy_bps "$APY_BPS"
+  deposit --wallet "$USER_ADDR" --amount "$DEPOSIT_STROOPS" --box_id "$BOX_ID"
 
 echo "  user balance after deposit : $(balance "$USER_ADDR") base units"
 echo "  vault balance after deposit: $(balance "$CONTRACT") base units"

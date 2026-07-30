@@ -265,6 +265,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "conduit-rate-oracle"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "conduit-stream-router"
 version = "0.1.0"
 dependencies = [

@@ -65,12 +65,14 @@ if [ "$NETWORK" != "mainnet" ]; then
 fi
 echo "  admin/operator: $ADMIN"
 
-# ── 2. Build contract ────────────────────────────────────────────────────────
-say "Building $PACKAGE to wasm"
-stellar contract build --manifest-path "$MANIFEST" --package "$PACKAGE"
+# ── 2. Build contracts ───────────────────────────────────────────────────────
+say "Building contracts to wasm"
+stellar contract build --manifest-path "$MANIFEST"
 WASM="contracts/target/wasm32v1-none/release/conduit_stream_router.wasm"
+ORACLE_WASM="contracts/target/wasm32v1-none/release/conduit_rate_oracle.wasm"
 [ -f "$WASM" ] || { echo "ERROR: wasm not found at $WASM" >&2; exit 1; }
-ok "Built $WASM"
+[ -f "$ORACLE_WASM" ] || { echo "ERROR: wasm not found at $ORACLE_WASM" >&2; exit 1; }
+ok "Built stream_router + rate_oracle wasm"
 
 # ── 3. Resolve yield asset SAC ───────────────────────────────────────────────
 say "Resolving yield asset SAC ($YIELD_ASSET)"
@@ -80,17 +82,44 @@ stellar contract asset deploy --asset "$YIELD_ASSET" \
 TOKEN_ID="$(stellar contract id asset --asset "$YIELD_ASSET" "${NET[@]}")"
 ok "Yield asset SAC: $TOKEN_ID"
 
+# ── 3b. Deploy + initialize rate oracle, seed box rates ──────────────────────
+say "Deploying rate_oracle"
+ORACLE_ID="$(stellar contract deploy --wasm "$ORACLE_WASM" \
+  --source "$IDENTITY" "${NET[@]}")"
+ok "Deployed rate_oracle: $ORACLE_ID"
+
+stellar contract invoke --id "$ORACLE_ID" \
+  --source "$IDENTITY" "${NET[@]}" -- \
+  initialize --admin "$ADMIN"
+ok "rate_oracle initialized"
+
+say "Seeding box rates (bps) from the initial strategy set"
+# box_id:apy_bps — Commit 5's keeper will take over live rate updates.
+BOX_RATES=(
+  "us-treasury-10y:420" "corporate-bond-a:650" "emerging-market-b:1200"
+  "green-energy-fund:780" "tech-growth-bond:1550" "german-bund-2027:384"
+  "ondo-usdy:510" "benji-franklin:450"
+)
+for entry in "${BOX_RATES[@]}"; do
+  bid="${entry%%:*}"; bps="${entry##*:}"
+  stellar contract invoke --id "$ORACLE_ID" \
+    --source "$IDENTITY" "${NET[@]}" -- \
+    set_rate --box_id "$bid" --apy_bps "$bps" >/dev/null
+  echo "  $bid → ${bps}bps"
+done
+ok "Seeded ${#BOX_RATES[@]} box rates"
+
 # ── 4. Deploy + initialize stream_router ─────────────────────────────────────
 say "Deploying stream_router"
 CONTRACT_ID="$(stellar contract deploy --wasm "$WASM" \
   --source "$IDENTITY" "${NET[@]}")"
 ok "Deployed stream_router: $CONTRACT_ID"
 
-say "Initializing vault (admin + yield asset)"
+say "Initializing vault (admin + yield asset + oracle)"
 stellar contract invoke --id "$CONTRACT_ID" \
   --source "$IDENTITY" "${NET[@]}" -- \
-  initialize --admin "$ADMIN" --token "$TOKEN_ID"
-ok "initialize(admin=$ADMIN, token=$TOKEN_ID)"
+  initialize --admin "$ADMIN" --token "$TOKEN_ID" --oracle "$ORACLE_ID"
+ok "initialize(admin=$ADMIN, token=$TOKEN_ID, oracle=$ORACLE_ID)"
 
 # ── 5. Seed the yield reserve ────────────────────────────────────────────────
 # stroops = XLM * 10^7. Move reserve from the operator into the vault's token
@@ -111,6 +140,7 @@ STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
 SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
 STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
 STREAM_ROUTER_CONTRACT_ID=$CONTRACT_ID
+RATE_ORACLE_CONTRACT_ID=$ORACLE_ID
 YIELD_ASSET_ID=$TOKEN_ID
 YIELD_ASSET_DECIMALS=7
 STELLAR_OPERATIONAL_ADDRESS=$ADMIN
@@ -118,6 +148,7 @@ EOF
 
 say "Done — deployment summary"
 echo "  stream_router : $CONTRACT_ID"
+echo "  rate_oracle   : $ORACLE_ID"
 echo "  yield asset   : $TOKEN_ID ($YIELD_ASSET)"
 echo "  operator      : $ADMIN"
 echo "  reserve       : ${RESERVE_XLM} XLM"

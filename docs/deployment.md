@@ -79,25 +79,35 @@ pnpm faucet               # generate + fund a fresh identity
 | `scripts/faucet.sh` | Fund testnet wallets with the yield asset |
 | `.env.deploy` | Generated env block (gitignored) |
 
+## Rate oracle (authorized APY)
+
+APY is no longer chosen by the depositor. The `rate_oracle` contract stores the
+authorized APY (bps) per box, writable only by the oracle admin. At deposit time
+`stream_router` reads the rate via a cross-contract call keyed by `box_id`, so a
+user cannot pick their own yield rate. `deploy-testnet.sh` seeds the initial box
+rates; the keeper (next phase) takes over live updates.
+
 ## Deployed instance (testnet)
 
-The token-backed `stream_router` is live on Stellar testnet:
+The token-backed, oracle-priced protocol is live on Stellar testnet:
 
 | Item | Value |
 |:---|:---|
-| **stream_router** | `CDDSBISHIOODZHKMY5245WPH6UMVV3TYBUSYSPUCRYSBHZYGRQWNBHXD` |
+| **stream_router** | `CAJ7MVNYW5WEYVVHHPIGLLP726O3F3DV5RRSDG536QWO2XJGPVKEV57P` |
+| **rate_oracle** | `CA6GAYOHCSN27U7E4HKU7G2BNDA4M7GSQY4VD6NBADP3ZNJY4XVK4SH5` |
 | **Yield asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
 | **Operator/admin** | `GALAHKCLSOZZRVVEU64UUUXZGDMYXVXJV2LMO4DXFQ7M7JCZE2TOJM6H` |
-| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CDDSBISHIOODZHKMY5245WPH6UMVV3TYBUSYSPUCRYSBHZYGRQWNBHXD) |
+| Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CAJ7MVNYW5WEYVVHHPIGLLP726O3F3DV5RRSDG536QWO2XJGPVKEV57P) |
 
-### End-to-end proof (real on-chain token movement)
+### End-to-end proof (real on-chain token movement + oracle-sourced APY)
 
-Running `pnpm proof:e2e` produced verifiable transactions where tokens actually moved:
+Running `pnpm proof:e2e` produced verifiable transactions. The deposit passed **no
+APY** — the contract read `420` bps from the oracle for `us-treasury-10y`:
 
 | Action | Effect | Tx |
 |:---|:---|:---|
-| deposit 25 XLM | user → vault `250000000` base units; vault balance +25 XLM | [`105e3ebd…`](https://stellar.expert/explorer/testnet/tx/105e3ebd8efea1385c217d19102e02c6a51bfb47bcdc42088f4f81b239f884ce) |
-| harvest | vault → user accrued yield; balances update on-chain | [`a2265159…`](https://stellar.expert/explorer/testnet/tx/a226515914431e708522a108c3dfc3e9064dccf057b294d1781955754f5f9c38) |
+| deposit 25 XLM into `us-treasury-10y` | user → vault `250000000`; anchor `apy_bps=420` **from oracle** | [`e27fc18e…`](https://stellar.expert/explorer/testnet/tx/e27fc18ef05f5a6be20f079ffc680a4d6098e3557a60105d1631abd668275e66) |
+| harvest | vault → user accrued yield; balances update on-chain | [`bbb29513…`](https://stellar.expert/explorer/testnet/tx/bbb29513b94dc333c8d7a646b384553ddbb2d65f139bb6e0cfce952dd5252c5b) |
 
-This confirms Conduit is no longer a simulation: deposits custody real tokens and
-harvest settles real yield from the vault reserve.
+This confirms Conduit is no longer a simulation: deposits custody real tokens,
+the APY is authorized on-chain by the oracle, and harvest settles real yield.

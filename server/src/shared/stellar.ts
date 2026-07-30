@@ -133,24 +133,21 @@ async function buildStreamRouterInvokeTx(
  * The user signs this client-side with Freighter, then sends back the signed XDR.
  *
  * When a stream_router contract is deployed (SOROBAN_ENABLED + contract id) this
- * invokes `deposit(wallet, amount, apy_bps)` so tokens actually move into the
- * vault. Otherwise it falls back to a native payment for local dev.
+ * invokes `deposit(wallet, amount, box_id)` so tokens actually move into the
+ * vault. The APY is read on-chain from the rate oracle keyed by box_id — the
+ * caller cannot choose it. Otherwise it falls back to a native payment for dev.
  */
 export async function buildDepositTx(
   sourceWallet: string,
   amount: number,
   boxId: string,
-  apyBps?: number,
 ): Promise<{ xdr: string; networkPassphrase: string }> {
   // Real path: invoke stream_router.deposit so tokens move into the vault.
   if (STREAM_ROUTER_INVOKE_ENABLED) {
-    if (apyBps === undefined || apyBps <= 0) {
-      throw new Error("apyBps is required for on-chain deposit");
-    }
     const args = [
       StellarSdk.Address.fromString(sourceWallet).toScVal(),
       toI128ScVal(amount),
-      StellarSdk.nativeToScVal(apyBps, { type: "u32" }),
+      StellarSdk.nativeToScVal(boxId, { type: "string" }),
     ];
     return buildStreamRouterInvokeTx(sourceWallet, "deposit", args);
   }

@@ -2,7 +2,7 @@
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, token,
-    Address, Env,
+    Address, Env, IntoVal, String, Val, Vec,
 };
 
 const BPS_SCALE: i128 = 10_000;
@@ -24,6 +24,8 @@ pub enum DataKey {
     Admin,
     /// Address of the yield asset (a Stellar Asset Contract / SAC token).
     Token,
+    /// Address of the rate oracle that authorizes per-box APYs.
+    Oracle,
     /// Per-wallet streaming anchor.
     Anchor(Address),
 }
@@ -59,9 +61,23 @@ fn save_anchor(env: &Env, wallet: &Address, anchor: &Anchor) {
         .set(&DataKey::Anchor(wallet.clone()), anchor);
 }
 
+fn load_admin(env: &Env) -> Address {
+    match env.storage().instance().get(&DataKey::Admin) {
+        Some(admin) => admin,
+        None => panic_with_error!(env, StreamRouterError::NotInitialized),
+    }
+}
+
 fn load_token(env: &Env) -> Address {
     match env.storage().instance().get(&DataKey::Token) {
         Some(token) => token,
+        None => panic_with_error!(env, StreamRouterError::NotInitialized),
+    }
+}
+
+fn load_oracle(env: &Env) -> Address {
+    match env.storage().instance().get(&DataKey::Oracle) {
+        Some(oracle) => oracle,
         None => panic_with_error!(env, StreamRouterError::NotInitialized),
     }
 }
@@ -70,6 +86,14 @@ fn load_token(env: &Env) -> Address {
 /// between the user and this contract's own address.
 fn token_client(env: &Env) -> token::TokenClient<'_> {
     token::TokenClient::new(env, &load_token(env))
+}
+
+/// Fetch the authorized APY (bps) for a box from the rate oracle via a
+/// cross-contract call. The rate can no longer be supplied by the depositor.
+fn fetch_rate(env: &Env, box_id: &String) -> u32 {
+    let oracle = load_oracle(env);
+    let args: Vec<Val> = (box_id.clone(),).into_val(env);
+    env.invoke_contract::<u32>(&oracle, &symbol_short!("get_rate"), args)
 }
 
 fn accrued(anchor: &Anchor, ts: u64) -> i128 {
@@ -94,15 +118,16 @@ fn validate_apy(env: &Env, apy_bps: u32) {
 
 #[contractimpl]
 impl StreamRouterContract {
-    /// One-time setup: records the operator and the yield asset (SAC token)
-    /// the vault custodies. Must be called before any deposit.
-    pub fn initialize(env: Env, admin: Address, token: Address) {
+    /// One-time setup: records the operator, the yield asset (SAC token) the
+    /// vault custodies, and the rate oracle that authorizes per-box APYs.
+    pub fn initialize(env: Env, admin: Address, token: Address, oracle: Address) {
         if env.storage().instance().has(&DataKey::Admin) {
             panic_with_error!(&env, StreamRouterError::AlreadyInitialized);
         }
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Token, &token);
+        env.storage().instance().set(&DataKey::Oracle, &oracle);
     }
 
     /// The asset this vault custodies.
@@ -110,12 +135,22 @@ impl StreamRouterContract {
         load_token(&env)
     }
 
-    pub fn deposit(env: Env, wallet: Address, amount: i128, apy_bps: u32) -> Anchor {
+    /// The rate oracle this vault reads APYs from.
+    pub fn get_oracle(env: Env) -> Address {
+        load_oracle(&env)
+    }
+
+    /// Deposit into the box identified by `box_id`. The APY is read from the
+    /// oracle — the depositor cannot choose their own rate.
+    pub fn deposit(env: Env, wallet: Address, amount: i128, box_id: String) -> Anchor {
         wallet.require_auth();
 
         if amount <= 0 {
             panic_with_error!(&env, StreamRouterError::AmountMustBePositive);
         }
+
+        // Authorized rate comes from the oracle, not the caller.
+        let apy_bps = fetch_rate(&env, &box_id);
         validate_apy(&env, apy_bps);
 
         // Real custody: pull `amount` of the yield asset from the user into the
@@ -223,9 +258,14 @@ impl StreamRouterContract {
         current
     }
 
-    pub fn update_apy(env: Env, wallet: Address, new_bps: u32) -> Anchor {
-        wallet.require_auth();
+    /// Re-price a position to the box's current oracle rate, settling accrued
+    /// yield into principal first. Operator/keeper only — this is how oracle
+    /// rate changes propagate to open positions. The depositor cannot call it.
+    pub fn sync_apy(env: Env, wallet: Address, box_id: String) -> Anchor {
+        let admin = load_admin(&env);
+        admin.require_auth();
 
+        let new_bps = fetch_rate(&env, &box_id);
         validate_apy(&env, new_bps);
 
         let ts = now(&env);
@@ -254,15 +294,36 @@ mod tests {
     use super::*;
     use soroban_sdk::testutils::{Address as _, Ledger};
     use soroban_sdk::token::StellarAssetClient;
+    use soroban_sdk::{contract, contractimpl};
 
-    /// Test harness: deploys the vault + a fresh SAC token, funds a user and the
-    /// vault reserve, and returns clients for driving real token flows.
+    // Minimal in-test oracle returning a fixed rate, so the stream_router tests
+    // can exercise the cross-contract read without depending on the oracle crate.
+    #[contract]
+    pub struct MockOracle;
+    #[contractimpl]
+    impl MockOracle {
+        pub fn get_rate(_env: Env, _box_id: String) -> u32 {
+            500
+        }
+    }
+
+    // Oracle returning an invalid (zero) rate, to prove defense-in-depth.
+    #[contract]
+    pub struct ZeroOracle;
+    #[contractimpl]
+    impl ZeroOracle {
+        pub fn get_rate(_env: Env, _box_id: String) -> u32 {
+            0
+        }
+    }
+
     struct Harness<'a> {
         env: Env,
         client: StreamRouterContractClient<'a>,
         token: token::TokenClient<'a>,
         vault: Address,
         wallet: Address,
+        box_id: String,
     }
 
     fn setup<'a>() -> Harness<'a> {
@@ -271,21 +332,21 @@ mod tests {
 
         let admin = Address::generate(&env);
         let wallet = Address::generate(&env);
+        let oracle = env.register(MockOracle, ());
 
-        // Deploy a Stellar Asset Contract to act as the yield asset.
         let sac = env.register_stellar_asset_contract_v2(admin.clone());
         let token_address = sac.address();
         let sac_admin = StellarAssetClient::new(&env, &token_address);
         let token = token::TokenClient::new(&env, &token_address);
 
-        // Deploy + initialize the vault.
         let contract_id = env.register(StreamRouterContract, ());
         let client = StreamRouterContractClient::new(&env, &contract_id);
-        client.initialize(&admin, &token_address);
+        client.initialize(&admin, &token_address, &oracle);
 
-        // Fund the user (to deposit) and the vault reserve (to pay yield).
         sac_admin.mint(&wallet, &1_000_000_000);
         sac_admin.mint(&contract_id, &1_000_000_000);
+
+        let box_id = String::from_str(&env, "us-treasury-10y");
 
         Harness {
             env,
@@ -293,7 +354,17 @@ mod tests {
             token,
             vault: contract_id,
             wallet,
+            box_id,
         }
+    }
+
+    #[test]
+    fn deposit_uses_oracle_rate_not_caller() {
+        let h = setup();
+        h.env.ledger().with_mut(|l| l.timestamp = 1);
+        let anchor = h.client.deposit(&h.wallet, &100_000_000, &h.box_id);
+        // Rate came from the oracle (500), regardless of any caller preference.
+        assert_eq!(anchor.apy_bps, 500);
     }
 
     #[test]
@@ -303,10 +374,9 @@ mod tests {
         let vault_before = h.token.balance(&h.vault);
 
         h.env.ledger().with_mut(|l| l.timestamp = 1);
-        let anchor = h.client.deposit(&h.wallet, &100_000_000, &1000);
+        let anchor = h.client.deposit(&h.wallet, &100_000_000, &h.box_id);
 
         assert_eq!(anchor.principal, 100_000_000);
-        // User balance decreased, vault balance increased by exactly the deposit.
         assert_eq!(h.token.balance(&h.wallet), user_before - 100_000_000);
         assert_eq!(h.token.balance(&h.vault), vault_before + 100_000_000);
     }
@@ -315,17 +385,18 @@ mod tests {
     fn accrual_increases_over_time() {
         let h = setup();
         h.env.ledger().with_mut(|l| l.timestamp = 1);
-        h.client.deposit(&h.wallet, &100_000_000, &1000);
+        h.client.deposit(&h.wallet, &100_000_000, &h.box_id);
 
         h.env.ledger().with_mut(|l| l.timestamp = 31_536_001);
-        assert_eq!(h.client.get_accrued(&h.wallet), 10_000_000);
+        // 100_000_000 @ 500 bps for one year = 5_000_000.
+        assert_eq!(h.client.get_accrued(&h.wallet), 5_000_000);
     }
 
     #[test]
     fn harvest_pays_real_tokens_and_resets_yield() {
         let h = setup();
         h.env.ledger().with_mut(|l| l.timestamp = 10);
-        h.client.deposit(&h.wallet, &50_000_000, &500);
+        h.client.deposit(&h.wallet, &50_000_000, &h.box_id);
 
         let after_deposit = h.token.balance(&h.wallet);
 
@@ -333,9 +404,7 @@ mod tests {
         let harvested = h.client.harvest(&h.wallet);
         assert!(harvested > 0);
 
-        // The harvested yield actually landed in the user's wallet.
         assert_eq!(h.token.balance(&h.wallet), after_deposit + harvested);
-        // Pending resets after harvest.
         assert_eq!(h.client.get_accrued(&h.wallet), 0);
     }
 
@@ -343,7 +412,7 @@ mod tests {
     fn withdraw_returns_tokens_to_user() {
         let h = setup();
         h.env.ledger().with_mut(|l| l.timestamp = 100);
-        h.client.deposit(&h.wallet, &10_000_000, &500);
+        h.client.deposit(&h.wallet, &10_000_000, &h.box_id);
 
         let after_deposit = h.token.balance(&h.wallet);
         h.client.withdraw(&h.wallet, &4_000_000);
@@ -353,16 +422,20 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn deposit_rejects_zero_apy() {
-        let h = setup();
-        h.client.deposit(&h.wallet, &100_000, &0);
-    }
-
-    #[test]
-    #[should_panic]
-    fn deposit_rejects_apy_above_limit() {
-        let h = setup();
-        h.client.deposit(&h.wallet, &100_000, &(MAX_APY_BPS + 1));
+    fn deposit_rejects_invalid_oracle_rate() {
+        // Oracle returns 0 → validate_apy rejects it (defense in depth).
+        let env = Env::default();
+        env.mock_all_auths();
+        let admin = Address::generate(&env);
+        let wallet = Address::generate(&env);
+        let bad_oracle = env.register(ZeroOracle, ());
+        let sac = env.register_stellar_asset_contract_v2(admin.clone());
+        let token_address = sac.address();
+        StellarAssetClient::new(&env, &token_address).mint(&wallet, &1_000_000_000);
+        let id = env.register(StreamRouterContract, ());
+        let client = StreamRouterContractClient::new(&env, &id);
+        client.initialize(&admin, &token_address, &bad_oracle);
+        client.deposit(&wallet, &1_000_000, &String::from_str(&env, "any-box"));
     }
 
     #[test]
@@ -370,7 +443,7 @@ mod tests {
     fn withdraw_rejects_amount_above_total() {
         let h = setup();
         h.env.ledger().with_mut(|l| l.timestamp = 100);
-        h.client.deposit(&h.wallet, &1_000_000, &500);
+        h.client.deposit(&h.wallet, &1_000_000, &h.box_id);
         h.client.withdraw(&h.wallet, &9_999_999);
     }
 
@@ -382,7 +455,6 @@ mod tests {
         let contract_id = env.register(StreamRouterContract, ());
         let client = StreamRouterContractClient::new(&env, &contract_id);
         let wallet = Address::generate(&env);
-        // No initialize(), no token configured → NotInitialized.
-        client.deposit(&wallet, &100_000, &500);
+        client.deposit(&wallet, &100_000, &String::from_str(&env, "b"));
     }
 }

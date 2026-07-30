@@ -58,13 +58,12 @@ app.post("/build", authMiddleware, async (c) => {
       );
     }
 
-    // Build unsigned XDR. The box APY is required for the on-chain
-    // deposit(wallet, amount, apy_bps) invocation.
+    // Build unsigned XDR. On-chain deposit(wallet, amount, box_id) reads the
+    // APY from the rate oracle keyed by box_id — the caller cannot choose it.
     const { xdr, networkPassphrase } = await buildDepositTx(
       wallet,
       amount,
       box_id,
-      box[0].apyBps,
     );
 
     return c.json({ xdr, networkPassphrase, box_id, amount });

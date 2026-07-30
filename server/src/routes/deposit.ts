@@ -58,11 +58,13 @@ app.post("/build", authMiddleware, async (c) => {
       );
     }
 
-    // Build unsigned XDR
+    // Build unsigned XDR. The box APY is required for the on-chain
+    // deposit(wallet, amount, apy_bps) invocation.
     const { xdr, networkPassphrase } = await buildDepositTx(
       wallet,
       amount,
       box_id,
+      box[0].apyBps,
     );
 
     return c.json({ xdr, networkPassphrase, box_id, amount });

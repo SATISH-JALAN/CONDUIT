@@ -27,6 +27,21 @@ const sorobanRpc = new StellarSdk.rpc.Server(SOROBAN_RPC_URL, {
   allowHttp: SOROBAN_RPC_ALLOW_HTTP,
 });
 
+// Real on-chain invocation of stream_router is enabled only when Soroban is on
+// AND a deployed contract id is configured. Otherwise we fall back to the legacy
+// native-payment path so local dev without a deployed contract still works.
+const STREAM_ROUTER_INVOKE_ENABLED =
+  SOROBAN_ENABLED && !!STREAM_ROUTER_CONTRACT_ID;
+// Decimals of the custodied yield asset (SAC). Amounts scale to i128 base units.
+const YIELD_ASSET_DECIMALS = parseInt(
+  process.env.YIELD_ASSET_DECIMALS || "7",
+  10,
+);
+// Inclusion fee (stroops) for Soroban txs; prepareTransaction adds resource fee.
+const SOROBAN_INCLUSION_FEE = process.env.SOROBAN_INCLUSION_FEE || "1000000";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export interface HarvestSplitOperation {
   destination: string;
   amount: number;
@@ -52,16 +67,95 @@ export interface SorobanReadResult<T> {
 
 // ── Public API ──
 
+export function isStreamRouterInvokeEnabled(): boolean {
+  return STREAM_ROUTER_INVOKE_ENABLED;
+}
+
+/** Scale a human amount (e.g. dollars) to the yield asset's i128 base units. */
+function toI128ScVal(amount: number): StellarSdk.xdr.ScVal {
+  const base = BigInt(Math.round(amount * 10 ** YIELD_ASSET_DECIMALS));
+  return StellarSdk.nativeToScVal(base, { type: "i128" });
+}
+
+/** Load the source account, auto-funding via friendbot on first use. */
+async function loadOrFundSource(
+  sourceWallet: string,
+): Promise<StellarSdk.Account> {
+  try {
+    return await sorobanRpc.getAccount(sourceWallet);
+  } catch {
+    logger.info(
+      { sourceWallet },
+      "Source account not found, funding via friendbot...",
+    );
+    const funded = await fundWithFriendbot(sourceWallet);
+    if (!funded) {
+      throw new Error(
+        "Account does not exist and friendbot funding failed. Please fund manually.",
+      );
+    }
+    return await sorobanRpc.getAccount(sourceWallet);
+  }
+}
+
+/**
+ * Build an unsigned stream_router contract invocation, prepared (footprint +
+ * auth + resource fees) via RPC simulation. The user's wallet is the tx source,
+ * so require_auth() and the SAC token transfer auth are covered by the envelope
+ * signature — no separate authorization entries are needed.
+ */
+async function buildStreamRouterInvokeTx(
+  sourceWallet: string,
+  method: string,
+  args: StellarSdk.xdr.ScVal[],
+): Promise<{ xdr: string; networkPassphrase: string }> {
+  if (!STREAM_ROUTER_CONTRACT_ID) {
+    throw new Error("STREAM_ROUTER_CONTRACT_ID is not configured");
+  }
+
+  const source = await loadOrFundSource(sourceWallet);
+  const contract = new StellarSdk.Contract(STREAM_ROUTER_CONTRACT_ID);
+
+  const tx = new StellarSdk.TransactionBuilder(source, {
+    fee: SOROBAN_INCLUSION_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(120)
+    .build();
+
+  const prepared = await sorobanRpc.prepareTransaction(tx);
+  return { xdr: prepared.toXDR(), networkPassphrase: NETWORK_PASSPHRASE };
+}
+
 /**
  * Build an unsigned deposit transaction.
  * The user signs this client-side with Freighter, then sends back the signed XDR.
- * Uses native XLM on standalone; swap to USDC asset for testnet/mainnet.
+ *
+ * When a stream_router contract is deployed (SOROBAN_ENABLED + contract id) this
+ * invokes `deposit(wallet, amount, apy_bps)` so tokens actually move into the
+ * vault. Otherwise it falls back to a native payment for local dev.
  */
 export async function buildDepositTx(
   sourceWallet: string,
   amount: number,
   boxId: string,
+  apyBps?: number,
 ): Promise<{ xdr: string; networkPassphrase: string }> {
+  // Real path: invoke stream_router.deposit so tokens move into the vault.
+  if (STREAM_ROUTER_INVOKE_ENABLED) {
+    if (apyBps === undefined || apyBps <= 0) {
+      throw new Error("apyBps is required for on-chain deposit");
+    }
+    const args = [
+      StellarSdk.Address.fromString(sourceWallet).toScVal(),
+      toI128ScVal(amount),
+      StellarSdk.nativeToScVal(apyBps, { type: "u32" }),
+    ];
+    return buildStreamRouterInvokeTx(sourceWallet, "deposit", args);
+  }
+
+  // Legacy fallback (local dev without a deployed contract): native payment.
   let sourceAccount;
   try {
     sourceAccount = await server.loadAccount(sourceWallet);
@@ -117,8 +211,16 @@ export async function buildHarvestTx(
   boxId: string,
   splits: HarvestSplitOperation[] = [],
 ): Promise<{ xdr: string; networkPassphrase: string }> {
-  // For harvest, the source is the vault paying the user
-  // On standalone, we simulate by building a self-payment
+  // Real path: invoke stream_router.harvest(wallet). The contract computes the
+  // accrued yield on-chain and pays it from the vault reserve to the user.
+  // (Multi-destination on-chain splitting arrives in a later phase; for now the
+  // contract pays the full accrued amount to the user.)
+  if (STREAM_ROUTER_INVOKE_ENABLED) {
+    const args = [StellarSdk.Address.fromString(sourceWallet).toScVal()];
+    return buildStreamRouterInvokeTx(sourceWallet, "harvest", args);
+  }
+
+  // Legacy fallback: vault-to-user (and split) native payments.
   let sourceAccount;
   try {
     sourceAccount = await server.loadAccount(sourceWallet);
@@ -178,9 +280,56 @@ export async function submitSignedTx(
     signedXdr,
     NETWORK_PASSPHRASE,
   );
+
+  // Soroban contract invocations must be submitted (and polled) via the RPC
+  // server, not Horizon. Detect them and route accordingly.
+  const isSoroban =
+    "operations" in tx &&
+    tx.operations.some((op) => op.type === "invokeHostFunction");
+
+  if (isSoroban) {
+    return submitSorobanTx(tx as StellarSdk.Transaction);
+  }
+
   const result = await server.submitTransaction(tx);
   logger.info({ hash: result.hash }, "Transaction submitted");
   return { txHash: result.hash };
+}
+
+/**
+ * Submit a signed Soroban transaction via RPC and poll until it is applied.
+ */
+async function submitSorobanTx(
+  tx: StellarSdk.Transaction,
+): Promise<{ txHash: string }> {
+  const send = await sorobanRpc.sendTransaction(tx);
+
+  if (send.status === "ERROR") {
+    logger.error({ send }, "Soroban sendTransaction returned ERROR");
+    throw new Error(
+      "Contract transaction rejected: " +
+        JSON.stringify(send.errorResult ?? send.status),
+    );
+  }
+
+  const hash = send.hash;
+  let result = await sorobanRpc.getTransaction(hash);
+  let attempts = 0;
+  while (String(result.status) === "NOT_FOUND" && attempts < 30) {
+    await sleep(1000);
+    result = await sorobanRpc.getTransaction(hash);
+    attempts += 1;
+  }
+
+  if (String(result.status) !== "SUCCESS") {
+    logger.error({ hash, status: result.status }, "Soroban tx did not succeed");
+    throw new Error(
+      "Contract transaction failed on-chain: " + String(result.status),
+    );
+  }
+
+  logger.info({ hash }, "Soroban transaction applied");
+  return { txHash: hash };
 }
 
 /**
@@ -241,7 +390,9 @@ function mapSorobanAnchor(payload: unknown): SorobanAnchor | null {
   }
 
   return {
-    principal,
+    // On-chain principal is stored in i128 base units; the rest of the server
+    // works in human (dollar) units, so normalize at the read boundary.
+    principal: principal / 10 ** YIELD_ASSET_DECIMALS,
     apy_bps: apyBps,
     sync_ts: syncTs,
   };
@@ -394,8 +545,8 @@ export async function readOnChainAccrued(
     [walletArg],
   );
 
-  const mapped = toFiniteNumber(response.value);
-  if (response.ok && mapped === null) {
+  const raw = toFiniteNumber(response.value);
+  if (response.ok && raw === null) {
     return {
       ...response,
       ok: false,
@@ -403,6 +554,9 @@ export async function readOnChainAccrued(
       fallbackReason: "invalid_read_shape",
     };
   }
+
+  // Normalize i128 base units → human (dollar) units for the rest of the server.
+  const mapped = raw === null ? null : raw / 10 ** YIELD_ASSET_DECIMALS;
 
   return {
     ...response,

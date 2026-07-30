@@ -60,8 +60,11 @@ Conduit has been scaled to production readiness with complete security checks, p
 
 | Contract | Contract ID | Explorer Link |
 |:---|:---|:---|
-| **Stream Router** | `CDEHCFTEWP2XRT7W5QVBOSMUY6BJAJ7ATF6DFHWZYVA33TB7UHQLXMSD` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDEHCFTEWP2XRT7W5QVBOSMUY6BJAJ7ATF6DFHWZYVA33TB7UHQLXMSD) |
+| **Stream Router** (token-backed) | `CDDSBISHIOODZHKMY5245WPH6UMVV3TYBUSYSPUCRYSBHZYGRQWNBHXD` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDDSBISHIOODZHKMY5245WPH6UMVV3TYBUSYSPUCRYSBHZYGRQWNBHXD) |
+| **Yield Asset SAC** (native XLM) | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC) |
 | **Compliance** | `CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAMMJKVU3XFX4JYTRFVHSMDKDK6SMPCKVJHIFIXAJNWOWTZPAEII2SI6) |
+
+> The Stream Router custodies a real SAC token. Deposits move tokens into the vault; harvest settles accrued yield from the reserve. Deploy + proof scripts: [`docs/deployment.md`](docs/deployment.md).
 
 > [!NOTE]  
 > Deployed to Stellar Testnet using `conduit-operational` identity (`GALAHKCLSOZZRVVEU64UUUXZGDMYXVXJV2LMO4DXFQ7M7JCZE2TOJM6H`).

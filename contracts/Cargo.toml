@@ -13,3 +13,15 @@ publish = false
 
 [workspace.dependencies]
 soroban-sdk = { version = "=25.3.0", default-features = false }
+
+# Canonical Soroban release profile. overflow-checks is required by the Stellar
+# CLI and prevents silent integer overflow in the fixed-point yield math.
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
